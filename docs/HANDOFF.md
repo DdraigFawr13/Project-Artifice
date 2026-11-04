@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Plan: final plan approved (D-004 to D-006); writing the forge spec with `write-spec`.
+Plan: forge spec drafted and checked (`docs/specs/forge-prototype.md`); waiting for Morgan's answers to its open questions and approval.
 
 ## Plan map
 
@@ -35,6 +35,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-04 Art refined at Morgan's request: close-up anvil (side on, cleaner, knife tip right) and the wide shot redrawn to match. These two replace Ember concept 3 as the style reference; resample UI_STYLE tokens from them when the spec is written.
 
 - 2026-11-04 Final plan approved in chat (the page saved only on the device): 14/44 px minimums, reheat any time, drag to quench, CC0 sound, Vercel free plan. Recorded as D-004 to D-006.
+
+- 2026-11-04 Forge spec drafted; 3 fresh checks, 2 re-checks and a final zero-decision check, all findings fixed or put to Morgan. Spec check agents $1.25 measured in total. D-003 scale rule and D-006 CI-05 override recorded.
 
 ## Next
 
