@@ -35,7 +35,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Morgan sets Vercel's production branch to `main` (project-artifice → Settings → Environments → Production): the first branch push was built as production. Then Morgan opens the S1 link on the Pixel (signed in to Vercel): https://project-artifice-git-clau-2be518-golden-goose-engineering-group.vercel.app/?debug (PR #3), adds `?debug`, and reports the width, height, device pixel ratio and scale shown; also judges the blade-free wide shot (`assets/wide.png`, free local edit). OpenArt only if Morgan doesn't like it.
+1. Morgan checks Vercel's production branch is `main` (project-artifice → Settings → Environments → Production): the first branch push was built as production, the second as preview. Then Morgan opens the S1 link on the Pixel (signed in to Vercel): https://project-artifice-git-clau-2be518-golden-goose-engineering-group.vercel.app/?debug (PR #3), adds `?debug`, and reports the width, height, device pixel ratio and scale shown; also judges the blade-free wide shot (`assets/wide.png`, free local edit). OpenArt only if Morgan doesn't like it.
 2. Merge the S1 PR once Morgan approves and CI is green (GIT-07).
 3. Fresh session for S2 (heat): re-run the zero-decision check on S2 against S1's merged code first (write-spec step 8).
 
