@@ -32,7 +32,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. S5 on `claude/forge-s5-loop` (PR #7, draft): Morgan plays the 10-craft test on the preview, fills the playtest form, and approves or not (GIT-07). Copy the form's answers into `docs/playtests/`.
+1. S5 on `claude/forge-s5-loop` (PR #7, draft): Morgan plays the 10-craft test on the preview, fills the [playtest form](https://claude.ai/artifact/2vWLEDRUzSoXhzNRSe4rxz) (db `playtests/s5-10-craft`), and approves or not (GIT-07). Copy its answers into `docs/playtests/2026-11-04-s5-loop.md` from the template.
 2. Open from S4 for Morgan's playtest: a no-strike knife scores 46 (missed hit −3 may be too light); the quench feels unsatisfying (steam and a sinking piece noted in the spec).
 
 ## Open questions
