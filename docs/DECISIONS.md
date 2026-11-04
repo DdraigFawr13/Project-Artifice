@@ -17,7 +17,7 @@ Settled rules for this project. Not a changelog: an entry stays while the rule i
 ## D-003 Art direction
 
 - **Status:** Accepted (2026-11-04)
-- **Decision:** The forge uses the Ember Night look: semi high detail pixel art, lit only by the fire and the hot metal (concept 3 of taste board 2). Daylight Workshop's look (concept 2) is kept for the shop in a later phase. The game renders at 360 × 640 game pixels in portrait. The forge and the hot metal are live 2D lights; everything else is painted. Heat is readable without colour: brightness rises with heat, and every band has a second cue, always on. Prototype art is AI-generated placeholders cleaned to the palette, with the hot metal drawn in code; an artist replaces it later. Details: [UI_STYLE.md](UI_STYLE.md).
+- **Decision:** The forge uses the Ember Night look: semi high detail pixel art, lit only by the fire and the hot metal (concept 3 of taste board 2). Daylight Workshop's look (concept 2) is kept for the shop in a later phase. The game is authored at 360 × 640 game pixels in portrait and drawn at a whole-number scale that keeps a central 336 × 640 safe zone on screen (×4 on the Pixel, showing about 336 × 748); backgrounds are 400 × 800 so taller and wider screens stay covered (forge spec, 2026-11-04). The forge and the hot metal are live 2D lights; everything else is painted. Heat is readable without colour: brightness rises with heat, and every band has a second cue, always on. Prototype art is AI-generated placeholders cleaned to the palette, with the hot metal drawn in code; an artist replaces it later. Details: [UI_STYLE.md](UI_STYLE.md).
 - **Why:** Morgan picked these on [taste board 2](https://claude.ai/artifact/LMMZGoVFjiwkUbSt4yBYnH) after asking for more detail and research. Smiths read heat colour in dim light, so Ember Night fits the core skill. The research found no asset pack with a forge close-up, and the budget is about $50. Morgan allows AI art only for placeholders and concepts (design review).
 
 ## D-004 Platform and tech
@@ -37,3 +37,4 @@ Settled rules for this project. Not a changelog: an entry stays while the rule i
 - **Status:** Accepted (2026-11-04)
 - **Decision:** Playtest builds go to a private preview link on Vercel's free plan, which Morgan opens on the Pixel after each build step. "Fun" counts only from Morgan's playtest notes (GAME-06).
 - **Why:** Morgan approved it on the final plan: $0, private, and the only way to play on the phone. Publishing anything public still needs Morgan's OK (SAFE-01).
+- **Override:** this overrides master rule CI-05's "branch previews off" for this project. The override is added to AGENTS.md and `.ai-master.json` in the forge spec's slice S1.

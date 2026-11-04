@@ -26,32 +26,32 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 ### J1 Open the game
 
 - **Given** the playtest build
-- **When** it opens at 412 × 915 CSS px with a device pixel ratio of 3.5
-- **Then** a loading screen, then the item list over the wide smithy. The game is drawn at a whole-number scale with between 336 and 400 game px visible across. **Check:** `e2e/open.spec.ts` asserts the integer scale, the visible width and 3 item rows, and saves a screenshot.
+- **When** it opens at 414 × 921 CSS px with a device pixel ratio of 3.25 (one reported Pixel 10 Pro XL size, UI_STYLE.md)
+- **Then** a loading screen, then the item list over the wide smithy. The game is drawn at scale 4, with about 336 × 748 game px visible. **Check:** `e2e/open.spec.ts` reads the scale and visible size from the debug API and asserts scale 4 and a visible width of 336–337, sees 3 item rows, and saves a screenshot.
 
 ### J2 Heat
 
 - **Given** a bar in the fire
-- **When** the player holds the bellows for 3 s, then lets go for 3 s
-- **Then** heat rises while held and falls after, and the metal's colour, brightness, glow radius and spark rate follow its band. **Check:** `src/engine/heat.test.ts` (rise and fall at the rates in Data); `src/data/heat-bands.test.ts` (luminance and glow radius strictly rise across the 6 bands); `e2e/heat.spec.ts` pins each band through the debug hook and checks, in a greyscale screenshot, that the metal's mean brightness strictly rises.
+- **When** the player holds the bellows for 4 s, then moves the bar to the anvil for 3 s
+- **Then** heat rises while held and falls on the anvil, and the metal's colour, brightness and glow radius change continuously with its temperature, with sparks from `orange` up. **Check:** `src/engine/heat.test.ts` (rise and fall at the rates in Data); `src/data/heat-bands.test.ts` (luminance and glow radius strictly rise across the 6 band anchors, with relative luminance at least 0.05 higher at each anchor than the one below); `e2e/heat.spec.ts` pins 6 temperatures (one per band) through the debug API and checks, in a greyscale screenshot, that the metal's mean brightness strictly rises.
 
 ### J3 Hammer
 
 - **Given** the hot piece in the close-up anvil view
 - **When** the player touches and lifts a finger
-- **Then** the strike lands 40 game px above the touch point at the moment of lift, on the nearest target; a spark, a sound and a mark answer at once, and the strike's points show live. **Check:** `src/engine/strike.test.ts` (nearest target by distance; error in game px; cold, hot and repeat strike penalties); `e2e/hammer.spec.ts` taps 40 game px below a target and sees its mark and the strike counter rise.
+- **Then** the strike lands 40 game px above the touch point at the moment of lift and counts for the nearest unstruck target within 24 game px; a spark, a sound and a mark answer at once, and the strike's points show live. **Check:** `src/engine/strike.test.ts` (nearest target; the distance penalty; wild, cold, hot and repeat strikes); `e2e/hammer.spec.ts` reads a target from the debug API, taps 40 game px below it, and sees its mark and the strike counter rise.
 
 ### J4 Quench and grade
 
 - **Given** a hammered piece
 - **When** the player drags it to the tub and lets go
-- **Then** the result screen shows the score, its tier, the material quality beside it, and one line per cause, with score = max(0, 100 − sum of points lost); or the ruin screen with half the metal returned as scrap. **Check:** `src/engine/grade.test.ts` (sum rule, floor at 0, every ruin rule, scrap = parts ÷ 2); `src/engine/spread.test.ts` (scripted careful and sloppy knife crafts with the default alloy differ by 25 points or more); `e2e/craft.spec.ts` plays a scripted knife to the result screen.
+- **Then** the result screen shows the score, its tier, the material quality beside it, and one line per cause, with score = max(0, round(100 − sum of points lost)); or the ruin screen with floor(parts ÷ 2) parts returned as scrap. **Check:** `src/engine/grade.test.ts` (sum rule, rounding, floor at 0, every ruin rule, scrap); `src/engine/spread.test.ts` (a careful knife, every strike within 4 px and in band, and a sloppy one, strikes 12 px off and a quench 100 °C hot, with the default alloy differ by 25 points or more); `e2e/craft.spec.ts` plays a scripted knife through the debug API and asserts the score, tier and cause lines; `e2e/ruin.spec.ts` quenches at white heat and sees the ruin screen.
 
 ### J5 Full loop
 
 - **Given** a fresh save
-- **When** the player mixes an alloy, crafts a knife, then reloads the page
-- **Then** the knife's best shows on the item list, and the save carries a version. **Check:** `src/engine/determinism.test.ts` (same seed and input log give the same targets and grade; a different seed gives different targets); `src/save/save.test.ts` (version field; unreadable save kept, not overwritten, GAME-05); `e2e/loop.spec.ts`.
+- **When** the player mixes a 3-ore alloy, crafts a knife, then reloads the page
+- **Then** the knife's best and the scrap count show on the item list. **Check:** `src/engine/alloy.test.ts` (weighted means for 1-, 2- and 3-ore mixes); `e2e/loop.spec.ts` (mix, craft, reload, best shown). Save and determinism tests land earlier (S1, S3).
 
 ## Decisions
 
@@ -67,8 +67,9 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 - **PixiJS:** no maintained official 2D normal-map lighting (research 2026-11-04). Would fail when D-003's live light is built.
 - **A heat gauge:** makes reading the metal trivial (mock-up check record). Would fail the "reading the metal" skill (planning-answers.md:11).
 - **Material quality inside the craft score:** CONCEPT.md has rarity = material quality + craft grade, so the craft score shows only the player's work. Would double-count material when rarity arrives in the shop phase.
-- **Painted glow instead of live lights by default:** D-003 settled live lights. The painted glow is only the fallback under Risks.
-- **Fitting the whole 360 px width (×3 on the Pixel):** leaves black bars about 66 physical px wide each side. Cropping to a 336 px safe zone at ×4 fills the screen (UI_STYLE.md Layout).
+- **Painted glow instead of live lights by default:** D-003 settled live lights. With flat placeholder normal maps the lights give only a radial falloff, so this is put to Morgan at approval (Open questions).
+- **Fitting the whole 360 px width (×3 on the Pixel):** leaves black bars about 66 physical px wide each side. Cropping to a 336 px safe zone at ×4 fills the screen (UI_STYLE.md Layout). D-003's "360 × 640" is updated in this change to say so.
+- **Heat colour in steps per band:** the player couldn't see a threshold in the middle of a band yet would be charged for it (critic re-check). Colour, brightness and glow change continuously with temperature instead.
 
 ## Risks
 
@@ -102,22 +103,23 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 
 ### Scale and screen
 
-- Scale `s` = max(1, floor(physical width ÷ 336)), where physical width = CSS width × device pixel ratio. The visible area is (physical width ÷ s) × (physical height ÷ s) game px. On the Pixel (1344 physical px, reported, not checked) that is ×4 and 336 game px across.
+- Scale `s` = max(1, floor(physical width ÷ 336)), where physical width = CSS width × device pixel ratio. The visible area is (physical width ÷ s) × (physical height ÷ s) game px, rounded down. On the Pixel (1344 × 2992 physical px, reported, not checked) that is ×4 and 336 × 748 game px.
 - Gameplay stays inside a centred 336 × 640 safe zone. Backgrounds are 400 × 800 game px, so any visible area up to that size is covered. Wider or taller screens show the background colour `--night-0`.
 - Panels and text are DOM overlays over the canvas's bottom area, laid out in CSS px, so text stays sharp at 14 px and up.
 - During a craft: `touch-action: none` and `overscroll-behavior: none` on the game area.
 
 ### Engine
 
-- `createCraft(seed: number, itemId: ItemId, alloy: AlloyMix): CraftState`. The seed jitters each target by up to ±3 game px, so no two crafts are the same, and seeds the sparks. Heat and grading use no randomness.
-- `step(state: CraftState, input: Input): CraftState` advances one fixed step of 16 ms. The game runs as many steps as real time needs (an accumulator), so 90 Hz and 120 Hz screens play the same. `Input` is `{bellows: boolean}`, `{moveTo: "fire" | "anvil" | "tub"}`, `{strike: {x: number, y: number}}` in close-view game px, or `{none: true}`. Moving to the tub is the quench, at that step's temperature.
+- `AlloyMix` is `{[oreId]: parts}` with 1–3 ores whose parts sum to the item's parts. Three ores are available; a mix may use one, two or three of them.
+- `createCraft(seed: number, itemId: ItemId, alloy: AlloyMix): CraftState`. The seed moves each target by a whole number of game px, up to ±3, so no two crafts are the same, and seeds the sparks. Heat and grading use no randomness. The game takes the seed from the clock at craft start; the debug API can set it.
+- `step(state: CraftState, input: Input): CraftState` advances one fixed step of 16 ms. The game runs as many steps as real time needs (an accumulator), so 90 Hz and 120 Hz screens play the same. `Input` is `{bellows: boolean}`, `{grab: true}`, `{drop: "fire" | "anvil" | "tub"}`, `{strike: {x: number, y: number}}` in close-view game px, or `{none: true}`. `CraftState.location` is `fire`, `anvil`, `held` or `done`. Dropping in the tub is the quench, at that step's temperature.
 - Each input is logged with its step number in `state.log`, so a craft replays from seed plus log (GAME-01).
-- The screen converts touches. In the close view a lift becomes `{strike}` 40 game px above the touch. In the wide view, dragging the piece and releasing over the tub becomes `{moveTo: "tub"}`, over the fire `{moveTo: "fire"}`, and over the anvil `{moveTo: "anvil"}`. While dragging, the piece cools at its air rate.
-- `grade(state): {score, tier, materialQuality, lines: {cause: CauseId, points}[]} | {ruined: true, cause: CauseId, scrapParts}`. `CauseId` is one of `off-centre`, `cold-strike`, `hot-strike`, `repeat-strike`, `missed-target`, `out-of-band`, `burning`, `quench-hot`, `quench-cold`.
+- The screen converts touches. In the wide view, touching the piece sends `{grab}` and releasing it over the fire, anvil or tub sends `{drop}`; anywhere else it returns to where it was. While `held` it cools at the alloy's cool rate. Dropping on the anvil opens the close view. In the close view a lift sends `{strike}` 40 game px above the touch; "Back to the fire" sends `{grab}` then `{drop: "fire"}`, and "Quench" sends `{grab}` and returns to the wide view with the piece held.
+- `grade(state): {score, tier, materialQuality, lines: {cause: CauseId, points}[]} | {ruined: true, cause: CauseId, scrapParts}`. `CauseId` is one of `off-centre`, `wild-strike`, `cold-strike`, `hot-strike`, `repeat-strike`, `missed-target`, `out-of-band`, `burning`, `quench-hot`, `quench-cold`. Per-second and per-°C penalties accrue every step in fractions; each line is rounded to a whole number when shown, and the score is max(0, round(100 − the unrounded sum)).
 
 ### Data (starting values to tune; assumptions, not playtested)
 
-- `heat-bands.json`, by °C, with colour and glow radius in game px:
+- `heat-bands.json`: 6 named anchors, by °C, with colour and glow radius in game px. Colour, brightness and glow are interpolated linearly between anchor midpoints, so they change continuously with temperature. Light strength follows brightness; spark rate is 0 below 900 °C and rises linearly to 30 per second at 1350; hum pitch rises linearly from 80 Hz at 550 °C to 220 Hz at 1350.
   - `black`: under 550, #30161c, glow 0
   - `dull-red`: 550–750, #64281d, glow 4
   - `cherry`: 750–900, #93341d, glow 8
@@ -125,7 +127,7 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
   - `yellow`: 1050–1200, #f7a74e, glow 16
   - `white`: 1200 and over, #fff2cc, glow 20 (this colour is new, not sampled; tune with the art)
   - Sparks start at `orange` and their rate rises with heat. A forge hum's pitch rises with heat.
-- Heat: the bar starts at 20 °C. In the fire with the bellows held it rises 150 °C/s, up to 1350. In the fire without the bellows it moves 40 °C/s towards 800. Out of the fire (anvil, dragging) it falls at the alloy's cool rate.
+- Heat: the bar starts at 20 °C in the fire. In the fire with the bellows held it rises 250 °C/s, up to 1350. In the fire without the bellows it moves 40 °C/s towards 800, up or down. Out of the fire (`anvil` or `held`) it falls at the alloy's cool rate, down to 20.
 - `ores.json`, with placeholder names until Morgan names them:
   - `ore1`: quality 40, working band 800–1150 °C, cool 45 °C/s
   - `ore2`: quality 60, working band 850–1100 °C, cool 60 °C/s
@@ -135,14 +137,18 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
   - `horseshoe`: 3 parts, 5 targets, 1 min
   - `knife`: 5 parts, 9 targets, 2 min
   - `sword`: 8 parts, 15 targets, 3 min
-  - Targets are spaced evenly along the blade. The default alloy for S2–S4 is all `ore2`.
+  - Targets are spaced evenly along the blade's centre line in the close view, from 20 px inside the tang end to 20 px inside the tip, with exact coordinates fixed in S3 against the close-up art. The default alloy for S2–S4 is all `ore2`.
 - `grading.json`:
-  - Off-centre: −3 per strike landing more than 6 game px from its target.
-  - Cold strike (below the working band): −4. Hot strike (above it): −2. Repeat strike on a done target: −1. Each target left unstruck at the quench: −6.
+  - A strike counts for the nearest unstruck target within 24 game px. Off-centre: −1 per 2 game px beyond 4, up to −6 per strike. No unstruck target within 24 px: −2 (wild strike), or −1 (repeat) if a struck one is within 24 px.
+  - Cold strike (below the working band): −4. Hot strike (above it): −2. These add to any off-centre points. Each target left unstruck at the quench: −6.
   - Out of band while on the anvil: −2 per second. Burning (`white` band, anywhere): −5 per second.
-  - Quench band 780–880 °C; −1 per 25 °C outside it.
+  - Quench band 780–880 °C; −1 per 25 °C outside it, in fractions.
   - Ruin: 3 strikes in the `black` band, or a quench at 1200 °C or more.
-- `hints.json`: one short hint per step (alloy, heat, hammer, quench), shown the first 3 times each step is reached, worded as in the mock-up.
+- `hints.json`: one short hint per step (alloy, heat, hammer, quench), shown the first 3 times each step is reached (counted in the save), worded as in the mock-up.
+
+### Debug API
+
+- With `?debug`, `window.__artifice` offers `info()` (scale, visible size, device pixel ratio), `setSeed(n)`, `pinTemp(°C | null)`, `targets()`, `state()` and `pause()` / `advance(ms)` to drive the fixed step from tests. Each slice adds what its checks need. It never ships without `?debug`.
 
 ### Screens
 
@@ -154,8 +160,8 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 
 ### Save
 
-- `localStorage` key `artifice.save`: `{version: 1, best: {[itemId]: number}, scrap: {[oreId]: number}}`.
-- Written when a craft starts and when it ends, never during it. A reload mid-craft abandons the craft, and its metal is lost with no scrap, so reloading is never better than a ruin.
+- `localStorage` key `artifice.save`: `{version: 1, best: {[itemId]: number}, scrap: number, hintsSeen: {[step]: number}}`. `scrap` is a count of mixed-metal parts; it is shown and kept, and gets a use when the ore stock question is answered.
+- Written when a craft ends (result or ruin) and when a hint is shown, never mid-craft. A reload mid-craft abandons it.
 - If `localStorage` is unavailable, the game runs and says "Progress won't be saved on this device."
 - A save with an unknown version or bad JSON is copied to `artifice.save.unreadable` and a fresh save starts.
 
@@ -167,8 +173,8 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 - **Checks that fail now:** J1; `src/engine/rng.test.ts`; `src/save/save.test.ts` (read, version, unreadable).
 - **Files:**
   - `package.json`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`, `index.html`
-  - `src/engine/rng.ts`; `src/save/save.ts`; `src/data/items.json`
-  - `src/game/Boot.ts`, `Choose.ts`; `src/ui/` panels and `debug.ts`
+  - `src/engine/rng.ts`, `rng.test.ts`; `src/save/save.ts`, `save.test.ts`; `src/data/items.json` (ids, names, parts, minutes; targets come in S3)
+  - `src/game/Boot.ts`, `Choose.ts`; `src/ui/` panels and `debug.ts` (the debug API's `info()`)
   - `assets/wide.png`: a blade-free edit of the reference wide shot, padded to 400 × 800
   - `assets/fonts/` with Pixelify Sans and Press Start 2P (OFL); `assets/ATTRIBUTION.md`
   - `e2e/open.spec.ts`
@@ -183,28 +189,28 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 
 - **Morgan tries:** taps Knife (default alloy), holds the bellows and watches the bar heat, glow, spark and hum; lets go and watches it cool; drags it between fire and anvil; sees "Burning!" at white heat. The heat hint shows.
 - **Checks that fail now:** J2.
-- **Files:** `src/engine/craft.ts` (the full `Input` union, `createCraft`, `step`, heat only), `heat.ts`, `alloy.ts` (default alloy and the weighted means); `src/data/heat-bands.json`, `ores.json`, `hints.json`; `src/game/Forge.ts` (wide view, bellows, drag, metal drawing, lights, sparks, hum); `scripts/flat-normals.mjs`; `assets/sfx/` fire, bellows, hum; ATTRIBUTION; `e2e/heat.spec.ts`; a debug hook `?debug&band=<id>` that pins the metal's band.
+- **Files:** `src/engine/craft.ts` (the full `Input` union, `location`, `createCraft`, `step`; strikes ignored until S3, the tub until S4), `heat.ts`, `heat.test.ts`, `alloy.ts` (the default alloy and weighted means); `src/data/heat-bands.json`, `heat-bands.test.ts`, `ores.json`, `hints.json`; `src/game/Choose.ts` (tapping an item starts a craft), `Forge.ts` (wide view, bellows, grab and drop, metal drawing, lights, sparks, hum, an fps readout with `?debug`); `scripts/flat-normals.mjs` (uses Node's built-in zlib to write PNGs, no new dependency); `assets/sfx/` fire, bellows, hum; ATTRIBUTION; the debug API's `pinTemp`, `pause`, `advance`, `state`; `e2e/heat.spec.ts`.
 - **Waits on:** S1.
 
 ### S3 Hammer
 
 - **Morgan tries:** drags the hot knife to the anvil and gets the close-up view; strikes along the blade and sees each strike's points live; drags back to the fire to reheat and returns. The hammer hint shows.
 - **Checks that fail now:** J3.
-- **Files:** `src/engine/strike.ts`, `grade.ts` (strike and out-of-band causes, the live total); `src/data/items.json` targets, `grading.json` strike values; `src/game/Forge.ts` close view, strike ring, marks; `assets/close.png` (a blade-free edit of the close-up reference, 400 × 800); `assets/sfx/` hammer; ATTRIBUTION; `e2e/hammer.spec.ts`.
+- **Files:** `src/engine/strike.ts`, `strike.test.ts`, `grade.ts` (strike, out-of-band and burning causes, the live total), `determinism.test.ts`; `src/data/items.json` targets, `grading.json` strike values; `src/game/Forge.ts` close view, strike ring, marks, the two buttons; `assets/close.png` (a blade-free edit of the close-up reference, 400 × 800); `assets/sfx/` hammer; ATTRIBUTION; the debug API's `setSeed`, `targets`; `e2e/hammer.spec.ts`. Black-band strikes are counted; the ruin they cause shows in S4.
 - **Waits on:** S2, and Morgan's OK for the OpenArt edit.
 
 ### S4 Quench and grade
 
 - **Morgan tries:** drags the knife to the tub and sees the score, tier, material quality and every point lost; overheats and quenches on purpose to see a ruin and the scrap returned. The quench hint shows.
 - **Checks that fail now:** J4.
-- **Files:** `src/engine/quench.ts`, `grade.ts` (quench and burning causes, tiers, floor at 0, ruin, scrap); `src/data/grading.json` quench, ruin and tier values; `src/game/Result.ts` (result and ruin); `src/save/save.ts` (best and scrap written at craft end); `assets/sfx/` hiss; `src/engine/spread.test.ts`; `e2e/craft.spec.ts`.
+- **Files:** `src/engine/quench.ts`, `grade.ts` (quench causes, tiers, rounding, floor at 0, ruin, scrap), `grade.test.ts`, `spread.test.ts`; `src/data/grading.json` quench, ruin and tier values; `src/game/Result.ts` (result and ruin; "Choose item" and "Forge another" go back to the list or start the same item); `src/game/Choose.ts` (bests and scrap); `src/save/save.ts` (written at craft end); `assets/sfx/` hiss; `e2e/craft.spec.ts`, `e2e/ruin.spec.ts`.
 - **Waits on:** S3, and Morgan's answer on tiers.
 
 ### S5 Full loop
 
 - **Morgan tries:** the 10-craft test. Mixes alloys from 3 ores, crafts horseshoes, knives and swords, sees bests survive a reload, and fills in a note in `docs/playtests/` from the template.
 - **Checks that fail now:** J5.
-- **Files:** `src/game/Alloy.ts` (mixing and its refused state); `src/engine/alloy.ts` (any mix); `src/game/Choose.ts` (bests); `src/save/save.ts` (write at craft start, ore stock if Morgan chooses one); `e2e/loop.spec.ts`.
+- **Files:** `src/game/Alloy.ts` (mixing and its refused state); `src/engine/alloy.ts` (any mix), `alloy.test.ts`; ore stock in `src/save/save.ts` only if Morgan chooses one; `e2e/loop.spec.ts`.
 - **Waits on:** S4, and Morgan's answer on ore stock.
 
 ## Verification
@@ -218,3 +224,5 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 - **Tiers:** proposed Crude 0–49, Fine 50–79, Masterwork 80–100. "Fine" for 74 matches the mock-up. Needed before S4.
 - **Ore stock:** is ore limited in the prototype? Unlimited ore means scrap only adds back to a counter; limited ore makes ruins cost something. Needed before S5.
 - **Phaser 4 version:** pin the newest release at least 2 weeks old when S1 starts.
+- **Live lights or a painted glow:** with flat placeholder normal maps, Phaser's lights give the same radial falloff as a painted glow sprite, but they cost speed on the phone. Proposed: a painted glow sprite now, live lights when an artist's normal maps arrive. This would change D-003.
+- **Vercel previews:** they build on every push, drafts included (no GitHub Actions minutes; Vercel's free-plan build limits not checked), and opening one needs Morgan signed in to Vercel on the phone. Accept?
