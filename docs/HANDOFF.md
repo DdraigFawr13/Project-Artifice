@@ -29,13 +29,13 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Final plan approved in chat (the page saved only on the device): 14/44 px minimums, reheat any time, drag to quench, CC0 sound, Vercel free plan. Recorded as D-004 to D-006.
 
-- 2026-11-04 S1 built: zero-decision re-check (reviewer agent) found 10 consequential gaps, 8 filled with defaults, 2 put to Morgan; all S1 checks failed first, then passed. Morgan chose the mock-up's item list (select, then "Forge a knife"), a free local blade edit before any OpenArt spend, and linking Vercel. Cool tokens re-sampled; CI-05 override added.
+- 2026-11-04 S1 built: zero-decision re-check (reviewer agent) found 10 consequential gaps, 8 filled with defaults, 2 put to Morgan; all S1 checks failed first, then passed. Morgan chose the mock-up's item list (select, then "Forge a knife"), a free local blade edit before any OpenArt spend, and linking Vercel. Cool tokens re-sampled; CI-05 override added. Spec review: 7 of 8 findings fixed. Vercel project `project-artifice` (team Golden Goose Engineering Group) linked, Node 22, login protection on all deployments; [PR #3](https://github.com/DdraigFawr13/Project-Artifice/pull/3) draft.
 
 - 2026-11-04 Forge spec drafted; 3 fresh checks, 2 re-checks and a final zero-decision check, all findings fixed or put to Morgan. Spec check agents $1.25 measured in total. D-003 scale rule and D-006 CI-05 override recorded.
 
 ## Next
 
-1. Morgan opens the S1 preview link on the Pixel (signed in to Vercel), adds `?debug`, and reports the width, height, device pixel ratio and scale shown; also judges the blade-free wide shot (`assets/wide.png`, free local edit). OpenArt only if Morgan doesn't like it.
+1. Morgan sets Vercel's production branch to `main` (project-artifice → Settings → Environments → Production): the first branch push was built as production. Then Morgan opens the S1 link on the Pixel (signed in to Vercel): https://project-artifice-git-clau-2be518-golden-goose-engineering-group.vercel.app/?debug (PR #3), adds `?debug`, and reports the width, height, device pixel ratio and scale shown; also judges the blade-free wide shot (`assets/wide.png`, free local edit). OpenArt only if Morgan doesn't like it.
 2. Merge the S1 PR once Morgan approves and CI is green (GIT-07).
 3. Fresh session for S2 (heat): re-run the zero-decision check on S2 against S1's merged code first (write-spec step 8).
 
