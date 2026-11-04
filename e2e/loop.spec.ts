@@ -56,7 +56,8 @@ test('mix a 3-ore alloy, craft a knife, forge another, reload: best and scrap ke
   await expect(start(page)).toBeDisabled();
   await expect(reason(page)).toBeVisible();
   await expect(reason(page)).toHaveText('Add 2 more parts: a knife takes 5.');
-  await expect(page.getByTestId('alloy-quality')).toBeHidden();
+  // Hidden, not just empty: an empty line still takes a row in the panel.
+  await expect(page.getByTestId('alloy-quality')).toHaveJSProperty('hidden', true);
   // Refused: one ore at the right total.
   await less(page, 'Ore 1').tap();
   await more(page, 'Ore 2').tap();
