@@ -33,11 +33,13 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Morgan plays S3 on the Pixel through the PR's Vercel preview, signed in: forge a knife, take it to the anvil, strike the marked spots (the strike lands at the ring above the finger on lift), watch each strike's points, reheat with "Back to the fire", reach "Burning!", and try three strikes on black metal for the ruin. Report the `?debug` line (width, height, dpr, scale, fps): still not reported since S1.
+1. Morgan plays S3 on the Pixel through the PR's Vercel preview, signed in: forge a knife, take it to the anvil, strike the marked spots (the strike lands at the ring above the finger on lift), watch each strike's points, reheat with "Back to the fire", reach "Burning!", and try three strikes on black metal for the ruin. The `?debug` line came in on 2026-11-04 (below).
 2. Merge S3 once Morgan approves; mark the PR ready first so CI runs, and merge when green (GIT-07).
 3. Fresh session for S4 (quench and grade): zero-decision re-check against S3's merged code first.
 
 ## Open questions
+
+- Test size: Morgan's Pixel reports 443 × 816 CSS px at dpr 2.4375 (1080 physical px wide), ×3, 359 × 663 game px, 60 fps, in the Claude app's in-app browser (2026-11-04 screenshot). The e2e checks and UI_STYLE assume 414 × 921 at 3.25 (×4). Put to Morgan: which size the checks use.
 
 - Art style, platform, and whether anyone else helps: open in CONCEPT.md, for design.
 
