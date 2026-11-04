@@ -22,6 +22,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Just done
 
+- 2026-11-04 S5 built (17333e3, b0b7bff): zero-decision re-check (reviewer) found 12 consequential gaps; 3 went to Morgan (ore info: quality + a plain line; last mix remembered, "Forge another" skips the alloy screen; names stay Ore 1–3), the rest are defaults in the spec's S5 list. J5 checks failed first, then passed (101 unit, 20 e2e); 15 mutants, all killed after 1 check was sharpened. Alloy screen screenshotted at the Pixel size beside frames 2 and 2b. Fresh spec review running.
+
 - Earlier entries (brainstorm to S3 built): [archive](archive/handoff-2026-11.md).
 
 - 2026-11-04 S3 merged (PR #5, ea9687b); main CI passed.
@@ -32,7 +34,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. S5 in a fresh session on `claude/forge-s5-loop`: read the spec's S4 "Settled at S4 start" list (incl. the playtest change: Quench from the fire), then the zero-decision re-check against S4's merged code (src/engine/alloy.ts, craft.ts, grade.ts, src/game/Choose.ts, Forge.ts, Result.ts, src/ui/choose.ts, result.ts, src/save/save.ts, e2e/craft.spec.ts). S5 adds the Alloy screen (mock-up frames 2 and 2b); check it against `mockups/forge.html`. Result's "Forge another" must carry the alloy once mixes exist.
+1. S5 on `claude/forge-s5-loop` (PR #7, draft): act on the fresh spec review, publish a phone playtest form, then Morgan plays the 10-craft test on the preview and approves or not (GIT-07).
 2. Open from S4 for Morgan's playtest: a no-strike knife scores 46 (missed hit −3 may be too light); the quench feels unsatisfying (steam and a sinking piece noted in the spec).
 
 ## Open questions
@@ -44,6 +46,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-04: 5 concepts made; dropped with reasons: yes; kill criteria: yes; rounds: 2; measured agent cost $1.12; measure 2 (planning-interview round 1 asks nothing the brief answered): passed, round 1 asked only the brief's open questions; measure 3 (concept unchanged after design): passed, the concept survived design unchanged. Both recorded 2026-11-04 from Morgan's report. A master session copies this to `decisions/benchmarks/brainstorm-trial.md` when done.
 
 ## Decisions since the last plan update
+
+- 2026-11-04 S5 start (Morgan): each ore shows quality and a plain line about how it works, no temperatures; the alloy screen remembers the last mix per item (page load only) and "Forge another" / "Try again" skip it; ore names stay Ore 1–3 (spec S5 "Settled at S5 start").
 
 - 2026-11-04 S4 playtest (Morgan): "works pretty well"; quench from the fire too (a wide-view Quench button added); the quench feels unsatisfying but fine (steam and a sinking piece noted for later, spec S4 list).
 
