@@ -32,7 +32,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Morgan plays the S4 preview (PR #6, draft) and approves or asks for changes. The approval page links the preview.
+1. Morgan plays the S4 preview (PR #6, draft) and approves or asks for changes: [approval page](https://claude.ai/artifact/SEyiCibbpabSA38E9RHaCW).
 2. After approval: mark PR #6 ready (CI runs only then, GIT-07), check CI, merge, check Vercel production equals the merge commit, then S5 in a fresh session.
 
 ## Open questions
