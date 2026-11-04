@@ -46,20 +46,27 @@ export function alloyProps(mix: AlloyMix): AlloyProps {
 
 /** Why a mix can't start a craft (S5 "Settled at S5 start"). */
 export type MixRefusal = 'empty' | 'short' | 'over' | 'one-ore' | 'bad';
-export type MixCheck = { ok: true } | { ok: false; refusal: MixRefusal };
+/** `room` is the parts still to add: the item's parts minus the mix's (negative when over). */
+export type MixCheck = { ok: true; room: number } | { ok: false; refusal: MixRefusal; room: number };
 
-/** A mix starts a craft only with 2 or 3 known ores, each a whole number of parts of at least 1, adding up to the item's parts. */
+/** Most ores in one alloy (D-005: 2 or 3). */
+export const MAX_ORES = 3;
+
+/**
+ * A mix starts a craft only with 2 or 3 known ores, each a whole number of parts of at least 1, adding up to the
+ * item's parts. The screen takes `room` from here for its + buttons and its wording, so the rule has one home.
+ */
 export function checkMix(item: Item, mix: AlloyMix): MixCheck {
   const entries = Object.entries(mix);
-  for (const [id, parts] of entries) {
-    if (!ores.some((o) => o.id === id) || !Number.isInteger(parts) || parts < 1) return { ok: false, refusal: 'bad' };
-  }
   const total = entries.reduce((n, [, parts]) => n + parts, 0);
-  if (total === 0) return { ok: false, refusal: 'empty' };
-  if (total < item.parts) return { ok: false, refusal: 'short' };
-  if (total > item.parts) return { ok: false, refusal: 'over' };
-  if (entries.length < 2) return { ok: false, refusal: 'one-ore' };
-  return { ok: true };
+  const room = item.parts - total;
+  const known = entries.every(([id, parts]) => ores.some((o) => o.id === id) && Number.isInteger(parts) && parts >= 1);
+  if (!known || entries.length > MAX_ORES) return { ok: false, refusal: 'bad', room };
+  if (total === 0) return { ok: false, refusal: 'empty', room };
+  if (room > 0) return { ok: false, refusal: 'short', room };
+  if (room < 0) return { ok: false, refusal: 'over', room };
+  if (entries.length < 2) return { ok: false, refusal: 'one-ore', room };
+  return { ok: true, room };
 }
 
 /** The alloy's quality, rounded: shown on the alloy screen and beside the score, never in it (D-005). */

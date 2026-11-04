@@ -23,18 +23,18 @@ export interface AlloyPanel {
 const partsText = (n: number) => `${n} ${n === 1 ? 'part' : 'parts'}`;
 
 /** Why "Start forging" is off, in words (S5 "Settled at S5 start"; the empty case is mock-up frame 2b's line). */
-function reasonText(refusal: MixRefusal, item: Item, total: number): string {
+function reasonText(refusal: MixRefusal, item: Item, room: number): string {
   const name = item.name.toLowerCase();
   const a = /^[aeiou]/.test(name) ? 'an' : 'a';
   switch (refusal) {
     case 'empty':
       return 'Add at least one part of ore first.';
     case 'short': {
-      const n = item.parts - total;
+      const n = room;
       return `Add ${n} more ${n === 1 ? 'part' : 'parts'}: ${a} ${name} takes ${item.parts}.`;
     }
     case 'over': {
-      const n = total - item.parts;
+      const n = -room;
       return `Take out ${n} ${n === 1 ? 'part' : 'parts'}: ${a} ${name} takes ${item.parts}.`;
     }
     case 'one-ore':
@@ -88,19 +88,18 @@ export function showAlloy(item: Item, ores: readonly Ore[], hint: string | null,
 
   return {
     update(view) {
-      const total = Object.values(view.parts).reduce((a, n) => a + n, 0);
       for (const r of rows) {
         const n = view.parts[r.ore.id] ?? 0;
         r.info.textContent = `Quality ${r.ore.quality} · ${partsText(n)}`;
         r.fill.style.width = `${(Math.min(n, item.parts) / item.parts) * 100}%`;
         r.less.disabled = n <= 0;
-        r.more.disabled = total >= item.parts;
+        r.more.disabled = view.check.room <= 0;
       }
       quality.hidden = view.quality === null;
       quality.textContent = view.quality === null ? '' : `Material quality ${view.quality}`;
       start.disabled = !view.check.ok;
       reason.hidden = view.check.ok;
-      reason.textContent = view.check.ok ? '' : reasonText(view.check.refusal, item, total);
+      reason.textContent = view.check.ok ? '' : reasonText(view.check.refusal, item, view.check.room);
     },
   };
 }

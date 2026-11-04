@@ -35,9 +35,8 @@ export class Alloy extends Phaser.Scene {
 
     this.panel = showAlloy(this.item, ores, hint, {
       change: (oreId, by) => {
-        const total = Object.values(this.parts).reduce((a, n) => a + n, 0);
         const n = this.parts[oreId] ?? 0;
-        if (by < 0 ? n <= 0 : total >= this.item.parts) return;
+        if (by < 0 ? n <= 0 : checkMix(this.item, mixOf(this.parts)).room <= 0) return;
         this.parts = { ...this.parts, [oreId]: n + by };
         this.refresh();
       },
