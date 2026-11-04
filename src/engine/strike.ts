@@ -12,6 +12,7 @@ export const CAUSES: readonly CauseId[] = [
 ];
 
 export interface Line { cause: CauseId; points: number }
+/** A target as scoring sees it: `struck` means already hit in the current round, so closed until the next. */
 export interface Target { x: number; y: number; struck: boolean }
 export type StrikeKind = 'hit' | 'repeat' | 'wild';
 
@@ -29,8 +30,8 @@ const R = grading.strike;
 
 /**
  * Score one strike at close-view game px (x, y) and the metal's temperature at that step (forge spec, Data →
- * grading.json). Pure. The nearest unstruck target within the reach takes it, ties to the lower index; with none,
- * a struck target in reach makes it a repeat, otherwise it is wild and misses the metal.
+ * grading.json). Pure. The nearest target still open this round within the reach takes it, ties to the lower index;
+ * with none, a closed target in reach makes it a repeat, otherwise it is wild and misses the metal.
  */
 export function scoreStrike(targets: readonly Target[], x: number, y: number, tempC: number, band: { bandLowC: number; bandHighC: number }): StrikeScore {
   let best = -1;

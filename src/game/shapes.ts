@@ -1,7 +1,8 @@
 /**
  * How a piece looks as it is worked (forge spec S3; Morgan 2026-11-04): it starts as bar stock, and each target owns its
- * stretch of the piece (the pixels nearer to it than to any other target). Striking a target turns its stretch into
- * the finished shape. The hammer spreads the metal, so the bar is narrower than the finished piece.
+ * stretch of the piece (the pixels nearer to it than to any other target). The first hit on a target turns its stretch
+ * into the halfway shape, the second into the finished shape. The hammer spreads the metal, so the bar is narrower
+ * than the finished piece.
  *
  * Shapes are rasters in close-view game px (assets/close.png). Each pixel holds a shading value: 0 empty, otherwise
  * 0.4–1, which the screen tints with the heat colour. The screen only draws these; struck flags come from the engine.
@@ -21,6 +22,8 @@ export interface Raster {
 
 export interface PieceShapes {
   bar: Raster;
+  /** Halfway between bar and finished: every pixel nearer the bar's edge than the finished piece's edge. */
+  mid: Raster;
   final: Raster;
   /** For each pixel of the shared box, the index of the target whose stretch it is in. */
   region: Int16Array;
@@ -109,6 +112,56 @@ function rebox(r: Raster, x: number, y: number, w: number, h: number): Raster {
   return out;
 }
 
+/** Distance in px from each cell to the nearest cell where `inside` is true (0 on those cells); two-pass chamfer. */
+function distanceTo(inside: (i: number) => boolean, w: number, h: number): Float32Array {
+  const d = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) d[i] = inside(i) ? 0 : 1e9;
+  const D = Math.SQRT2;
+  const relax = (i: number, j: number, cost: number) => {
+    if (d[j]! + cost < d[i]!) d[i] = d[j]! + cost;
+  };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (x > 0) relax(i, i - 1, 1);
+    if (y > 0) {
+      relax(i, i - w, 1);
+      if (x > 0) relax(i, i - w - 1, D);
+      if (x < w - 1) relax(i, i - w + 1, D);
+    }
+  }
+  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) {
+    const i = y * w + x;
+    if (x < w - 1) relax(i, i + 1, 1);
+    if (y < h - 1) {
+      relax(i, i + w, 1);
+      if (x < w - 1) relax(i, i + w + 1, D);
+      if (x > 0) relax(i, i + w - 1, D);
+    }
+  }
+  return d;
+}
+
+/** The halfway shape: final pixels nearer the bar than the outside of the final shape, and bar pixels nearer the final shape than the outside of the bar. */
+function midRaster(bar: Raster, final: Raster): Raster {
+  const { x, y, w, h } = final;
+  const inB = (i: number) => bar.shade[i]! > 0;
+  const inF = (i: number) => final.shade[i]! > 0;
+  const toBar = distanceTo(inB, w, h);
+  const toFinal = distanceTo(inF, w, h);
+  const outB = distanceTo((i) => !inB(i), w, h);
+  const outF = distanceTo((i) => !inF(i), w, h);
+  const out = emptyRaster(x, y, w, h);
+  for (let i = 0; i < w * h; i++) {
+    if (inB(i) && inF(i)) out.shade[i] = final.shade[i]!;
+    else if (inF(i) && toBar[i]! <= outF[i]!) out.shade[i] = final.shade[i]!;
+    else if (inB(i) && toFinal[i]! <= outB[i]!) out.shade[i] = bar.shade[i]!;
+  }
+  // A clean rim on the new edge.
+  for (let i = 0; i < w * h; i++) if (out.shade[i] === RIM) out.shade[i] = 0.76;
+  addRim(out);
+  return out;
+}
+
 const cache = new Map<string, PieceShapes>();
 
 export function shapesFor(itemId: string): PieceShapes {
@@ -137,16 +190,17 @@ export function shapesFor(itemId: string): PieceShapes {
     });
     region[j * w + i] = best;
   }
-  const s = { bar, final, region };
+  const s = { bar, mid: midRaster(bar, final), final, region };
   cache.set(itemId, s);
   return s;
 }
 
-/** The piece as worked so far: each struck target's stretch is the finished shape, the rest is still bar. */
-export function worked(s: PieceShapes, struck: readonly boolean[]): Raster {
+/** The piece as worked so far, from each target's hits: 0 bar, 1 halfway, 2 or more finished. */
+export function worked(s: PieceShapes, hits: readonly number[]): Raster {
   const { x, y, w, h } = s.final;
   const out = emptyRaster(x, y, w, h);
-  for (let i = 0; i < w * h; i++) out.shade[i] = (struck[s.region[i]!] ? s.final : s.bar).shade[i]!;
+  const stage = [s.bar, s.mid, s.final];
+  for (let i = 0; i < w * h; i++) out.shade[i] = stage[Math.min(2, hits[s.region[i]!] ?? 0)]!.shade[i]!;
   return out;
 }
 

@@ -1,4 +1,5 @@
 {
+  "passes": 2,
   "strike": { "offsetPx": 40, "reachPx": 9, "centrePx": 3, "offCentrePerPx": 1, "offCentreMax": 6, "wild": 2, "repeat": 1, "cold": 4, "hot": 2 },
   "perSecond": { "outOfBand": 2, "burning": 5 },
   "ruin": { "blackStrikes": 3 }

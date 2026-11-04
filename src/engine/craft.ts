@@ -31,8 +31,8 @@ export interface CraftState {
   heldFrom: 'fire' | 'anvil';
   /** Sticky: set by `{bellows}` until the next `{bellows}` input. Works only in the fire. */
   bellows: boolean;
-  /** Strike targets in close-view game px, moved by the seed, with whether each has been struck. */
-  targets: Target[];
+  /** Strike targets in close-view game px, moved by the seed, with how many times each has been hit (0 to `passes`). */
+  targets: CraftTarget[];
   /** Every strike made on the anvil, in order, with its points lost. */
   strikes: Strike[];
   /** Per-second causes so far (out of band on the anvil, burning), in fractions. */
@@ -43,6 +43,25 @@ export interface CraftState {
   ruin: 'black-strikes' | null;
   /** Every input except `{none}`, with the step it arrived on, so a craft replays from seed plus log (GAME-01). */
   log: { step: number; input: Input }[];
+}
+
+export interface CraftTarget {
+  x: number;
+  y: number;
+  hits: number;
+}
+
+/** Each target takes this many hits, in rounds: round 2 opens once every target has its first hit (Morgan, S3). */
+export const PASSES = grading.passes;
+
+/** The round in progress: 1 + the fewest hits on any target, at most PASSES. */
+export function currentRound(s: Pick<CraftState, 'targets'>): number {
+  return Math.min(PASSES, 1 + Math.min(...s.targets.map((t) => t.hits)));
+}
+
+/** True once every target has all its hits. */
+export function allWorked(s: Pick<CraftState, 'targets'>): boolean {
+  return s.targets.every((t) => t.hits >= PASSES);
 }
 
 export interface Strike {
@@ -56,13 +75,13 @@ export interface Strike {
 }
 
 /** The seed moves each target by whole px, up to ±3 in x and y: floor(next() × 7) − 3, x then y (forge spec S3). */
-function placeTargets(seed: number, itemId: string): Target[] {
+function placeTargets(seed: number, itemId: string): CraftTarget[] {
   const rng = mulberry32(seed);
   const shift = () => Math.floor(rng.next() * 7) - 3;
   return itemById(itemId).targets.map((t) => {
     const x = t.x + shift();
     const y = t.y + shift();
-    return { x, y, struck: false };
+    return { x, y, hits: 0 };
   });
 }
 
@@ -101,8 +120,11 @@ function applyInput(s: CraftState, input: Input): CraftState {
     // Strikes count only on the anvil; elsewhere they are logged and ignored.
     if (s.location !== 'anvil') return s;
     const { x, y } = input.strike;
-    const sc = scoreStrike(s.targets, x, y, s.temp, s.props);
-    const targets = sc.target === null ? s.targets : s.targets.map((t, i) => (i === sc.target ? { ...t, struck: true } : t));
+    // A target is open while it has fewer hits than the round in progress; once all are worked, none is open.
+    const round = currentRound(s);
+    const view: Target[] = s.targets.map((t) => ({ x: t.x, y: t.y, struck: t.hits >= round }));
+    const sc = scoreStrike(view, x, y, s.temp, s.props);
+    const targets = sc.target === null ? s.targets : s.targets.map((t, i) => (i === sc.target ? { ...t, hits: t.hits + 1 } : t));
     const strikes = [...s.strikes, { step: s.step, x, y, ...sc }];
     const blacks = strikes.filter((k) => k.black).length;
     // The 3rd black-band strike is scored, then ends the craft at once.

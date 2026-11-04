@@ -4,7 +4,7 @@ import hints from '../data/hints.json';
 import { itemById, type Item } from '../data/items';
 import { defaultAlloy } from '../engine/alloy';
 import grading from '../data/grading.json';
-import { createCraft, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
+import { createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
 import { pointsLost } from '../engine/grade';
 import { mulberry32, type Rng } from '../engine/rng';
 import { debugEnabled, setForgeDebug, takeDebugSeed, type CssBox } from '../ui/debug';
@@ -25,7 +25,7 @@ const MIN_HIT = 36;
 const EDGE_RGB = [0x12, 0x08, 0x14] as const;
 const SPARK = 0xfdd479; // --fire-5
 const FORGE_GLOW = 0xf87f33; // --fire-3
-const INK = 0xead59c; // --ink: unstruck targets
+const INK = 0xead59c; // --ink: targets still open this round
 const RING = 0xfdd479; // --fire-5: where the strike will land
 /** A strike's points show for this long, advancing with engine steps (S3). */
 const POINTS_S = 0.8;
@@ -268,13 +268,13 @@ export class Forge extends Phaser.Scene {
     }
   }
 
-  /** Repaint both views' textures when the struck targets change: grey shading (tinted at draw) and a dark outline. */
+  /** Repaint both views' textures when a target's hits change: grey shading (tinted at draw) and a dark outline. */
   private paintPiece(): void {
-    const struck = this.craft.targets.map((t) => t.struck);
-    const key = struck.map((b) => (b ? 1 : 0)).join('');
+    const hits = this.craft.targets.map((t) => t.hits);
+    const key = hits.join('');
     if (key === this.shapeKey) return;
     this.shapeKey = key;
-    this.closeR = worked(this.shapes, struck);
+    this.closeR = worked(this.shapes, hits);
     this.wideR = scaled(this.closeR, WIDE_SCALE[this.item.id] ?? 0.45);
     const paint = (r: Raster, view: 'close' | 'wide') => {
       const edge = outline(r);
@@ -436,7 +436,7 @@ export class Forge extends Phaser.Scene {
     const color = Phaser.Display.Color.HexStringToColor(l.color).color;
     const wide = this.mode === 'wide';
 
-    // The piece as worked so far, its shading tinted with the heat colour; the outline stays dark.
+    // The piece as worked so far (bar, halfway or finished by stretch), its shading tinted with the heat colour; the outline stays dark.
     this.paintPiece();
     this.closeFill.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y).setTint(color);
     this.closeEdge.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y);
@@ -476,7 +476,8 @@ export class Forge extends Phaser.Scene {
       inFire: this.craft.location === 'fire',
       held: this.craft.location === 'held' || this.dragging,
       burning: this.craft.burning,
-      struck: this.craft.targets.filter((t) => t.struck).length,
+      round: currentRound(this.craft),
+      struck: this.craft.targets.filter((t) => t.hits >= currentRound(this.craft)).length,
       targets: this.craft.targets.length,
       lost: pointsLost(this.craft),
     });
@@ -497,7 +498,7 @@ export class Forge extends Phaser.Scene {
     }
   }
 
-  /** Targets (dashed squares until struck), dents where strikes hit the metal, and the ring above a finger. */
+  /** Targets (dashed squares while open this round), dents where strikes hit the metal, and the ring above a finger. */
   private drawClose(metalColor: number): void {
     const g = this.targetGfx;
     g.clear();
@@ -509,8 +510,9 @@ export class Forge extends Phaser.Scene {
     }
     g.fillStyle(INK, 1);
     const h = Math.floor(TARGET_PX / 2);
+    const round = currentRound(this.craft);
     for (const t of this.craft.targets) {
-      if (t.struck) continue;
+      if (t.hits >= round) continue;
       const x0 = this.closeX + t.x - h;
       const y0 = this.closeY + t.y - h;
       // Dashes of 2 px with 1 px gaps along each side.
@@ -601,7 +603,7 @@ export class Forge extends Phaser.Scene {
       targets: () => {
         const r = this.game.canvas.getBoundingClientRect();
         const k = r.width / this.game.canvas.width;
-        return this.craft.targets.map((t) => ({ x: r.left + (this.closeX + t.x) * k, y: r.top + (this.closeY + t.y) * k, struck: t.struck }));
+        return this.craft.targets.map((t) => ({ x: r.left + (this.closeX + t.x) * k, y: r.top + (this.closeY + t.y) * k, hits: t.hits }));
       },
       metalBox: (): CssBox => {
         const r = this.game.canvas.getBoundingClientRect();

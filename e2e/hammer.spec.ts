@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // J3 Hammer (docs/specs/forge-prototype.md; S3 "Settled at S3 start"). Reads a target from the debug API, touches
-// 40 game px below it and lifts; that target is marked struck and the strike count rises.
-type Pt = { x: number; y: number; struck: boolean };
+// 40 game px below it and lifts; that target takes a hit and the strike count rises. Each target takes two hits, in rounds.
+type Pt = { x: number; y: number; hits: number };
 type Api = {
   setSeed(n: number): void;
   state(): { location: string; temp: number; ruin: string | null; strikes: { kind: string; lines: { cause: string; points: number }[] }[]; targets: Pt[] } | null;
@@ -59,7 +59,7 @@ test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) =
   const targets = await api(page, (a) => a.targets());
   expect(targets).toHaveLength(9);
   expect((await api(page, (a) => a.state()))!.targets).toHaveLength(9);
-  await expect(page.getByTestId('strikes')).toHaveText('Strikes 0 of 9 · −0');
+  await expect(page.getByTestId('strikes')).toHaveText('Round 1 · 0 of 9 · −0');
 
   await strikeAt(page, targets[4]!);
   const s = (await api(page, (a) => a.state()))!;
@@ -67,10 +67,10 @@ test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) =
   expect(s.strikes[0]!.kind).toBe('hit');
   // Exactly 40 game px above the touch: a centre hit costs nothing.
   expect(s.strikes[0]!.lines).toEqual([]);
-  expect(s.targets[4]!.struck).toBe(true);
-  expect((await api(page, (a) => a.targets()))[4]!.struck).toBe(true);
-  expect(s.targets.filter((t) => t.struck)).toHaveLength(1);
-  await expect(page.getByTestId('strikes')).toHaveText('Strikes 1 of 9 · −0');
+  expect(s.targets[4]!.hits).toBe(1);
+  expect((await api(page, (a) => a.targets()))[4]!.hits).toBe(1);
+  expect(s.targets.filter((t) => t.hits > 0)).toHaveLength(1);
+  await expect(page.getByTestId('strikes')).toHaveText('Round 1 · 1 of 9 · −0');
   await expect(page.getByTestId('points')).toHaveText('Clean');
 
   // About 6 game px off-centre: the strike costs points, and the screen shows what the engine scored for it.
@@ -82,7 +82,7 @@ test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) =
   const pts = Math.round(off.lines.reduce((t, l) => t + l.points, 0));
   expect(pts).toBeGreaterThan(0);
   await expect(page.getByTestId('points')).toHaveText(`−${pts}`);
-  await expect(page.getByTestId('strikes')).toHaveText(`Strikes 2 of 9 · −${pts}`);
+  await expect(page.getByTestId('strikes')).toHaveText(`Round 1 · 2 of 9 · −${pts}`);
   await testInfo.attach('close-view', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
@@ -100,6 +100,27 @@ async function meanRgb(page: Page, clip: { x: number; y: number; width: number; 
     return sum.map((v) => v / (d.length / 4));
   }, png.toString('base64'));
 }
+
+test('round 2 opens once every target has its first hit', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  const targets = await api(page, (a) => a.targets());
+  for (const t of targets) await strikeAt(page, t);
+  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 0 of 9 · −\d+$/);
+  expect((await api(page, (a) => a.targets())).every((t) => t.hits === 1)).toBe(true);
+  // The second hit finishes the stretch: 11–13 game px below a belly target only the finished blade reaches.
+  const k = await cssPerGame(page);
+  const deep = (t: Pt) => ({ x: t.x - 5 * k, y: t.y + 11 * k, width: 10 * k, height: 2 * k });
+  await api(page, (a) => a.advance(800));
+  await frames(page);
+  const before = await meanRgb(page, deep(targets[5]!));
+  await strikeAt(page, targets[5]!);
+  expect((await api(page, (a) => a.targets()))[5]!.hits).toBe(2);
+  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 1 of 9 · −\d+$/);
+  await api(page, (a) => a.advance(800));
+  await frames(page);
+  const after = await meanRgb(page, deep(targets[5]!));
+  expect(Math.max(...after.map((v, i) => Math.abs(v - before[i]!))), 'the second hit finishes the stretch').toBeGreaterThan(20);
+});
 
 test('a strike shapes its own stretch of the bar, and only that', async ({ page }) => {
   await knifeOnAnvil(page, 950);

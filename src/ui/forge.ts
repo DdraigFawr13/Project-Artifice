@@ -12,7 +12,8 @@ export interface ForgeView {
   held: boolean;
   /** The engine's burning flag. */
   burning: boolean;
-  /** Targets struck, out of how many, and the live total of points lost. */
+  /** The round in progress, targets hit in it out of how many, and the live total of points lost. */
+  round: number;
   struck: number;
   targets: number;
   lost: number;
@@ -129,7 +130,7 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
       closeIntro.hidden = isBurning;
       if (heatHint) heatHint.hidden = isBurning;
       if (hammerHint) hammerHint.hidden = isBurning;
-      const text = `Strikes ${v.struck} of ${v.targets} · −${v.lost}`;
+      const text = `Round ${v.round} · ${v.struck} of ${v.targets} · −${v.lost}`;
       if (label.textContent !== text) label.textContent = text;
       if (v.mode !== 'wide') return;
       bellows.disabled = !v.inFire;

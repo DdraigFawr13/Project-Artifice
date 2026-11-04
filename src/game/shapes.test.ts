@@ -9,28 +9,29 @@ describe('piece shapes', () => {
   for (const item of items) {
     const s = shapesFor(item.id);
     const n = item.targets.length;
-    const none = Array<boolean>(n).fill(false);
+    const none = Array<number>(n).fill(0);
 
-    it(`${item.id}: every target is on both the bar and the finished piece, even after the seed moves it 3 px`, () => {
+    it(`${item.id}: every target is on the bar, the halfway shape and the finished piece, even after the seed moves it 3 px`, () => {
       expect(n).toBe({ horseshoe: 5, knife: 9, sword: 15 }[item.id]);
       for (const t of item.targets) {
         for (let dx = -3; dx <= 3; dx++) for (let dy = -3; dy <= 3; dy++) {
           expect(onRaster(s.bar, t.x + dx, t.y + dy), `${item.id} bar at ${t.x + dx},${t.y + dy}`).toBe(true);
+          expect(onRaster(s.mid, t.x + dx, t.y + dy), `${item.id} halfway at ${t.x + dx},${t.y + dy}`).toBe(true);
           expect(onRaster(s.final, t.x + dx, t.y + dy), `${item.id} finished at ${t.x + dx},${t.y + dy}`).toBe(true);
         }
       }
     });
 
-    it(`${item.id}: unworked it is the bar, fully worked it is the finished shape`, () => {
+    it(`${item.id}: unworked it is the bar, one round makes the halfway shape, two the finished shape`, () => {
       expect(worked(s, none).shade).toEqual(s.bar.shade);
-      expect(worked(s, Array<boolean>(n).fill(true)).shade).toEqual(s.final.shade);
+      expect(worked(s, Array<number>(n).fill(1)).shade).toEqual(s.mid.shade);
+      expect(worked(s, Array<number>(n).fill(2)).shade).toEqual(s.final.shade);
     });
 
-    it(`${item.id}: a strike changes only its own target's stretch, and does change it`, () => {
-      for (let k = 0; k < n; k++) {
-        const one = none.map((_, i) => i === k);
-        const a = worked(s, none).shade;
-        const b = worked(s, one).shade;
+    it(`${item.id}: each hit changes only its own target's stretch, and does change it`, () => {
+      for (let k = 0; k < n; k++) for (const from of [0, 1]) {
+        const a = worked(s, none.map(() => from)).shade;
+        const b = worked(s, none.map((_, i) => (i === k ? from + 1 : from))).shade;
         let changed = 0;
         for (let i = 0; i < a.length; i++) {
           if (a[i] !== b[i]) {
@@ -38,7 +39,7 @@ describe('piece shapes', () => {
             expect(s.region[i]).toBe(k);
           }
         }
-        expect(changed, `${item.id} target ${k}`).toBeGreaterThan(0);
+        expect(changed, `${item.id} target ${k}, hit ${from + 1}`).toBeGreaterThan(0);
       }
     });
 
@@ -53,9 +54,10 @@ describe('piece shapes', () => {
       }
     });
 
-        it(`${item.id}: the hammer spreads the metal, so the finished piece covers more than the bar`, () => {
+        it(`${item.id}: the hammer spreads the metal: the halfway shape covers more than the bar, the finished piece more still`, () => {
       const count = (r: Float32Array) => r.reduce((a, v) => a + (v > 0 ? 1 : 0), 0);
-      expect(count(s.final.shade)).toBeGreaterThan(count(s.bar.shade));
+      expect(count(s.mid.shade)).toBeGreaterThan(count(s.bar.shade));
+      expect(count(s.final.shade)).toBeGreaterThan(count(s.mid.shade));
     });
 
     it(`${item.id}: neighbouring targets stay out of reach of each other after the seed moves them`, () => {
@@ -69,7 +71,7 @@ describe('piece shapes', () => {
   }
 
   it('outlines the piece just outside it, and scales it for the wide view', () => {
-    const r = worked(shapesFor('knife'), Array<boolean>(9).fill(false));
+    const r = worked(shapesFor('knife'), Array<number>(9).fill(0));
     const o = outline(r);
     for (let i = 0; i < o.length; i++) if (o[i]) expect(r.shade[i]).toBe(0);
     expect(o.some((v) => v === 1)).toBe(true);

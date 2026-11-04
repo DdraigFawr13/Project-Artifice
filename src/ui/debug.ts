@@ -29,8 +29,8 @@ export interface ForgeDebug {
   pinTemp(c: number | null): void;
   /** The metal's bounding box (the piece itself, not its glow), in whichever view shows it. */
   metalBox(): CssBox;
-  /** The strike targets' centres in CSS px, relative to the page, with whether each is struck. */
-  targets(): { x: number; y: number; struck: boolean }[];
+  /** The strike targets' centres in CSS px, relative to the page, with how many hits each has had. */
+  targets(): { x: number; y: number; hits: number }[];
 }
 
 export interface DebugApi extends Omit<ForgeDebug, 'state'> {

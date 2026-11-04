@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { itemById } from '../data/items';
-import { createCraft, step, type CraftState, type Input } from './craft';
+import { allWorked, createCraft, currentRound, PASSES, step, type CraftState, type Input } from './craft';
 import { liveLines, pointsLost } from './grade';
 
 // J3 through the craft: targets, strikes, ruin, burning and the live lines (S3 "Settled at S3 start").
@@ -24,7 +24,7 @@ describe('craft with strikes', () => {
       expect(Number.isInteger(t.x) && Number.isInteger(t.y)).toBe(true);
       expect(Math.abs(t.x - base.x)).toBeLessThanOrEqual(3);
       expect(Math.abs(t.y - base.y)).toBeLessThanOrEqual(3);
-      expect(t.struck).toBe(false);
+      expect(t.hits).toBe(0);
     });
     expect(a.targets).not.toEqual(b.targets);
   });
@@ -38,10 +38,35 @@ describe('craft with strikes', () => {
     s = step(s, { strike: { x: t0.x, y: t0.y } });
     expect(s.strikes).toHaveLength(1);
     expect(s.strikes[0]).toMatchObject({ kind: 'hit', target: 0, lines: [] });
-    expect(s.targets[0]!.struck).toBe(true);
-    // The same spot again is a repeat.
+    expect(s.targets[0]!.hits).toBe(1);
+    // The same spot again in round 1 is a repeat.
     s = step(at(s, 950), { strike: { x: t0.x, y: t0.y } });
     expect(s.strikes[1]!.kind).toBe('repeat');
+  });
+
+  it('works in rounds: round 2 opens only when every target has its first hit, and a worked piece takes no more', () => {
+    expect(PASSES).toBe(2);
+    let s = at(run(createCraft(5, 'knife', ALLOY), toAnvil), 950);
+    const hit = (i: number) => {
+      const t = s.targets[i]!;
+      s = step(at(s, 950), { strike: { x: t.x, y: t.y } });
+      return s.strikes[s.strikes.length - 1]!;
+    };
+    expect(currentRound(s)).toBe(1);
+    for (let i = 0; i < 8; i++) expect(hit(i).kind).toBe('hit');
+    expect(currentRound(s)).toBe(1);
+    expect(hit(0).kind).toBe('repeat'); // target 8 still lacks its first hit
+    expect(s.targets[0]!.hits).toBe(1);
+    expect(hit(8).kind).toBe('hit');
+    expect(currentRound(s)).toBe(2);
+    expect(hit(3)).toMatchObject({ kind: 'hit', target: 3 });
+    expect(s.targets[3]!.hits).toBe(2);
+    expect(hit(3).kind).toBe('repeat'); // done for round 2
+    for (let i = 0; i < 9; i++) if (i !== 3) expect(hit(i).kind).toBe('hit');
+    expect(allWorked(s)).toBe(true);
+    expect(currentRound(s)).toBe(2);
+    expect(hit(5).kind).toBe('repeat');
+    expect(s.targets.every((t) => t.hits === 2)).toBe(true);
   });
 
   it('scores a strike at its step\'s temperature, before the heat changes', () => {
