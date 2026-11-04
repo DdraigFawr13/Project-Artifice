@@ -22,7 +22,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Just done
 
-- 2026-11-04 S5 built (17333e3, b0b7bff): zero-decision re-check (reviewer) found 12 consequential gaps; 3 went to Morgan (ore info: quality + a plain line; last mix remembered, "Forge another" skips the alloy screen; names stay Ore 1–3), the rest are defaults in the spec's S5 list. J5 checks failed first, then passed (101 unit, 20 e2e); 15 mutants, all killed after 1 check was sharpened. Alloy screen screenshotted at the Pixel size beside frames 2 and 2b. Fresh spec review running.
+- 2026-11-04 S5 built (17333e3, b0b7bff): zero-decision re-check (reviewer) found 12 consequential gaps; 3 went to Morgan (ore info: quality + a plain line; last mix remembered, "Forge another" skips the alloy screen; names stay Ore 1–3), the rest are defaults in the spec's S5 list. J5 checks failed first, then passed (101 unit, 20 e2e); 15 mutants, all killed after 1 check was sharpened. Alloy screen screenshotted at the Pixel size beside frames 2 and 2b. Spec review: 7 findings, all fixed (9c5d2f0): `room` from checkMix (GAME-02), the hint limit, the mix changing grading, 4 ores refused, stale spec lines; 4 more mutants killed (103 unit, 21 e2e).
 
 - Earlier entries (brainstorm to S3 built): [archive](archive/handoff-2026-11.md).
 
@@ -32,7 +32,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. S5 on `claude/forge-s5-loop` (PR #7, draft): act on the fresh spec review, publish a phone playtest form, then Morgan plays the 10-craft test on the preview and approves or not (GIT-07).
+1. S5 on `claude/forge-s5-loop` (PR #7, draft): Morgan plays the 10-craft test on the preview, fills the playtest form, and approves or not (GIT-07). Copy the form's answers into `docs/playtests/`.
 2. Open from S4 for Morgan's playtest: a no-strike knife scores 46 (missed hit −3 may be too light); the quench feels unsatisfying (steam and a sinking piece noted in the spec).
 
 ## Open questions
