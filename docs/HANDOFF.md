@@ -22,22 +22,18 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Just done
 
-- Earlier entries (brainstorm to the forge spec): [archive](archive/handoff-2026-11.md).
-
-- 2026-11-04 S1 built: zero-decision re-check (reviewer agent) found 10 consequential gaps, 8 filled with defaults, 2 put to Morgan; all S1 checks failed first, then passed. Morgan chose the mock-up's item list (select, then "Forge a knife"), a free local blade edit before any OpenArt spend, and linking Vercel. Cool tokens re-sampled; CI-05 override added. Spec review: 7 of 8 findings fixed. Vercel project `project-artifice` (team Golden Goose Engineering Group) linked, Node 22, login protection on all deployments; [PR #3](https://github.com/DdraigFawr13/Project-Artifice/pull/3) draft.
-
-- 2026-11-04 S2 built: zero-decision re-check (reviewer) found 14 open choices; Morgan chose both control styles (buttons and drag), 13 defaults recorded in the spec's S2 list. J2 checks failed first, then passed (39 unit, 6 e2e); greyscale, between-anchor and controls checks each mutation-tested once. Spec review: 13 of 20 fixed, 7 declined or left for S3. CC0 sounds from OpenGameArt (ATTRIBUTION). Preview builds are login-protected (302 checked).
-
-- 2026-11-04 S2 merged (PR #4, 19e6e3b) after Morgan's approval; Vercel production is that commit, all aliases login-protected (302).
+- Earlier entries (brainstorm to S2 merged): [archive](archive/handoff-2026-11.md).
 
 - 2026-11-04 S3 merged (PR #5, ea9687b); main CI passed.
+
+- 2026-11-04 S4 built (02ab8e4): zero-decision re-check (reviewer) found 7 consequential gaps; all answered by the spec, D-005 or mock-up frames 5–7, so none went to Morgan; defaults in the spec's S4 list. J4 checks failed first, then passed (91 unit, 17 e2e); 21 mutants, all killed after 2 checks were sharpened. Screens screenshotted at the Pixel size and matched to frames 5–7. CC0 hiss (ATTRIBUTION).
 
 - 2026-11-04 S3 built: zero-decision re-check (reviewer) found 26 items; Morgan chose the free local close-up edit (no credits; OpenArt quote was 20 credits a try, balance 3,345) and a 9 px strike reach (targets sit 19–22 px apart); defaults recorded in the spec's S3 list. J3 checks failed first, then passed (57 unit, 11 e2e); 10 unit and 3 e2e mutants, all killed after one test was sharpened. CC0 hammer sound (ATTRIBUTION).
 
 ## Next
 
-1. S4 zero-decision re-check (reviewer agent, against S3's merged code) running; then ask Morgan any consequential gap, one at a time, and record defaults in a spec "Settled at S4 start" list. Hiss sound already added (CC0, ATTRIBUTION).
-2. S4 adds the result and ruin screens (mock-up frames for the grade and ruin); check them against `mockups/forge.html` (ui-mockups rule).
+1. Post-build spec review of S4 (fresh reviewer) is running: fix or record each finding, re-check fixed lines (VER-08), push, mark PR #6 ready so CI runs, then ask Morgan to play the preview and approve.
+2. After approval and green CI: merge PR #6, check Vercel production equals the merge commit, then S5 in a fresh session.
 
 ## Open questions
 
