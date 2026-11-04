@@ -24,6 +24,7 @@ const frames = (page: Page) => page.evaluate(() => new Promise<void>((r) => requ
 async function startKnife(page: Page) {
   await page.goto('/?debug');
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
   await page.waitForFunction(() => (window as unknown as { __artifice: Api }).__artifice.state?.() != null);
 }

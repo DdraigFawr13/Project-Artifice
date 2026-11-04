@@ -136,6 +136,8 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
         if (v.mode === 'done') {
           // The craft has ended: the last view stays as it was, with nothing left to press.
           for (const b of panel.querySelectorAll('button')) b.disabled = true;
+          // In the tub the label would cover the piece going in (S5).
+          tubLabel.hidden = true;
           release();
           return;
         }

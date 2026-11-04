@@ -11,7 +11,7 @@ export interface Item {
   parts: number;
   /** About how long a craft takes for a practised player. */
   minutes: number;
-  /** The alloy used until the alloy screen lands in S5. */
+  /** The starting mix on the alloy screen, until a mix has been used for the item (S5). */
   defaultAlloy: AlloyMix;
   /** Strike targets in close-view game px (assets/close.png), before the seed moves them (forge spec S3). */
   targets: { x: number; y: number }[];

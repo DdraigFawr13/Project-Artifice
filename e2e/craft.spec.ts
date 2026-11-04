@@ -27,7 +27,7 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   await dragTo(page, 'tub');
   const s = (await api(page, (a) => a.state()))!;
   expect(s).toMatchObject({ location: 'done', quenchC: 905, ruin: null });
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
 
   await expect(page.getByTestId('score')).toHaveText('94');
   await expect(page.getByTestId('tier')).toHaveText('Masterwork');
@@ -47,8 +47,9 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 94');
   // The hint counts were written with the craft: each step's hint shown once.
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
-  expect(saved.hintsSeen).toEqual({ heat: 1, hammer: 1, quench: 1 });
+  expect(saved.hintsSeen).toEqual({ alloy: 1, heat: 1, hammer: 1, quench: 1 });
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
 });
 
@@ -60,7 +61,7 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
     a.advance(32);
   });
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
   // No strikes: all 18 hits missing, 54 points, so 46 and Common.
   await expect(page.getByTestId('score')).toHaveText('46');
   await expect(page.getByTestId('tier')).toHaveText('Common');
@@ -90,7 +91,7 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(32));
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
   await page.getByRole('button', { name: 'Choose item' }).click();
   await expect(page.getByRole('button', { name: 'Forge a knife' })).toBeVisible();
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 46');
@@ -100,6 +101,7 @@ test('the piece can go from the fire straight to the quench', async ({ page }, t
   await page.goto('/?debug');
   await page.waitForFunction(() => (window as unknown as { __artifice?: unknown }).__artifice != null);
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await page.waitForFunction(() => (window as unknown as { __artifice: { state(): unknown } }).__artifice.state() != null);
   await api(page, (a) => {
     a.pause();
@@ -119,6 +121,55 @@ test('the piece can go from the fire straight to the quench', async ({ page }, t
   await api(page, (a) => a.advance(48));
   await dragTo(page, 'tub');
   expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
   await expect(page.getByTestId('score')).toHaveText('46');
+});
+
+// S5 (Morgan: "the quench does feel very flat"): the piece sinks where it went in, steam rises, then the result opens.
+test('a quench holds the tub view while the piece sinks, then shows the result', async ({ page }, testInfo) => {
+  await knifeOnAnvil(page, 950);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => {
+    a.pinTemp(830);
+    a.advance(32);
+  });
+  await dragTo(page, 'tub');
+  const start = await api(page, (a) => a.metalBox());
+  await page.screenshot({ path: testInfo.outputPath('quench-plunge.png') });
+  // The label would cover the piece going in.
+  await expect(page.getByTestId('tub-label')).toBeHidden();
+  await api(page, (a) => a.advance(400));
+  const mid = await api(page, (a) => a.metalBox());
+  await page.screenshot({ path: testInfo.outputPath('quench-sink.png') });
+  // Going under: the part above the water gets shorter.
+  expect(mid.height).toBeLessThan(start.height);
+  // Sinking: its top is lower than when it went in, and the result isn't up yet.
+  expect(mid.y).toBeGreaterThan(start.y);
+  await api(page, (a) => a.advance(500));
+  await expect(page.getByTestId('score')).toHaveCount(0);
+  expect((await api(page, (a) => a.metalBox())).y).toBeGreaterThan(mid.y);
+  await api(page, (a) => a.advance(700));
+  await expect(page.getByTestId('score')).toHaveText('46');
+});
+
+// S5 (Morgan: "It didn't quench a few times"): a drop is judged where the finger lets go. Judged by the piece's
+// centre, a knife grabbed near its right end and let go with the finger over the water's left edge went back to the anvil.
+test('letting go with the finger over the water quenches, wherever the piece was grabbed', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => {
+    a.pinTemp(830);
+    a.advance(48);
+  });
+  const b = await api(page, (a) => a.metalBox());
+  const tub = await api(page, (a) => a.zone('tub'));
+  const k = await page.locator('#game canvas').evaluate((c: HTMLCanvasElement) => c.getBoundingClientRect().width / c.width);
+  // wide.png (320, 500): the water's left edge, 28 and 20 game px into the tub zone (292, 480).
+  const over = { x: tub.x + 28 * k, y: tub.y + 20 * k };
+  await page.mouse.move(b.x + b.width - 6, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(over.x, over.y, { steps: 8 });
+  await page.mouse.up();
+  await api(page, (a) => a.advance(32));
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
 });

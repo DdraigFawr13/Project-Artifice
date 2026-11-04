@@ -1,8 +1,7 @@
 import * as Phaser from 'phaser';
 import { look } from '../data/heatBands';
 import hints from '../data/hints.json';
-import { itemById, type Item } from '../data/items';
-import { defaultAlloy } from '../engine/alloy';
+import { itemById, type AlloyMix, type Item } from '../data/items';
 import grading from '../data/grading.json';
 import { createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
 import { grade, pointsLost } from '../engine/grade';
@@ -14,7 +13,7 @@ import { showForgePanel, type ForgeMode, type ForgePanel } from '../ui/forge';
 import { CLOSE_LINE_Y } from './closeLayout';
 import type { GameContext } from './context';
 import { outline, scaled, shapesFor, worked, WIDE_SCALE, type PieceShapes, type Raster } from './shapes';
-import { CONTENT_BOTTOM_Y, CONTENT_MID_Y, FIRE_GLOW, inside, REST, ZONES } from './wideLayout';
+import { CONTENT_BOTTOM_Y, CONTENT_MID_Y, FIRE_GLOW, inside, REST, WATER, ZONES } from './wideLayout';
 
 const BG_W = 400;
 /** Hints show the first 3 times a step is reached (forge spec, Data → hints.json). */
@@ -33,10 +32,20 @@ const RING = 0xfdd479; // --fire-5: where the strike will land
 const POINTS_S = 0.8;
 /** After a craft ends, the last view stays this long (so a ruin's last points show) before the result or ruin screen. */
 const END_S = 0.8;
+/** After a quench the tub holds the screen longer: steam bursts, the piece sinks and its glow dies (Morgan, S5 playtest). */
+const QUENCH_S = 1.6;
+/** The piece turns tip-down over the water and slides in, its whole length going under in this long. */
+const SINK_S = 1.1;
+/** A ring spreads on the water from the plunge for this long. */
+const RIPPLE_S = 0.7;
+/** Steam puffs per 100 °C of the quench heat: a hotter quench boils harder. */
+const STEAM_PER_100C = 3;
+const STEAM = 0xead59c; // --ink: pale steam over the dark tub
 /** Target squares: 11 game px, about the mock-up's 14 CSS px on the Pixel (1.23 CSS px per game px). */
 const TARGET_PX = 11;
 
 interface Spark { x: number; y: number; vx: number; vy: number; life: number; max: number }
+interface Puff { x: number; y: number; vx: number; vy: number; r: number; life: number; max: number }
 interface Popup { set(progress: number): void; age: number }
 
 /**
@@ -45,6 +54,8 @@ interface Popup { set(progress: number): void; age: number }
  */
 export class Forge extends Phaser.Scene {
   private item!: Item;
+  /** The mix this craft uses, from the alloy screen or the result's "Forge another" (S5). */
+  private alloy!: AlloyMix;
   private craft!: CraftState;
   private queue: Input[] = [];
   private carryMs = 0;
@@ -75,6 +86,11 @@ export class Forge extends Phaser.Scene {
   private ringGfx!: Phaser.GameObjects.Graphics;
 
   private sparks: Spark[] = [];
+  private steam: Puff[] = [];
+  private steamGfx!: Phaser.GameObjects.Graphics;
+  /** True once the piece has gone into the water. */
+  private plunged = false;
+  private sinkS = 0;
   private sparkRng!: Rng;
   private flickerRng!: Rng;
   private flicker = 1;
@@ -109,13 +125,17 @@ export class Forge extends Phaser.Scene {
     super('Forge');
   }
 
-  init(data: { itemId: string }): void {
+  init(data: { itemId: string; alloy: AlloyMix }): void {
     this.item = itemById(data.itemId);
+    this.alloy = { ...data.alloy };
     this.queue = [];
     this.carryMs = 0;
     this.paused = false;
     this.pinned = null;
     this.sparks = [];
+    this.steam = [];
+    this.plunged = false;
+    this.sinkS = 0;
     this.dragging = false;
     this.draft = 0;
     this.flicker = 1;
@@ -136,7 +156,8 @@ export class Forge extends Phaser.Scene {
   create(): void {
     // The view takes the seed from the clock; the engine never reads it (GAME-01).
     const seed = takeDebugSeed() ?? Date.now() >>> 0;
-    this.craft = createCraft(seed, this.item.id, defaultAlloy(this.item));
+    this.craft = createCraft(seed, this.item.id, this.alloy);
+    this.ctx.lastMix[this.item.id] = { ...this.alloy };
     this.sparkRng = mulberry32(seed ^ 0x5eed);
     this.flickerRng = mulberry32(seed ^ 0xf1c4);
     this.shapes = shapesFor(this.item.id);
@@ -197,6 +218,7 @@ export class Forge extends Phaser.Scene {
     this.targetGfx = this.add.graphics();
     this.ringGfx = this.add.graphics();
     this.sparkGfx = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
+    this.steamGfx = this.add.graphics();
     this.layout();
     this.scale.on('resize', this.layout, this);
     // The panel changes height when the Burning alert replaces the intro; keep the scene between the bars.
@@ -233,7 +255,7 @@ export class Forge extends Phaser.Scene {
       if (this.craft.location === 'done') {
         if (!this.ended) this.end();
         this.endedS += STEP_MS / 1000;
-        if (this.endedS >= END_S && !this.leaving) {
+        if (this.endedS >= (this.craft.quenchC !== null ? QUENCH_S : END_S) && !this.leaving) {
           this.leaving = true;
           this.scene.start('Result', this.ended!);
           return;
@@ -250,8 +272,13 @@ export class Forge extends Phaser.Scene {
     // Never write over a save that couldn't be read or kept aside (GAME-05); a failed write stops later ones too.
     const saved = this.ctx.load.saving && writeSave(this.ctx.storage, r.save);
     this.ctx.load.saving = saved;
-    this.ended = { itemId: this.item.id, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
-    if (this.craft.quenchC !== null) this.sound.play('hiss', { volume: 0.7 });
+    this.ended = { itemId: this.item.id, alloy: this.alloy, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
+    if (this.craft.quenchC !== null) {
+      this.sound.play('hiss', { volume: 0.7 });
+      this.plunged = true;
+      const n = Math.round((this.craft.quenchC / 100) * STEAM_PER_100C);
+      for (let i = 0; i < n; i++) this.puff(1);
+    }
     this.dragging = false;
     this.cancelStrike();
   }
@@ -300,6 +327,11 @@ export class Forge extends Phaser.Scene {
 
   /** The piece's box in game px, in whichever view shows it (its raster's box, outline included). */
   private pieceBox(): { x: number; y: number; w: number; h: number } {
+    if (this.plunged && this.bg.visible) {
+      // Tip-down in the tub: the part still above the water.
+      const { w, h } = this.wideR;
+      return { x: Math.round(this.bgX + WATER.x - h / 2), y: Math.round(this.bgY + WATER.y - w + this.underwater()), w: h, h: Math.max(0, Math.round(w - this.underwater())) };
+    }
     if (this.bgClose.visible) return { x: this.closeX + this.closeR.x, y: this.closeY + this.closeR.y, w: this.closeR.w, h: this.closeR.h };
     const p = this.piecePos();
     const { w, h } = this.wideR;
@@ -407,9 +439,10 @@ export class Forge extends Phaser.Scene {
     if (!this.dragging || p.id !== this.dragPointer) return;
     this.dragging = false;
     if (this.craft.location === 'done') return;
-    const x = this.heldPos.x - this.bgX;
-    const y = this.heldPos.y - this.bgY;
-    const zone = (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x, y));
+    // Where the finger lets go decides; the piece's centre counts only when the finger is over no zone. Judged by the
+    // centre alone, a piece grabbed near one end missed the tub with the finger over the water (Morgan, S5 playtest).
+    const zoneAt = (x: number, y: number) => (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x - this.bgX, y - this.bgY));
+    const zone = zoneAt(p.x, p.y) ?? zoneAt(this.heldPos.x, this.heldPos.y);
     // Anywhere else, the piece goes back where it came from (forge spec, Engine).
     this.queue.push({ drop: zone ?? this.craft.heldFrom });
   }
@@ -466,6 +499,19 @@ export class Forge extends Phaser.Scene {
       s.life -= dt;
     }
     this.sparks = this.sparks.filter((s) => s.life > 0);
+    if (this.plunged) {
+      this.sinkS += dt;
+      // The boil settles as the piece sinks: a puff now and then until it is under.
+      if (this.sinkS < SINK_S && this.sparkRng.next() < 14 * dt * (1 - this.sinkS / SINK_S)) this.puff(0.5);
+    }
+    for (const p of this.steam) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy *= 1 - 0.8 * dt;
+      p.r += 7 * dt;
+      p.life -= dt;
+    }
+    this.steam = this.steam.filter((p) => p.life > 0);
     for (const p of this.popups) {
       p.age += dt;
       p.set(Math.min(1, p.age / POINTS_S));
@@ -487,6 +533,27 @@ export class Forge extends Phaser.Scene {
     }
   }
 
+  /** How much of the piece's length is under the water, in game px: fast at the plunge, slowing as it settles. */
+  private underwater(): number {
+    const t = Math.min(1, this.sinkS / SINK_S);
+    return Math.round(this.wideR.w * (1 - (1 - t) * (1 - t)));
+  }
+
+  /** One steam puff from the water where the piece went in; `burst` 1 at the plunge, less as it settles. */
+  private puff(burst: number): void {
+    if (!this.plunged) return;
+    const max = 0.7 + this.sparkRng.next() * 0.7;
+    this.steam.push({
+      x: this.bgX + WATER.x + (this.sparkRng.next() - 0.5) * WATER.halfW * 2,
+      y: this.bgY + WATER.y - 2,
+      vx: (this.sparkRng.next() - 0.5) * 24 * burst,
+      vy: -(18 + this.sparkRng.next() * 40 * burst),
+      r: 2 + this.sparkRng.next() * 2,
+      life: max,
+      max,
+    });
+  }
+
   // ── Drawing ───────────────────────────────────────────────────────────────
 
   private draw(): void {
@@ -495,8 +562,10 @@ export class Forge extends Phaser.Scene {
     const color = Phaser.Display.Color.HexStringToColor(l.color).color;
     // After a craft ends the last view stays; the close view stays for a ruin on the anvil.
     const wide = this.bg.visible;
-    // Once quenched, the piece is in the water.
+    // Once quenched, the piece is in the water: it sinks and fades from where it went in, its glow dying with it.
     const inTub = this.craft.quenchC !== null;
+    const sink = inTub ? Math.min(1, this.sinkS / SINK_S) : 0;
+    const sinking = inTub && sink < 1;
 
     // The piece as worked so far (bar, halfway or finished by stretch), its shading tinted with the heat colour; the outline stays dark.
     this.paintPiece();
@@ -504,8 +573,21 @@ export class Forge extends Phaser.Scene {
     this.closeEdge.setVisible(!wide && !inTub).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y);
     const pb = this.pieceBox();
     const flip = this.piecePos().dir < 0;
-    this.wideFill.setVisible(wide && !inTub).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip).setTint(color);
-    this.wideEdge.setVisible(wide && !inTub).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip);
+    const showWide = wide && (!inTub || sinking);
+    if (inTub) {
+      // Tip-down over the water: turned a quarter (the tip is the texture's right end), cropped to what is still above it.
+      const { w, h } = this.wideR;
+      const under = this.underwater();
+      const cx = this.bgX + WATER.x;
+      const cy = this.bgY + WATER.y - w / 2 + under;
+      for (const img of [this.wideFill, this.wideEdge]) img.setFlipX(false).setAngle(90).setPosition(cx, cy).setCrop(0, 0, Math.max(0, w - under), h);
+      this.wideFill.setTint(color);
+    } else {
+      for (const img of [this.wideFill, this.wideEdge]) img.setAngle(0).setCrop().setFlipX(flip).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2);
+      this.wideFill.setTint(color);
+    }
+    this.wideFill.setVisible(showWide);
+    this.wideEdge.setVisible(showWide);
     if (!wide) this.drawClose(color);
     else {
       this.targetGfx.clear();
@@ -514,11 +596,11 @@ export class Forge extends Phaser.Scene {
 
     // The metal's glow: its band's radius and colour, as strong as the metal is bright (forge spec, Screens).
     const b = this.pieceBox();
-    this.metalGlow.setVisible(l.glow > 0 && !inTub);
+    this.metalGlow.setVisible(l.glow > 0 && (!inTub || sinking));
     this.metalGlow.setPosition(b.x + b.w / 2, b.y + b.h / 2);
     this.metalGlow.setDisplaySize(b.w + l.glow * 4, b.h + l.glow * 4);
     this.metalGlow.setTint(color);
-    this.metalGlow.setAlpha(Math.min(1, 0.2 + l.luminance));
+    this.metalGlow.setAlpha(Math.min(1, 0.2 + l.luminance) * (1 - sink) * (1 - sink));
 
     const f = FIRE_GLOW;
     const strength = (0.45 + 0.4 * this.draft) * this.flicker;
@@ -531,6 +613,17 @@ export class Forge extends Phaser.Scene {
     for (const s of this.sparks) {
       this.sparkGfx.fillStyle(SPARK, Math.max(0, s.life / s.max));
       this.sparkGfx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
+    }
+    this.steamGfx.clear();
+    if (this.plunged && this.sinkS < RIPPLE_S && wide) {
+      const t = this.sinkS / RIPPLE_S;
+      this.steamGfx.lineStyle(1, STEAM, 0.6 * (1 - t));
+      this.steamGfx.strokeEllipse(this.bgX + WATER.x, this.bgY + WATER.y, 8 + t * WATER.halfW * 2, 3 + t * 8);
+    }
+    for (const p of this.steam) {
+      const t = p.life / p.max;
+      this.steamGfx.fillStyle(STEAM, 0.55 * t);
+      this.steamGfx.fillCircle(Math.round(p.x), Math.round(p.y), Math.round(p.r));
     }
 
     this.panel.update({

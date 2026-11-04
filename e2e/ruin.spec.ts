@@ -12,7 +12,7 @@ test('a quench at white heat shows the ruin screen and returns scrap', async ({ 
   });
   await dragTo(page, 'tub');
   expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', ruin: 'white-quench' });
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
 
   await expect(page.getByText('Knife ruined')).toBeVisible();
   await expect(page.getByRole('alert')).toContainText('The knife cracked in the quench.');

@@ -1,10 +1,10 @@
 import { expect, type Page } from '@playwright/test';
 
-/** The debug API as the S4 checks use it (forge spec, Debug API). */
+/** The debug API as the S4 and S5 checks use it (forge spec, Debug API). */
 export type Box = { x: number; y: number; width: number; height: number };
 export type Api = {
   setSeed(n: number): void;
-  state(): { location: string; temp: number; ruin: string | null; quenchC: number | null; targets: { x: number; y: number; hits: number }[] } | null;
+  state(): { location: string; temp: number; ruin: string | null; quenchC: number | null; alloy: Record<string, number>; targets: { x: number; y: number; hits: number }[] } | null;
   pause(): void;
   advance(ms: number): void;
   send(input: unknown): void;
@@ -23,6 +23,7 @@ export async function knifeOnAnvil(page: Page, temp: number, url = '/?debug') {
   await page.waitForFunction(() => (window as unknown as { __artifice?: Api }).__artifice != null);
   await api(page, (a) => a.setSeed(42));
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await page.waitForFunction(() => (window as unknown as Win).__artifice.state?.() != null);
   await page.evaluate((t) => {
     const a = (window as unknown as Win).__artifice;

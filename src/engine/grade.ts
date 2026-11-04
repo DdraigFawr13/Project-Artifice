@@ -1,6 +1,7 @@
 import grading from '../data/grading.json';
 import { itemById } from '../data/items';
 import { PASSES, type CraftState, type Ruin } from './craft';
+import { materialQuality } from './alloy';
 import { quenchLines } from './quench';
 import { CAUSES, type CauseId, type Line } from './strike';
 
@@ -81,5 +82,5 @@ export function grade(state: CraftState): GradeResult {
   for (const l of quenchLines(state.quenchC ?? 0)) raw.set(l.cause, { points: l.points, count: 1 });
   const lines = rounded(raw);
   const score = Math.max(0, 100 - lines.reduce((a, l) => a + l.points, 0));
-  return { ruined: false, score, tier: tierFor(score), materialQuality: Math.round(state.props.quality), lines };
+  return { ruined: false, score, tier: tierFor(score), materialQuality: materialQuality(state.alloy), lines };
 }

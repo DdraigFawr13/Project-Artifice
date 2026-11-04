@@ -123,3 +123,15 @@ body {
 .lines .pts .count { font-family: var(--face); font-size: 16px; }
 .lines .count .pts { font-size: 14px; }
 .lines .minus { color: var(--fire-2); font-variant-numeric: tabular-nums; }
+
+/* Alloy (mock-up frames 2 and 2b; forge spec S5). */
+.ore { display: grid; grid-template-columns: 1fr auto; gap: 6px; padding: 10px 12px; border: 2px solid var(--soot); background: var(--night-2); align-items: center; }
+.ore b { font-size: 18px; font-weight: 600; }
+.ore .sub { grid-column: 1 / -1; }
+.bar { grid-column: 1 / -1; height: 16px; background: var(--night-0); border: 2px solid var(--soot); position: relative; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--fire-1); }
+.stepper { display: flex; gap: 8px; }
+.stepper button { font-family: var(--face); font-size: 20px; width: 48px; height: 48px; background: var(--soot); color: var(--ink); border: 0; border-radius: 2px; cursor: pointer; }
+.stepper button:active { background: var(--fire-2); color: var(--night-0); }
+.stepper button:disabled { color: var(--ink-dim); cursor: default; background: var(--night-1); }
+.panel .reason:empty { display: none; }
