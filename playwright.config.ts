@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-// The J1 size from the forge spec: one reported Pixel 10 Pro XL viewport (UI_STYLE.md Target devices).
+// The J1 size from the forge spec: Morgan's Pixel 10 Pro XL as measured on the device, 2026-11-04 (UI_STYLE.md Target devices).
 const PORT = 4173;
 
 export default defineConfig({
@@ -12,8 +12,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     browserName: 'chromium',
-    viewport: { width: 414, height: 921 },
-    deviceScaleFactor: 3.25,
+    viewport: { width: 443, height: 816 },
+    deviceScaleFactor: 2.4375,
     isMobile: true,
     hasTouch: true,
   },

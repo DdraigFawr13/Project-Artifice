@@ -39,7 +39,6 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Open questions
 
-- Test size: Morgan's Pixel reports 443 × 816 CSS px at dpr 2.4375 (1080 physical px wide), ×3, 359 × 663 game px, 60 fps, in the Claude app's in-app browser (2026-11-04 screenshot). The e2e checks and UI_STYLE assume 414 × 921 at 3.25 (×4). Put to Morgan: which size the checks use.
 
 - Art style, platform, and whether anyone else helps: open in CONCEPT.md, for design.
 
@@ -49,6 +48,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Decisions since the last plan update
 
+- 2026-11-04 Checks run at Morgan's measured Pixel size only: 443 × 816 CSS px at dpr 2.4375, ×3, 359 × 663 game px (the `?debug` readout; D-004 updated).
 - 2026-11-04 S3: close-up art from a free local edit, no OpenArt spend; strike reach 9 game px with −1 per px beyond 3, up to −6 (Morgan; spec S3 "Settled at S3 start" and Data → grading.json).
 - 2026-11-04 S2 controls: the mock-up's "Hold: bellows" and "To the anvil" buttons plus dragging the bar both work (Morgan; spec S2 "Settled at S2 start").
 

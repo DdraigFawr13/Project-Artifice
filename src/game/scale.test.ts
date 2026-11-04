@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { computeScale } from './scale';
 
 describe('computeScale', () => {
-  it('gives ×4 and about 336 × 748 game px on the J1 Pixel size', () => {
+  it('gives ×3 and 359 × 663 game px on the J1 Pixel size (measured on Morgan\'s phone)', () => {
+    expect(computeScale(443, 816, 2.4375)).toEqual({ scale: 3, visibleWidth: 359, visibleHeight: 663 });
+  });
+
+  it('gives ×4 and 336 × 748 game px at the Pixel\'s spec-sheet size', () => {
     expect(computeScale(414, 921, 3.25)).toEqual({ scale: 4, visibleWidth: 336, visibleHeight: 748 });
   });
 

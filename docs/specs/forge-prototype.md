@@ -26,8 +26,8 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 ### J1 Open the game
 
 - **Given** the playtest build
-- **When** it opens at 414 × 921 CSS px with a device pixel ratio of 3.25 (one reported Pixel 10 Pro XL size, UI_STYLE.md)
-- **Then** a loading screen, then the item list (mock-up frame 1). The game is drawn at scale 4, with about 336 × 748 game px visible. **Check:** `e2e/open.spec.ts` reads the scale and visible size from the debug API and asserts scale 4 and a visible width of 336–337, sees 3 item rows, and saves a screenshot.
+- **When** it opens at 443 × 816 CSS px with a device pixel ratio of 2.4375 (measured on Morgan's Pixel 10 Pro XL, 2026-11-04; was 414 × 921 at 3.25 from a spec sheet)
+- **Then** a loading screen, then the item list (mock-up frame 1). The game is drawn at scale 3, with 359 × 663 game px visible. **Check:** `e2e/open.spec.ts` reads the scale and visible size from the debug API and asserts scale 3 and 359 × 663, sees 3 item rows, and saves a screenshot.
 
 ### J2 Heat
 
@@ -68,7 +68,7 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 - **A heat gauge:** makes reading the metal trivial (mock-up check record). Would fail the "reading the metal" skill (planning-answers.md:11).
 - **Material quality inside the craft score:** CONCEPT.md has rarity = material quality + craft grade, so the craft score shows only the player's work. Would double-count material when rarity arrives in the shop phase.
 - **Live Phaser lights now:** with flat placeholder normal maps they give only the radial falloff a painted glow gives, at a speed cost on the phone. Morgan chose the painted glow for now (D-003, updated 2026-11-04).
-- **Fitting the whole 360 px width (×3 on the Pixel):** leaves black bars about 66 physical px wide each side. Cropping to a 336 px safe zone at ×4 fills the screen (UI_STYLE.md Layout). D-003's "360 × 640" is updated in this change to say so.
+- **Fitting the whole 360 px width (×3 on the Pixel):** leaves black bars about 66 physical px wide each side. Cropping to a 336 px safe zone at ×4 fills the screen (UI_STYLE.md Layout). D-003's "360 × 640" is updated in this change to say so. (Measured 2026-11-04: Morgan's phone is 1080 physical px wide, so the same scale rule gives ×3 there with 359 game px shown and no bars; the rule is unchanged.)
 - **Heat colour in steps per band:** the player couldn't see a threshold in the middle of a band yet would be charged for it (critic re-check). Colour, brightness and glow change continuously with temperature instead.
 
 ## Risks
@@ -95,7 +95,7 @@ src/game/           # Phaser scenes: Boot, Choose, Alloy, Forge (wide and close 
 src/save/save.ts
 src/ui/             # DOM overlay panels from UI_STYLE tokens; debug.ts (shown with ?debug)
 assets/             # images, sounds, fonts; assets/ATTRIBUTION.md lists every file's source and licence (SAFE-05)
-e2e/                # Playwright at 414 × 921, deviceScaleFactor 3.25 (the J1 size), against `vite preview`
+e2e/                # Playwright at 443 × 816, deviceScaleFactor 2.4375 (the J1 size), against `vite preview`
 docs/playtests/TEMPLATE.md
 ```
 

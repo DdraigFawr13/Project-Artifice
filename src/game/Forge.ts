@@ -19,7 +19,7 @@ const BG_W = 400;
 const HINT_TIMES = 3;
 /** Real time is capped per frame so a stalled tab doesn't run a burst of steps. */
 const MAX_FRAME_MS = 250;
-/** Smallest hit area around the piece: 44 CSS px at the Pixel's ×4 on 3.25 dpr is about 36 game px. */
+/** Smallest hit area around the piece: 44 CSS px at the Pixel's ×3 on 2.4375 dpr is about 36 game px. */
 const MIN_HIT = 36;
 const OUTLINE = 0x735b44; // --ink-dim
 const SPARK = 0xfdd479; // --fire-5
@@ -28,7 +28,7 @@ const INK = 0xead59c; // --ink: unstruck targets
 const RING = 0xfdd479; // --fire-5: where the strike will land
 /** A strike's points show for this long, advancing with engine steps (S3). */
 const POINTS_S = 0.8;
-/** Target squares: 11 game px, about the mock-up's 14 CSS px at ×4 on 3.25 dpr. */
+/** Target squares: 11 game px, about the mock-up's 14 CSS px on the Pixel (1.23 CSS px per game px). */
 const TARGET_PX = 11;
 
 interface Spark { x: number; y: number; vx: number; vy: number; life: number; max: number }

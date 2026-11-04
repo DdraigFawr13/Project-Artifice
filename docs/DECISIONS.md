@@ -23,7 +23,7 @@ Settled rules for this project. Not a changelog: an entry stays while the rule i
 ## D-004 Platform and tech
 
 - **Status:** Accepted (2026-11-04)
-- **Decision:** A web game designed for touch first, also playable with a mouse, in portrait. Mock-ups and checks start at Morgan's Pixel 10 Pro XL (412 px). Minimum text 14 px, minimum tap 44 px. Built in TypeScript with Phaser 4 and Vite. All game rules live in a separate engine module with seeded randomness; screens only show results (GAME-01, GAME-02). Items, ores and heat bands are data files (GAME-04).
+- **Decision:** A web game designed for touch first, also playable with a mouse, in portrait. Mock-ups and checks start at Morgan's Pixel 10 Pro XL (412 px). Automated checks run at the size measured on that phone, 443 × 816 CSS px at dpr 2.4375, only (Morgan, 2026-11-04, at S3: the spec-sheet 414 × 921 at 3.25 was not what the phone shows). Minimum text 14 px, minimum tap 44 px. Built in TypeScript with Phaser 4 and Vite. All game rules live in a separate engine module with seeded randomness; screens only show results (GAME-01, GAME-02). Items, ores and heat bands are data files (GAME-04).
 - **Why:** One link runs on Morgan's phone and PC. Touch-first designs also work with a mouse; the reverse fails. Cloud build sessions can run, test and screenshot a web game. Phaser 4 has 2D lighting with normal maps, which D-003's live light needs (research 2026-11-04). Approved on the [final plan](https://claude.ai/artifact/Dp2hubybfACEV2c8WHrftx), answered in chat.
 
 ## D-005 Forge prototype scope
