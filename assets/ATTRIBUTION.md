@@ -22,3 +22,4 @@ All CC0 (D-005). Downloaded and converted on 2026-11-04 with ffmpeg (mono Ogg Vo
 - `sfx/bellows.ogg`: "wind whoosh loop" by SketchMan3, CC0 1.0. https://opengameart.org/content/wind-whoosh-loop (file `wind woosh loop.ogg`, 6 s; source SHA-256 0cfdbd3f…2191dac). Quality 3. Used as the bellows' air.
 - `sfx/hammer.ogg`: "Blacksmith's Hammer" by VishwaJai, CC0 1.0. https://opengameart.org/content/blacksmiths-hammer (file `blacksmithhammer.wav`, 0.5 s; source SHA-256 a26c2e96…5ec7ae2). Quality 3. Downloaded and converted on 2026-11-04.
 - The forge hum is not a file: it is a Web Audio oscillator made in `src/game/Forge.ts`.
+- `sfx/hiss.ogg`: "Steam release sounds" by bart, CC0 1.0. https://opengameart.org/content/steam-release-sounds (archive `steam_hisses.zip`, SHA-256 7dc5ae6f…a9ab4677f; file `steam hisses - Marker #1.wav`, 1.8 s; source SHA-256 1dd3462e…faecb476817c). Downloaded and converted on 2026-11-04 (quality 3). Used as the quench hiss.
