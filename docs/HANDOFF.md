@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Design: forge mock-up approved; final plan page out for approval.
+Plan: final plan approved (D-004 to D-006); writing the forge spec with `write-spec`.
 
 ## Plan map
 
@@ -12,8 +12,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - ✔ Brainstorm: concept chosen and brief committed.
 - ✔ Bootstrap: shared rules, starter docs and CI ([PR #1](https://github.com/DdraigFawr13/Project-Artifice/pull/1)).
-- ▶ Design: `planning-interview` rounds, starting from CONCEPT.md's design brief.
-- ○ Plan: the first phase's spec with `write-spec`.
+- ✔ Design: rounds, review, art direction, forge mock-up, final plan approved.
+- ▶ Plan: the forge prototype spec with `write-spec` (`docs/specs/forge-prototype.md`).
 - ○ Build: the smithing prototype, in slice sessions.
 
 ## Just done
@@ -34,9 +34,11 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Art refined at Morgan's request: close-up anvil (side on, cleaner, knife tip right) and the wide shot redrawn to match. These two replace Ember concept 3 as the style reference; resample UI_STYLE tokens from them when the spec is written.
 
+- 2026-11-04 Final plan approved in chat (the page saved only on the device): 14/44 px minimums, reheat any time, drag to quench, CC0 sound, Vercel free plan. Recorded as D-004 to D-006.
+
 ## Next
 
-1. When Morgan says "final done", read `final`. If approved: record every settled choice in DECISIONS, update HANDOFF, then write the forge spec with `write-spec` (from its step 3).
+1. Write `docs/specs/forge-prototype.md` with `write-spec` from its step 3 (inputs: CONCEPT.md, D-003 to D-006, docs/design/planning-answers.md, UI_STYLE.md, mockups/forge.html). Re-sample UI_STYLE tokens from the new reference art. Then reconcile, run the 3 fresh checks and ask Morgan to approve.
 2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
 
 ## Open questions

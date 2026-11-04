@@ -1,6 +1,6 @@
 # Planning answers (design, 2026-11-04)
 
-Status: **Proposed** until Morgan approves the final plan; then each settled choice moves to DECISIONS (SRC-04). Copied from the form pages' saved answers. Morgan's own words are in quotes.
+Status: **Settled** 2026-11-04. The final plan was approved; settled choices are in DECISIONS D-003 to D-006. This file keeps the answers as given. Copied from the form pages' saved answers. Morgan's own words are in quotes.
 
 ## Design round 1 ([page](https://claude.ai/artifact/NA4KTBCDvhGa22LTUzwbDy))
 
@@ -41,3 +41,12 @@ Recorded as D-003 and in UI_STYLE.md. Step 1 note: "Need more detail and resolut
 ## Target device
 
 Morgan's phone: "I have a pixel 10xl so it will be on that" (read as the Pixel 10 Pro XL).
+
+## Final plan ([page](https://claude.ai/artifact/Dp2hubybfACEV2c8WHrftx); answered in chat because the page saved only on the device)
+
+- Minimum sizes: 14 px text, 44 px buttons
+- Reheat: yes, back to the fire any time
+- Quench: drag the blade to the tub
+- Sound: free CC0 packs
+- Playtest link: Vercel free plan
+- Approval: "Approved, start"

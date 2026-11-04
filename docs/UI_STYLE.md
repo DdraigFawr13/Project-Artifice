@@ -11,7 +11,7 @@ Picked on 2026-11-04 through two taste boards: [step 1](https://claude.ai/artifa
 - Also works with a mouse on PC (design round 1). No layout for landscape.
 - Minimum text: 14 px
 - Minimum tap: 44 px
-- The two minimums are my proposed defaults (Apple's thumb-tap guideline); Morgan named the phone but not the sizes. Confirm them on the final plan page.
+- Morgan confirmed both minimums on the final plan (D-004).
 
 ## Idea
 <!-- The look in two sentences, from the taste board picks. -->
