@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Design: round 1 answered; review page out, waiting for Morgan.
+Design: review answered; art direction workshop (`ui-style` taste board) out, waiting for Morgan.
 
 ## Plan map
 
@@ -24,9 +24,11 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Round 1 answered. Reviewer ($0.53 measured) and own review done; [review page](https://claude.ai/artifact/4dzk1d8JqTw6gcPtE4p7kQ) (collection `review1`): 11 findings, keep list, draft phases, 5 questions.
 
+- 2026-11-04 Review answered: all 11 findings agreed; prototype = forge, alloy, grade breakdown, sound, 3 items (horseshoe/knife/sword), save between crafts, hints; reputation and casting after; portrait; AI art only for placeholders; Vercel free plan (publishing still needs Morgan's OK); a ruin returns half the metal as scrap. Morgan asked for an art direction workshop: [taste board](https://claude.ai/artifact/1MpZv8TsgQK6DXwHRtRnNT) (collection `taste`).
+
 ## Next
 
-1. When Morgan says "review done", read `review1`, then publish the final page (or another round if questions remain).
+1. When Morgan says "taste done", read `taste`, write `docs/UI_STYLE.md` with `ui-style`, mock up the forge screen with `ui-mockups`, then publish the final plan page.
 2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
 
 ## Open questions
