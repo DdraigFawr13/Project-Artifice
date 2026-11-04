@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Design: art direction workshop step 2 out, waiting for Morgan.
+Design: style doc written (D-003); forge mock-up out for approval.
 
 ## Plan map
 
@@ -28,9 +28,11 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Taste board 1: kept Ember Night and Daylight Workshop, Rune Forge parked, Chunky cut; Morgan wanted more detail and research. Research agent $0.71 measured; 6 OpenArt concepts (Nano Banana 2, Morgan approved the spend). [Taste board 2](https://claude.ai/artifact/LMMZGoVFjiwkUbSt4yBYnH) (collection `taste2`): lead look, resolution, live lighting, art pipeline, colour-blind cues.
 
+- 2026-11-04 Taste 2: Ember Night leads the forge, Daylight for the shop later; 360×640; live forge/metal lights; AI placeholders; heat readable without colour (D-003). Target phone: Pixel 10 Pro XL, 412 px. `docs/UI_STYLE.md` and `docs/design/planning-answers.md` written. [Forge mock-up](https://claude.ai/artifact/8MATSEHtmtMVsXEF7X8faQ) (`mockups/forge.html`), fresh check $0.18.
+
 ## Next
 
-1. When Morgan says "taste 2 done", read `taste2`, write `docs/UI_STYLE.md` with `ui-style`, mock up the forge screen with `ui-mockups`, then publish the final plan page.
+1. Morgan answers the mock-up: approve, change or rethink. Then publish the final plan page (planning-interview "Final check"), record DECISIONS, and write the forge spec with `write-spec`.
 2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
 
 ## Open questions

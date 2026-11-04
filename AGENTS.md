@@ -10,6 +10,7 @@ Shared rules come from AI-Master-Instructions and load through CLAUDE.md (`.clau
 2. `docs/DECISIONS.md`: settled rules. Don't reopen them.
 3. `docs/LESSONS.md`: entries for the area you are about to work in.
 4. `docs/CONCEPT.md`: the chosen concept. Its "Design brief" section lists what design must not reopen.
+5. `docs/UI_STYLE.md`: the look, tokens and screen checklist. Read it before any screen or art work.
 
 ## Local checks (run before pushing)
 
