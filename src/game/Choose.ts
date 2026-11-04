@@ -1,9 +1,9 @@
 import * as Phaser from 'phaser';
 import { items, type Item } from '../data/items';
-import { showChoose, showForgePlaceholder } from '../ui/choose';
+import { showChoose } from '../ui/choose';
 import type { GameContext } from './context';
 
-/** The item list. The list is a DOM panel over the canvas; the forge itself arrives in slice S2. */
+/** The item list. The list is a DOM panel over the canvas; "Forge a <item>" starts a craft. */
 export class Choose extends Phaser.Scene {
   constructor(private readonly ctx: GameContext) {
     super('Choose');
@@ -18,6 +18,6 @@ export class Choose extends Phaser.Scene {
   }
 
   private forge(item: Item): void {
-    showForgePlaceholder(item, () => this.list(item.id));
+    this.scene.start('Forge', { itemId: item.id });
   }
 }

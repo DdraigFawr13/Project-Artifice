@@ -193,6 +193,19 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 - **Checks that fail now:** J2.
 - **Files:** `src/engine/craft.ts` (the full `Input` union, `location`, `createCraft`, `step`; strikes ignored until S3, the tub until S4), `heat.ts`, `heat.test.ts`, `alloy.ts` (the default alloy and weighted means); `src/data/heat-bands.json`, `heat-bands.test.ts`, `ores.json`, `hints.json`; `src/game/Choose.ts` ("Forge a <item>" starts a craft), `Forge.ts` (wide view, bellows, grab and drop, metal drawing, glow sprites, sparks, hum, an fps readout with `?debug`); `assets/sfx/` fire, bellows, hum; ATTRIBUTION; the debug API's `pinTemp`, `pause`, `advance`, `send`, `state`, `metalBox`; `src/save/save.ts` (`hintsSeen`, written at craft end); `e2e/heat.spec.ts`.
 - **Waits on:** S1.
+- **Settled at S2 start (2026-11-04):** the zero-decision re-check against S1's merged code found 14 open choices. Morgan chose the controls: the mock-up's two buttons ("Hold: bellows"; "To the anvil" / "To the fire") and dragging the bar on the scene both work. Defaults for the rest:
+  - An anvil drop in S2 leaves the bar resting on the anvil in the wide view; the close view arrives in S3. A tub drop returns the bar to where it was until S4.
+  - `{bellows}` is sticky: it sets the bellows until the next `{bellows}` input, and only works in the fire. The "Hold: bellows" button is disabled, with a reason, while the bar is out of the fire.
+  - The heat rates sit in `heat-bands.json` under `heat`, and each item's default alloy is a `defaultAlloy` field in `items.json` (GAME-04). Alloy means are not rounded.
+  - The drift to 800 °C without the bellows stops at 800 and doesn't overshoot. The hum is silent below 550 °C.
+  - Brightness is the relative luminance of the interpolated colour, mixed per sRGB channel.
+  - The background is placed so the fire, anvil and tub sit between the top bar and the panel, as in mock-up frame 3. The top bar shows the steps, with Heat lit.
+  - Only "Burning!" shows, and only in the `white` band; mock-up frame 3b's "Too hot / too cold" alert is not built, because it would give the heat away (Risks).
+  - Sparks, the glow flicker and the metal are drawn by the screen and advance with engine steps, so `pause()` freezes them. Spark positions come from a generator seeded with the craft's seed. The seed comes from the clock; `setSeed` stays in S3.
+  - Sound: the fire and bellows loops are CC0 files from OpenGameArt; the hum is a Web Audio oscillator made in code, so it needs no file.
+  - Debug: `pinTemp` overrides the temperature after each step while location still changes, `advance(ms)` carries any part step over, `metalBox()` is in CSS px, and `state()` is null outside the forge. The greyscale check decodes the screenshot in the page, so it needs no new dependency.
+  - Hint counts stay in memory until a craft ends (S4), so in S2 the heat hint shows on every craft after a reload. S2 doesn't change `save.ts`.
+  - The forge has no way back to the list until S4's result screen; reload to choose again. `e2e/open.spec.ts` changes from the placeholder to the forge.
 
 ### S3 Hammer
 

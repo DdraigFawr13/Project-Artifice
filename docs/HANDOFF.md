@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Build: slice S1 (skeleton and playtest link) built on `claude/forge-prototype-docs-s1-rswknv`; waiting for Morgan's playtest on the preview link and approval of the PR.
+Build: slice S2 (heat) on `claude/forge-s2-heat`. S1 merged ([PR #3](https://github.com/DdraigFawr13/Project-Artifice/pull/3), merge commit 84654be).
 
 ## Plan map
 
@@ -14,8 +14,9 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Bootstrap: shared rules, starter docs and CI ([PR #1](https://github.com/DdraigFawr13/Project-Artifice/pull/1)).
 - ✔ Design: rounds, review, art direction, forge mock-up, final plan approved.
 - ✔ Plan: forge spec approved 2026-11-04.
-- ▶ Build S1: skeleton and playtest link (built; Morgan's check on the Pixel next).
-- ○ Build S2 heat, S3 hammer, S4 quench and grade, S5 full loop and the 10-craft test (one fresh session each).
+- ✔ Build S1: skeleton and playtest link (merged, PR #3).
+- ▶ Build S2: heat.
+- ○ Build S3 hammer, S4 quench and grade, S5 full loop and the 10-craft test (one fresh session each).
 
 ## Just done
 
@@ -35,9 +36,9 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Morgan checks Vercel's production branch is `main` (project-artifice → Settings → Environments → Production): the first branch push was built as production, the second as preview. Then Morgan opens the S1 link on the Pixel (signed in to Vercel): https://project-artifice-git-clau-2be518-golden-goose-engineering-group.vercel.app/?debug (PR #3), adds `?debug`, and reports the width, height, device pixel ratio and scale shown; also judges the blade-free wide shot (`assets/wide.png`, free local edit). OpenArt only if Morgan doesn't like it.
-2. Merge the S1 PR once Morgan approves and CI is green (GIT-07).
-3. Fresh session for S2 (heat): re-run the zero-decision check on S2 against S1's merged code first (write-spec step 8).
+1. Build S2 on `claude/forge-s2-heat`: J2 checks fail first, then the build, a fresh spec review, then a draft PR.
+2. Morgan: open the S1/S2 preview on the Pixel with `?debug` and report the width, height, device pixel ratio and scale shown (still not reported). Also judge the blade-free wide shot (`assets/wide.png`).
+3. Merge S2 once Morgan approves and CI is green (GIT-07). Then a fresh session for S3, which starts with the zero-decision re-check.
 
 ## Open questions
 
@@ -48,6 +49,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-04: 5 concepts made; dropped with reasons: yes; kill criteria: yes; rounds: 2; measured agent cost $1.12; measure 2 (planning-interview round 1 asks nothing the brief answered): passed, round 1 asked only the brief's open questions; measure 3 (concept unchanged after design): passed, the concept survived design unchanged. Both recorded 2026-11-04 from Morgan's report. A master session copies this to `decisions/benchmarks/brainstorm-trial.md` when done.
 
 ## Decisions since the last plan update
+
+- 2026-11-04 S2 controls: the mock-up's "Hold: bellows" and "To the anvil" buttons plus dragging the bar both work (Morgan; spec S2 "Settled at S2 start").
 
 - 2026-11-04 Concept chosen ([D-001](DECISIONS.md#d-001-concept-chosen)).
 - 2026-11-04 Full setup with the game layer ([D-002](DECISIONS.md#d-002-full-ai-master-setup-with-the-game-layer)).

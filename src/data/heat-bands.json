@@ -1,0 +1,13 @@
+{
+  "bands": [
+    { "id": "black", "minC": null, "anchorC": 285, "color": "#2a1418", "glow": 0 },
+    { "id": "dull-red", "minC": 550, "anchorC": 650, "color": "#7a2a1a", "glow": 4 },
+    { "id": "cherry", "minC": 750, "anchorC": 825, "color": "#b23c1c", "glow": 8 },
+    { "id": "orange", "minC": 900, "anchorC": 975, "color": "#e8682a", "glow": 12 },
+    { "id": "yellow", "minC": 1050, "anchorC": 1125, "color": "#f8ae52", "glow": 16 },
+    { "id": "white", "minC": 1200, "anchorC": 1275, "color": "#fff2cc", "glow": 20 }
+  ],
+  "sparks": { "fromC": 900, "toC": 1350, "maxPerSecond": 30 },
+  "hum": { "fromC": 550, "toC": 1350, "fromHz": 80, "toHz": 220 },
+  "heat": { "startC": 20, "floorC": 20, "maxC": 1350, "bellowsRate": 250, "idleTargetC": 800, "idleRate": 40 }
+}
