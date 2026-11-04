@@ -439,9 +439,10 @@ export class Forge extends Phaser.Scene {
     if (!this.dragging || p.id !== this.dragPointer) return;
     this.dragging = false;
     if (this.craft.location === 'done') return;
-    const x = this.heldPos.x - this.bgX;
-    const y = this.heldPos.y - this.bgY;
-    const zone = (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x, y));
+    // Where the finger lets go decides; the piece's centre counts only when the finger is over no zone. Judged by the
+    // centre alone, a piece grabbed near one end missed the tub with the finger over the water (Morgan, S5 playtest).
+    const zoneAt = (x: number, y: number) => (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x - this.bgX, y - this.bgY));
+    const zone = zoneAt(p.x, p.y) ?? zoneAt(this.heldPos.x, this.heldPos.y);
     // Anywhere else, the piece goes back where it came from (forge spec, Engine).
     this.queue.push({ drop: zone ?? this.craft.heldFrom });
   }

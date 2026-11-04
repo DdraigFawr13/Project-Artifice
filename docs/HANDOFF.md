@@ -30,7 +30,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. S5 on `claude/forge-s5-loop` (PR #7, draft): Morgan replays the new quench (c882540) and approves or not (GIT-07). Playtest note: `docs/playtests/2026-11-04-s5-loop.md` ([form](https://claude.ai/artifact/2vWLEDRUzSoXhzNRSe4rxz)).
+1. S5 on `claude/forge-s5-loop` (PR #7, draft): Morgan replays the quench (animation "looks good"; drop fix in the latest commit) and approves or not (GIT-07). Playtest note: `docs/playtests/2026-11-04-s5-loop.md` ([form](https://claude.ai/artifact/2vWLEDRUzSoXhzNRSe4rxz)).
 2. After S5 merges, with Morgan: the 10-craft test (6 played) answered "unsure" to forging another ("needs more depth"), and crafts run "way shorter" than the 1/2/3 min goal; both bear on CONCEPT.md's kill criteria. Also open: a no-strike knife scores 46.
 
 ## Open questions

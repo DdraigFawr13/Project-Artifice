@@ -151,3 +151,25 @@ test('a quench holds the tub view while the piece sinks, then shows the result',
   await api(page, (a) => a.advance(700));
   await expect(page.getByTestId('score')).toHaveText('46');
 });
+
+// S5 (Morgan: "It didn't quench a few times"): a drop is judged where the finger lets go. Judged by the piece's
+// centre, a knife grabbed near its right end and let go with the finger over the water's left edge went back to the anvil.
+test('letting go with the finger over the water quenches, wherever the piece was grabbed', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => {
+    a.pinTemp(830);
+    a.advance(48);
+  });
+  const b = await api(page, (a) => a.metalBox());
+  const tub = await api(page, (a) => a.zone('tub'));
+  const k = await page.locator('#game canvas').evaluate((c: HTMLCanvasElement) => c.getBoundingClientRect().width / c.width);
+  // wide.png (320, 500): the water's left edge, 28 and 20 game px into the tub zone (292, 480).
+  const over = { x: tub.x + 28 * k, y: tub.y + 20 * k };
+  await page.mouse.move(b.x + b.width - 6, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(over.x, over.y, { steps: 8 });
+  await page.mouse.up();
+  await api(page, (a) => a.advance(32));
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
+});
