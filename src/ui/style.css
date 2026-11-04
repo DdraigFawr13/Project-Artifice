@@ -1,0 +1,87 @@
+/* Tokens from docs/UI_STYLE.md. Screens use the names, never literal values. */
+@font-face {
+  font-family: 'Pixelify Sans';
+  src: url('../../assets/fonts/PixelifySans-Variable.ttf') format('truetype');
+  font-weight: 400 700;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('../../assets/fonts/PressStart2P-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: block;
+}
+
+:root {
+  --night-0: #0d091b;
+  --night-1: #191126;
+  --night-2: #241a33;
+  --soot: #372c45;
+  --ember-0: #30161c;
+  --ember-1: #451b1a;
+  --ember-2: #64281d;
+  --ember-3: #93341d;
+  --fire-0: #a9512b;
+  --fire-1: #c05024;
+  --fire-2: #e26328;
+  --fire-3: #f87f33;
+  --fire-4: #f7a74e;
+  --fire-5: #fdd479;
+  --ink: #ead59c;
+  --ink-dim: #735b44;
+  --face: 'Pixelify Sans', monospace;
+  --figures: 'Press Start 2P', monospace;
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--night-0);
+  color: var(--ink);
+  font-family: var(--face);
+  font-size: 16px;
+  line-height: 1.4;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The stage is sized in main.ts to the canvas's CSS size and centred. */
+#stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+}
+#game canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+#ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; background: var(--night-0); border-bottom: 2px solid var(--soot); font-size: 14px; }
+.panel { background: var(--night-1); border-top: 2px solid var(--soot); padding: 16px; display: grid; gap: 12px; }
+.panel.fill { flex: 1; align-content: start; border-top: 0; overflow-y: auto; }
+.panel p { margin: 0; }
+.btn { font-family: var(--face); font-size: 18px; font-weight: 600; background: var(--fire-3); color: var(--night-0); border: 0; border-radius: 2px; min-height: 52px; padding: 0 16px; width: 100%; cursor: pointer; }
+.btn:active { background: var(--fire-2); transform: translateY(1px); }
+.btn.ghost { background: var(--soot); color: var(--ink); }
+.btn:disabled { background: var(--soot); color: var(--ink-dim); cursor: default; transform: none; }
+.hint { font-size: 14px; color: var(--ink); background: var(--night-2); border-left: 4px solid var(--fire-3); padding: 8px 10px; }
+.item { font: inherit; color: inherit; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 12px; min-height: 64px; border: 2px solid var(--soot); background: var(--night-2); align-items: center; cursor: pointer; }
+.item[aria-pressed='true'] { border-color: var(--fire-3); }
+.item b { font-size: 18px; font-weight: 600; }
+.item .sub { grid-column: 1 / -1; font-size: 14px; }
+.loading { flex: 1; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; padding: 24px; background: var(--night-1); }
+.loadbar { width: 240px; height: 16px; border: 2px solid var(--soot); background: var(--night-0); }
+.loadbar i { display: block; height: 100%; width: 0; background: var(--fire-2); }
+.debug { position: absolute; top: 4px; right: 4px; z-index: 10; font-size: 14px; background: var(--night-0); border: 2px solid var(--soot); padding: 2px 6px; pointer-events: none; }

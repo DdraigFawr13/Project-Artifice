@@ -14,12 +14,14 @@ Shared rules come from AI-Master-Instructions and load through CLAUDE.md (`.clau
 
 ## Local checks (run before pushing)
 
-- Every push: `node .claude/master/sync.mjs --check`. There's no app code yet; add the project's checks here when the stack is chosen.
+- Every push: `node .claude/master/sync.mjs --check && npm run check` (typecheck and unit tests).
+- When screens change: also `npm run e2e` (Playwright at the Pixel size, 414 × 921 at ×3.25, against `vite preview`).
+- Install with `npm ci`. npm 10.9 fails `npm install` on this tree ("Cannot read properties of null (reading 'edgesOut')"); change dependencies with `npx npm@11 install`.
 
 ## What CI runs
 
-- **CI** (`ci.yml`): the master drift check, on PRs marked ready and on default-branch pushes. Markdown and `docs/` changes skip it.
-- No deploys yet.
+- **CI** (`ci.yml`): the master drift check, `npm run check` and `npm run e2e`, on PRs marked ready and on default-branch pushes. Markdown and `docs/` changes skip it.
+- **Vercel:** a private preview build on every push (D-006); no production deploys yet.
 
 ## Project rules
 
@@ -30,4 +32,4 @@ Shared rules come from AI-Master-Instructions and load through CLAUDE.md (`.clau
 
 Master rules this project deliberately changes. Each line names the rule id and the reason; the same entry is in `.ai-master.json` "overrides".
 
-- None.
+- **CI-05:** Vercel builds a private preview on every push, drafts included, so Morgan can playtest each slice on the Pixel (D-006). The rest of CI-05 still holds: deploy to production only from the default branch; merge when a change is done, not to preview it; deploys and migrations queue and are never cancelled or re-run without reading the log; after a deploy, check the deployed commit equals the merge commit.

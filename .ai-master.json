@@ -2,5 +2,10 @@
   "version": "v4.8.0",
   "layers": ["core", "project-types/game"],
   "exclude": [],
-  "overrides": []
+  "overrides": [
+    {
+      "id": "CI-05",
+      "reason": "D-006: Vercel builds a private preview on every push, drafts included, so Morgan can playtest each slice on the Pixel. The rest of CI-05 still holds (see AGENTS.md Overrides)."
+    }
+  ]
 }

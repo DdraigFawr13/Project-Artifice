@@ -1,0 +1,5 @@
+[
+  { "id": "horseshoe", "name": "Horseshoe", "parts": 3, "minutes": 1 },
+  { "id": "knife", "name": "Knife", "parts": 5, "minutes": 2 },
+  { "id": "sword", "name": "Sword", "parts": 8, "minutes": 3 }
+]
