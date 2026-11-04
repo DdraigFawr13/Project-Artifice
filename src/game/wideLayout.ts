@@ -22,6 +22,9 @@ export const ZONES: Record<'fire' | 'anvil' | 'tub', Rect> = {
   tub: { x: 292, y: 480, w: 100, h: 180 },
 };
 
+/** The water's surface in the tub, in wide.png px: where a quenched piece goes in (measured on the image, S5). */
+export const WATER = { x: 345, y: 512, halfW: 24 };
+
 /** The forge glow's centre and size. */
 export const FIRE_GLOW = { x: 85, y: 350, size: 230 };
 

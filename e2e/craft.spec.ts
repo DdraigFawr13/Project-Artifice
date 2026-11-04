@@ -27,7 +27,7 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   await dragTo(page, 'tub');
   const s = (await api(page, (a) => a.state()))!;
   expect(s).toMatchObject({ location: 'done', quenchC: 905, ruin: null });
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
 
   await expect(page.getByTestId('score')).toHaveText('94');
   await expect(page.getByTestId('tier')).toHaveText('Masterwork');
@@ -61,7 +61,7 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
     a.advance(32);
   });
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
   // No strikes: all 18 hits missing, 54 points, so 46 and Common.
   await expect(page.getByTestId('score')).toHaveText('46');
   await expect(page.getByTestId('tier')).toHaveText('Common');
@@ -91,7 +91,7 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(32));
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
   await page.getByRole('button', { name: 'Choose item' }).click();
   await expect(page.getByRole('button', { name: 'Forge a knife' })).toBeVisible();
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 46');
@@ -121,6 +121,33 @@ test('the piece can go from the fire straight to the quench', async ({ page }, t
   await api(page, (a) => a.advance(48));
   await dragTo(page, 'tub');
   expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
+  await expect(page.getByTestId('score')).toHaveText('46');
+});
+
+// S5 (Morgan: "the quench does feel very flat"): the piece sinks where it went in, steam rises, then the result opens.
+test('a quench holds the tub view while the piece sinks, then shows the result', async ({ page }, testInfo) => {
+  await knifeOnAnvil(page, 950);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => {
+    a.pinTemp(830);
+    a.advance(32);
+  });
+  await dragTo(page, 'tub');
+  const start = await api(page, (a) => a.metalBox());
+  await page.screenshot({ path: testInfo.outputPath('quench-plunge.png') });
+  // The label would cover the piece going in.
+  await expect(page.getByTestId('tub-label')).toBeHidden();
+  await api(page, (a) => a.advance(400));
+  const mid = await api(page, (a) => a.metalBox());
+  await page.screenshot({ path: testInfo.outputPath('quench-sink.png') });
+  // Going under: the part above the water gets shorter.
+  expect(mid.height).toBeLessThan(start.height);
+  // Sinking: its top is lower than when it went in, and the result isn't up yet.
+  expect(mid.y).toBeGreaterThan(start.y);
+  await api(page, (a) => a.advance(500));
+  await expect(page.getByTestId('score')).toHaveCount(0);
+  expect((await api(page, (a) => a.metalBox())).y).toBeGreaterThan(mid.y);
+  await api(page, (a) => a.advance(700));
   await expect(page.getByTestId('score')).toHaveText('46');
 });

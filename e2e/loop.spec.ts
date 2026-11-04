@@ -22,7 +22,7 @@ async function quenchAt(page: Page, temp: number) {
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(48));
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(800));
+  await api(page, (a) => a.advance(1600));
 }
 
 test('mix a 3-ore alloy, craft a knife, forge another, reload: best and scrap kept', async ({ page }, testInfo) => {
