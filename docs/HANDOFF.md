@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Design: review answered; art direction workshop (`ui-style` taste board) out, waiting for Morgan.
+Design: art direction workshop step 2 out, waiting for Morgan.
 
 ## Plan map
 
@@ -26,9 +26,11 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Review answered: all 11 findings agreed; prototype = forge, alloy, grade breakdown, sound, 3 items (horseshoe/knife/sword), save between crafts, hints; reputation and casting after; portrait; AI art only for placeholders; Vercel free plan (publishing still needs Morgan's OK); a ruin returns half the metal as scrap. Morgan asked for an art direction workshop: [taste board](https://claude.ai/artifact/1MpZv8TsgQK6DXwHRtRnNT) (collection `taste`).
 
+- 2026-11-04 Taste board 1: kept Ember Night and Daylight Workshop, Rune Forge parked, Chunky cut; Morgan wanted more detail and research. Research agent $0.71 measured; 6 OpenArt concepts (Nano Banana 2, Morgan approved the spend). [Taste board 2](https://claude.ai/artifact/LMMZGoVFjiwkUbSt4yBYnH) (collection `taste2`): lead look, resolution, live lighting, art pipeline, colour-blind cues.
+
 ## Next
 
-1. When Morgan says "taste done", read `taste`, write `docs/UI_STYLE.md` with `ui-style`, mock up the forge screen with `ui-mockups`, then publish the final plan page.
+1. When Morgan says "taste 2 done", read `taste2`, write `docs/UI_STYLE.md` with `ui-style`, mock up the forge screen with `ui-mockups`, then publish the final plan page.
 2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
 
 ## Open questions
