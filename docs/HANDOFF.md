@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Build: slice S3 (hammer) built on `claude/forge-s3-hammer`; draft PR next, then Morgan's playtest and approval. S2 merged (PR #4, merge commit 19e6e3b); S1 merged (PR #3).
+Build: slice S3 (hammer) approved by Morgan on 2026-11-04 after playing it ([PR #5](https://github.com/DdraigFawr13/Project-Artifice/pull/5), merged when CI is green). Next: S4 in a fresh session. S2 merged (PR #4, 19e6e3b); S1 merged (PR #3).
 
 ## Plan map
 
@@ -16,8 +16,9 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Plan: forge spec approved 2026-11-04.
 - ✔ Build S1: skeleton and playtest link (merged, PR #3).
 - ✔ Build S2: heat (merged, PR #4).
-- ▶ Build S3: hammer (built; Morgan's check on the Pixel next).
-- ○ Build S4 quench and grade, S5 full loop and the 10-craft test (one fresh session each).
+- ✔ Build S3: hammer (approved; PR #5).
+- ▶ Build S4: quench and grade (fresh session).
+- ○ Build S5: full loop and the 10-craft test.
 
 ## Just done
 
@@ -33,9 +34,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Morgan plays S3 on the Pixel through the PR's Vercel preview, signed in: forge a knife, take it to the anvil, strike the marked spots (the strike lands at the ring above the finger on lift), watch each strike's points, reheat with "Back to the fire", reach "Burning!", and try three strikes on black metal for the ruin. The `?debug` line came in on 2026-11-04 (below).
-2. Merge S3 once Morgan approves; mark the PR ready first so CI runs, and merge when green (GIT-07).
-3. Fresh session for S4 (quench and grade): zero-decision re-check against S3's merged code first.
+1. Fresh session for S4 (quench and grade), from the latest `main` after PR #5 merges: read the spec's S3 "Settled at S3 start" list first (rounds, shapes, the −3 per missing hit note for S4), then the zero-decision re-check against S3's merged code (src/engine/craft.ts, strike.ts, grade.ts, src/game/Forge.ts, shapes.ts, src/ui/forge.ts, e2e/hammer.spec.ts).
+2. S4 adds the result and ruin screens (mock-up frames for the grade and ruin); check them against `mockups/forge.html` (ui-mockups rule).
 
 ## Open questions
 
