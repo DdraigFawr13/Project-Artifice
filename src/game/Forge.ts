@@ -9,7 +9,7 @@ import { pointsLost } from '../engine/grade';
 import { mulberry32, type Rng } from '../engine/rng';
 import { debugEnabled, setForgeDebug, takeDebugSeed, type CssBox } from '../ui/debug';
 import { showForgePanel, type ForgeMode, type ForgePanel } from '../ui/forge';
-import { CLOSE_LINE_Y, closeOutlineFor, type Pt } from './closeLayout';
+import { CLOSE_LINE_Y, closeOutlineFor, closeSpriteFor, type CloseSprite, type Pt } from './closeLayout';
 import type { GameContext } from './context';
 import { outlineFor, type Outline } from './metal';
 import { CONTENT_BOTTOM_Y, CONTENT_MID_Y, FIRE_GLOW, inside, REST, ZONES } from './wideLayout';
@@ -52,7 +52,10 @@ export class Forge extends Phaser.Scene {
   private closeX = 0;
   private closeY = 0;
   private outline!: Outline;
-  private closeOutline!: Pt[];
+  private closeOutline: Pt[] = [];
+  private sprite: CloseSprite | null = null;
+  private spriteFill?: Phaser.GameObjects.Image;
+  private spriteEdge?: Phaser.GameObjects.Image;
   private mode: ForgeMode = 'wide';
   private metal!: Phaser.GameObjects.Graphics;
   private sparkGfx!: Phaser.GameObjects.Graphics;
@@ -117,7 +120,8 @@ export class Forge extends Phaser.Scene {
     this.sparkRng = mulberry32(seed ^ 0x5eed);
     this.flickerRng = mulberry32(seed ^ 0xf1c4);
     this.outline = outlineFor(this.item.id);
-    this.closeOutline = closeOutlineFor(this.item.id);
+    this.sprite = closeSpriteFor(this.item.id);
+    this.closeOutline = this.sprite ? [] : closeOutlineFor(this.item.id);
 
     // Hint counts stay in memory until the craft ends (S4 writes them). The hammer hint counts when the anvil is reached.
     const seen = this.ctx.load.save.hintsSeen;
@@ -152,6 +156,10 @@ export class Forge extends Phaser.Scene {
     this.fireGlow = this.add.image(0, 0, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(FORGE_GLOW);
     this.metalGlow = this.add.image(0, 0, 'glow').setBlendMode(Phaser.BlendModes.ADD);
     this.metal = this.add.graphics();
+    if (this.sprite) {
+      this.spriteFill = this.add.image(0, 0, this.sprite.fill).setOrigin(0, 0).setVisible(false);
+      this.spriteEdge = this.add.image(0, 0, this.sprite.edge).setOrigin(0, 0).setVisible(false);
+    }
     this.targetGfx = this.add.graphics();
     this.ringGfx = this.add.graphics();
     this.sparkGfx = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
@@ -235,6 +243,12 @@ export class Forge extends Phaser.Scene {
 
   /** The piece's outline in game px, in whichever view shows it. */
   private piecePoints(): Pt[] {
+    if (this.mode !== 'wide' && this.sprite) {
+      const s = this.sprite;
+      const x = this.closeX + s.x;
+      const y = this.closeY + s.y;
+      return [{ x, y }, { x: x + s.w - 1, y }, { x: x + s.w - 1, y: y + s.h - 1 }, { x, y: y + s.h - 1 }];
+    }
     if (this.mode !== 'wide') return this.closeOutline.map((q) => ({ x: Math.round(this.closeX + q.x), y: Math.round(this.closeY + q.y) }));
     const p = this.piecePos();
     return this.outline.map((q) => ({ x: Math.round(p.x + q.x * p.dir), y: Math.round(p.y + q.y) }));
@@ -394,9 +408,15 @@ export class Forge extends Phaser.Scene {
     this.metal.clear();
     this.metal.fillStyle(color, 1);
     this.metal.lineStyle(1, OUTLINE, 1);
-    const pts = this.piecePoints().map((q) => new Phaser.Math.Vector2(q.x, q.y));
-    this.metal.fillPoints(pts, true);
-    this.metal.strokePoints(pts, true);
+    // A piece with concept art is its sprite, tinted with the heat colour; others are drawn from their outline.
+    const useSprite = !wide && this.sprite !== null;
+    this.spriteFill?.setVisible(useSprite).setPosition(this.closeX + (this.sprite?.x ?? 0), this.closeY + (this.sprite?.y ?? 0)).setTint(color);
+    this.spriteEdge?.setVisible(useSprite).setPosition(this.closeX + (this.sprite?.x ?? 0), this.closeY + (this.sprite?.y ?? 0));
+    if (!useSprite) {
+      const pts = this.piecePoints().map((q) => new Phaser.Math.Vector2(q.x, q.y));
+      this.metal.fillPoints(pts, true);
+      this.metal.strokePoints(pts, true);
+    }
     if (!wide) this.drawClose(color);
     else {
       this.targetGfx.clear();

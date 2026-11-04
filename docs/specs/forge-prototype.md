@@ -229,6 +229,7 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
   - Debug: `setSeed(n)` sets the seed for the next craft started (it works outside the forge); `targets()` gives the targets' centres in CSS px with their struck flags; `metalBox()` gives the close piece in the close view. `pinTemp` also holds the temperature before each step, so a strike scores at the pinned heat.
   - `e2e/heat.spec.ts` changes with the close view: the anvil now shows the close panel, so "a drop in empty space returns it" is checked from the fire, and "bellows disabled out of the fire" while the bar is held.
   - Sound: "Blacksmith's Hammer" by VishwaJai, CC0, from OpenGameArt (ATTRIBUTION).
+  - Changed 2026-11-04 during S3 (Morgan: the drawn knife didn't look like the art): the close-view knife is the concept's own knife, cut out with `tools/art/knife_close.py` at the spot it was painted (x 109–315), tinted with the heat colour, with an untinted dark outline. Its targets follow that knife's centre line, 20–21 px apart. The sword and horseshoe have no concept art, so they keep their drawn outlines; the wide view keeps the drawn knife.
 
 ### S4 Quench and grade
 

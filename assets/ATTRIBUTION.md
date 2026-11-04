@@ -7,6 +7,8 @@ Every file in `assets/` is listed here with where it came from and its licence (
 - `wide.png` (400 × 800): AI-generated placeholder, not final art (D-003). Source: the wide-shot concept embedded in `mockups/forge.html` (OpenArt, Nano Banana 2, made for this project 2026-11-04; round 8 of the forge mock-up). Edited locally on 2026-11-04 with `tools/art/deblade.py` (the hot blade and its tang painted out with the anvil face's colour) and `tools/art/pad.py` (scaled to 360 px wide, centred on `--night-0` with a 16 px fade). No credits spent on the edit.
 - `close.png` (400 × 800): AI-generated placeholder, not final art (D-003). Source: the close-up anvil concept embedded in `mockups/forge.html` (OpenArt, Nano Banana 2, made for this project 2026-11-04; round 8 of the forge mock-up). Edited locally on 2026-11-04 with `tools/art/deblade_close.py` (the hot knife and its sparks painted out, the knife's warm cast on the anvil cooled, then scaled to 360 px wide and centred on `--night-0` with a 16 px fade). No credits spent on the edit (Morgan chose the free edit, 2026-11-04).
 
+- `knife-close.png` and `knife-close-edge.png`: the hot knife cut from the same close-up concept (AI-generated placeholder, not final art; D-003) with `tools/art/knife_close.py` on 2026-11-04: its shading in grey, in 4 steps with a darker rim, tinted with the heat colour in the game, and its outline in one dark colour. No credits spent.
+
 ## Fonts
 
 - `fonts/PixelifySans-Variable.ttf`: Pixelify Sans, © 2021 The Pixelify Sans Project Authors. SIL Open Font License 1.1 (`fonts/OFL-PixelifySans.txt`). From `google/fonts`, `ofl/pixelifysans/`, commit 66285aa, 2026-11-04.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { items } from '../data/items';
 import grading from '../data/grading.json';
-import { closeOutlineFor, CLOSE_LINE_Y } from './closeLayout';
+import { closeOutlineFor, closeSpriteFor, CLOSE_LINE_Y, onSprite } from './closeLayout';
 
 // Every target sits on its piece in the close view, even after the seed's ±3 px, and a strike centred on one
 // target is out of reach of its neighbours in the worst case (S3 "Settled at S3 start").
@@ -20,11 +20,12 @@ describe('close-view targets', () => {
     it(`${item.id}: targets lie on the piece, and neighbours stay out of reach after the seed moves them`, () => {
       const counts: Record<string, number> = { horseshoe: 5, knife: 9, sword: 15 };
       expect(item.targets).toHaveLength(counts[item.id]!);
-      const outline = closeOutlineFor(item.id);
+      const sprite = closeSpriteFor(item.id);
+      const on = sprite ? (x: number, y: number) => onSprite(sprite, x, y) : (x: number, y: number) => insidePoly(closeOutlineFor(item.id), x, y);
       for (const t of item.targets) {
-        // Inside even after the seed moves it 3 px either way in x and y.
-        for (const [dx, dy] of [[-3, -3], [3, -3], [-3, 3], [3, 3]] as const) {
-          expect(insidePoly(outline, t.x + dx, t.y + dy), `${item.id} target ${t.x},${t.y} moved ${dx},${dy}`).toBe(true);
+        // On the piece even after the seed moves it up to 3 px in x and y.
+        for (let dx = -3; dx <= 3; dx++) {
+          for (let dy = -3; dy <= 3; dy++) expect(on(t.x + dx, t.y + dy), `${item.id} target ${t.x},${t.y} moved ${dx},${dy}`).toBe(true);
         }
       }
       for (let i = 1; i < item.targets.length; i++) {
