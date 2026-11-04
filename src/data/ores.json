@@ -1,5 +1,5 @@
 [
-  { "id": "ore1", "name": "ore1", "quality": 40, "bandLowC": 800, "bandHighC": 1150, "cool": 45 },
-  { "id": "ore2", "name": "ore2", "quality": 60, "bandLowC": 850, "bandHighC": 1100, "cool": 60 },
-  { "id": "ore3", "name": "ore3", "quality": 85, "bandLowC": 900, "bandHighC": 1050, "cool": 80 }
+  { "id": "ore1", "name": "Ore 1", "quality": 40, "bandLowC": 800, "bandHighC": 1150, "cool": 45, "note": "Easy to work: a wide working heat, and it cools slowly." },
+  { "id": "ore2", "name": "Ore 2", "quality": 60, "bandLowC": 850, "bandHighC": 1100, "cool": 60, "note": "Middling: a fair working heat and cooling." },
+  { "id": "ore3", "name": "Ore 3", "quality": 85, "bandLowC": 900, "bandHighC": 1050, "cool": 80, "note": "Hard to work: a narrow working heat, and it cools fast." }
 ]

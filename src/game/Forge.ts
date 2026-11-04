@@ -1,8 +1,7 @@
 import * as Phaser from 'phaser';
 import { look } from '../data/heatBands';
 import hints from '../data/hints.json';
-import { itemById, type Item } from '../data/items';
-import { defaultAlloy } from '../engine/alloy';
+import { itemById, type AlloyMix, type Item } from '../data/items';
 import grading from '../data/grading.json';
 import { createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
 import { grade, pointsLost } from '../engine/grade';
@@ -45,6 +44,8 @@ interface Popup { set(progress: number): void; age: number }
  */
 export class Forge extends Phaser.Scene {
   private item!: Item;
+  /** The mix this craft uses, from the alloy screen or the result's "Forge another" (S5). */
+  private alloy!: AlloyMix;
   private craft!: CraftState;
   private queue: Input[] = [];
   private carryMs = 0;
@@ -109,8 +110,9 @@ export class Forge extends Phaser.Scene {
     super('Forge');
   }
 
-  init(data: { itemId: string }): void {
+  init(data: { itemId: string; alloy: AlloyMix }): void {
     this.item = itemById(data.itemId);
+    this.alloy = { ...data.alloy };
     this.queue = [];
     this.carryMs = 0;
     this.paused = false;
@@ -136,7 +138,8 @@ export class Forge extends Phaser.Scene {
   create(): void {
     // The view takes the seed from the clock; the engine never reads it (GAME-01).
     const seed = takeDebugSeed() ?? Date.now() >>> 0;
-    this.craft = createCraft(seed, this.item.id, defaultAlloy(this.item));
+    this.craft = createCraft(seed, this.item.id, this.alloy);
+    this.ctx.lastMix[this.item.id] = { ...this.alloy };
     this.sparkRng = mulberry32(seed ^ 0x5eed);
     this.flickerRng = mulberry32(seed ^ 0xf1c4);
     this.shapes = shapesFor(this.item.id);
@@ -250,7 +253,7 @@ export class Forge extends Phaser.Scene {
     // Never write over a save that couldn't be read or kept aside (GAME-05); a failed write stops later ones too.
     const saved = this.ctx.load.saving && writeSave(this.ctx.storage, r.save);
     this.ctx.load.saving = saved;
-    this.ended = { itemId: this.item.id, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
+    this.ended = { itemId: this.item.id, alloy: this.alloy, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
     if (this.craft.quenchC !== null) this.sound.play('hiss', { volume: 0.7 });
     this.dragging = false;
     this.cancelStrike();

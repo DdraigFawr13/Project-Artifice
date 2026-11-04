@@ -47,8 +47,9 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 94');
   // The hint counts were written with the craft: each step's hint shown once.
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
-  expect(saved.hintsSeen).toEqual({ heat: 1, hammer: 1, quench: 1 });
+  expect(saved.hintsSeen).toEqual({ alloy: 1, heat: 1, hammer: 1, quench: 1 });
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
 });
 
@@ -100,6 +101,7 @@ test('the piece can go from the fire straight to the quench', async ({ page }, t
   await page.goto('/?debug');
   await page.waitForFunction(() => (window as unknown as { __artifice?: unknown }).__artifice != null);
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await page.waitForFunction(() => (window as unknown as { __artifice: { state(): unknown } }).__artifice.state() != null);
   await api(page, (a) => {
     a.pause();

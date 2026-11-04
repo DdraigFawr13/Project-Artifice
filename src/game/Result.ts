@@ -1,11 +1,13 @@
 import * as Phaser from 'phaser';
-import { itemById } from '../data/items';
+import { itemById, type AlloyMix } from '../data/items';
 import type { GradeResult } from '../engine/grade';
 import { showResult } from '../ui/result';
 
 /** What the forge hands the result screen when a craft ends; the save is already written. */
 export interface ResultData {
   itemId: string;
+  /** The mix the craft used; "Forge another" and "Try again" start with it (S5). */
+  alloy: AlloyMix;
   graded: GradeResult;
   newBest: boolean;
   previousBest: number | null;
@@ -23,7 +25,7 @@ export class Result extends Phaser.Scene {
     const item = itemById(data.itemId);
     showResult(item, data, {
       choose: () => this.scene.start('Choose', { selectedId: item.id }),
-      again: () => this.scene.start('Forge', { itemId: item.id }),
+      again: () => this.scene.start('Forge', { itemId: item.id, alloy: data.alloy }),
     });
   }
 }

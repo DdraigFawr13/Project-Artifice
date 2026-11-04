@@ -23,6 +23,7 @@ export async function knifeOnAnvil(page: Page, temp: number, url = '/?debug') {
   await page.waitForFunction(() => (window as unknown as { __artifice?: Api }).__artifice != null);
   await api(page, (a) => a.setSeed(42));
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await page.waitForFunction(() => (window as unknown as Win).__artifice.state?.() != null);
   await page.evaluate((t) => {
     const a = (window as unknown as Win).__artifice;

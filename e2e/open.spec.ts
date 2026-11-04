@@ -46,9 +46,10 @@ test('opens to the item list at ×3 on the Pixel size', async ({ page }, testInf
   await page.screenshot({ path: shot });
   await testInfo.attach('open', { path: shot, contentType: 'image/png' });
 
-  // Choosing an item and tapping the forge button opens the forge for that item.
+  // Choosing an item and tapping the forge button opens the alloy screen, then the forge for that item.
   await page.getByTestId('item-row').filter({ hasText: 'Sword' }).tap();
   await page.getByRole('button', { name: 'Forge a sword' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
   await expect(page.locator('.top')).toContainText('Sword');
   expect(await page.evaluate(() => (window as unknown as { __artifice: { state(): { itemId: string } | null } }).__artifice.state()?.itemId)).toBe('sword');

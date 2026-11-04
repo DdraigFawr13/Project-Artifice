@@ -1,7 +1,7 @@
 import grading from '../data/grading.json';
 import { bandAt, heatRules } from '../data/heatBands';
 import { itemById, type AlloyMix } from '../data/items';
-import { alloyProps, type AlloyProps } from './alloy';
+import { alloyProps, checkMix, type AlloyProps } from './alloy';
 import { heatStep, type Place } from './heat';
 import { isWhiteQuench } from './quench';
 import { mulberry32 } from './rng';
@@ -91,6 +91,8 @@ function placeTargets(seed: number, itemId: string): CraftTarget[] {
 }
 
 export function createCraft(seed: number, itemId: string, alloy: AlloyMix): CraftState {
+  const check = checkMix(itemById(itemId), alloy);
+  if (!check.ok) throw new Error(`This mix can't start a craft: ${check.refusal}`);
   return {
     seed: seed >>> 0,
     itemId,
