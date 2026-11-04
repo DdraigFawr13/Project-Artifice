@@ -4,27 +4,28 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Concept chosen ([CONCEPT.md](CONCEPT.md)). Next: design with the `planning-interview` skill.
+Design: `planning-interview` round 1 is out, waiting for Morgan's answers.
 
 ## Plan map
 
 Shown at the start of a session and when asking the owner to approve a PR or a merge (WS-08). One line per step, marked done ✔, now ▶ or later ○.
 
 - ✔ Brainstorm: concept chosen and brief committed.
-- ▶ Bootstrap: shared rules, starter docs and CI (this PR).
-- ○ Design: `planning-interview` rounds, starting from CONCEPT.md's design brief (same or a new session).
+- ✔ Bootstrap: shared rules, starter docs and CI ([PR #1](https://github.com/DdraigFawr13/Project-Artifice/pull/1)).
+- ▶ Design: `planning-interview` rounds, starting from CONCEPT.md's design brief.
 - ○ Plan: the first phase's spec with `write-spec`.
 - ○ Build: the smithing prototype, in slice sessions.
 
 ## Just done
 
 - 2026-11-04 Brainstorm done. Pages: [open questions](https://claude.ai/artifact/TPWNRT6HAxtDPSnwhRNGtM), [concepts](https://claude.ai/artifact/7Rvk1HAdvK1EcWVgYDkRNP), [round 1](https://claude.ai/artifact/J2wvcWkCKBkBYwCBTMVs2J), [round 2](https://claude.ai/artifact/Skf9Aids5RjZPmhExmYpkD). Brief committed (e5b1553). Morgan renamed the first branch to `main`, now the default.
-- 2026-11-04 Bootstrap: AI-Master v4.8.0 synced with `core` and `project-types/game`.
+- 2026-11-04 Bootstrap merged ([PR #1](https://github.com/DdraigFawr13/Project-Artifice/pull/1), 8fc3611): AI-Master v4.8.0 with `core` and `project-types/game`.
+- 2026-11-04 Design round 1 published: [round 1](https://claude.ai/artifact/NA4KTBCDvhGa22LTUzwbDy) (collection `round1`): platform, tools, forging steps, skill, failure, craft length, grade display, art, scope, prototype test.
 
 ## Next
 
-1. Morgan approves and merges the bootstrap PR.
-2. Run `planning-interview` round 1 from CONCEPT.md's "Design brief". Start with the smithing interaction and platform (phone or PC).
+1. When Morgan says "round 1 done", read the `round1` answers, start the adversarial reviewer on them, and publish the review page.
+2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
 
 ## Open questions
 
