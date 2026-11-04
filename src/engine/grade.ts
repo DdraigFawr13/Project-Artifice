@@ -36,7 +36,7 @@ function rawLost(state: CraftState): Map<CauseId, { points: number; count: numbe
     sum.set(c, { points: v.points + p, count: v.count + n });
   };
   for (const s of state.strikes) for (const l of s.lines) add(l.cause, l.points, 1);
-  for (const [c, p] of Object.entries(state.lost) as [CauseId, number][]) add(c, p, Math.round(p / (PER_SECOND[c] ?? 1)));
+  for (const [c, p] of Object.entries(state.lost) as [CauseId, number][]) add(c, p, Math.max(1, Math.round(p / (PER_SECOND[c] ?? 1))));
   return sum;
 }
 

@@ -173,10 +173,6 @@ export class Forge extends Phaser.Scene {
         this.cancelStrike();
         this.heldPos = { x: this.bgX + REST.anvil.x, y: this.bgY + REST.anvil.y };
         this.quenching = true;
-        if (!this.quenchHintCounted) {
-          this.quenchHintCounted = true;
-          seen.quench = (seen.quench ?? 0) + 1;
-        }
         this.queue.push({ grab: true });
       },
       toAnvil: () => {
@@ -249,7 +245,9 @@ export class Forge extends Phaser.Scene {
     const g = grade(this.craft);
     const r = recordCraft(this.ctx.load.save, this.item.id, g.ruined ? { ruined: true, scrapParts: g.scrapParts } : { ruined: false, score: g.score });
     this.ctx.load.save = r.save;
-    const saved = writeSave(this.ctx.storage, r.save);
+    // Never write over a save that couldn't be read or kept aside (GAME-05); a failed write stops later ones too.
+    const saved = this.ctx.load.saving && writeSave(this.ctx.storage, r.save);
+    this.ctx.load.saving = saved;
     this.ended = { itemId: this.item.id, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
     if (this.craft.quenchC !== null) this.sound.play('hiss', { volume: 0.7 });
     this.dragging = false;
@@ -352,7 +350,7 @@ export class Forge extends Phaser.Scene {
     if (loc === 'done') return 'done';
     // The quench ends once the piece lands on the fire or the anvil and no pick-up is still queued.
     if (this.quenching && (loc === 'fire' || loc === 'anvil') && !this.dragging && !this.pendingMove()) this.quenching = false;
-    if (this.quenching) return 'quench';
+    if (this.quenching && loc === 'held') return 'quench';
     return loc === 'anvil' && !this.dragging ? 'close' : 'wide';
   }
 
@@ -564,6 +562,12 @@ export class Forge extends Phaser.Scene {
       this.bgClose.setVisible(!wide);
     }
     if (mode !== 'close') this.cancelStrike();
+    // The quench hint counts once the piece is in hand for the quench (a craft can end before the pick-up lands).
+    if (mode === 'quench' && !this.quenchHintCounted) {
+      this.quenchHintCounted = true;
+      const seen = this.ctx.load.save.hintsSeen;
+      seen.quench = (seen.quench ?? 0) + 1;
+    }
     if (mode === 'close' && !this.hammerHintCounted) {
       this.hammerHintCounted = true;
       const seen = this.ctx.load.save.hintsSeen;

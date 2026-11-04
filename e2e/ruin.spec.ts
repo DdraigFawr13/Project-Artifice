@@ -37,4 +37,9 @@ test('three strikes on black metal show the ruin screen; Try again starts the sa
   await expect(page.getByTestId('line')).toHaveText([/^Metal used\s*5 parts$/, /^Scrap returned\s*2 parts$/]);
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
+  // The scrap was kept, and no quench hint was counted: this craft never reached the quench.
+  await page.reload();
+  await expect(page.getByText('Scrap kept: 2 parts')).toBeVisible();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
+  expect(saved.hintsSeen.quench).toBeUndefined();
 });

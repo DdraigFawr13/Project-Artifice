@@ -51,9 +51,13 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   const stepEls = STEPS.map((s) => el('span', { text: s }));
   const top = el('div', { className: 'top' }, el('div', { className: 'steps' }, ...stepEls), el('span', { text: itemName }));
 
+  // In hand for the quench the fire advice doesn't fit; white heat in the tub would crack it, so the advice is to cool.
+  const BURN_FIRE = 'The metal is being damaged. Ease off the bellows or take it out of the fire.';
+  const BURN_HELD = 'The metal is being damaged. Let it cool before you quench it.';
+  const burnText = el('p', { text: BURN_FIRE });
   const burning = el('div', { className: 'alert', testId: 'burning', attrs: { role: 'alert' } },
     el('b', { text: 'Burning!' }),
-    el('p', { text: 'The metal is being damaged. Ease off the bellows or take it out of the fire.' }),
+    burnText,
   );
   burning.hidden = true;
 
@@ -143,6 +147,8 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
         tubLabel.style.top = `${v.tub.y}px`;
       }
       const isBurning = v.burning;
+      const burnWords = v.mode === 'quench' ? BURN_HELD : BURN_FIRE;
+      if (burnText.textContent !== burnWords) burnText.textContent = burnWords;
       if (burning.hidden === isBurning) burning.hidden = !isBurning;
       intro.hidden = isBurning;
       closeIntro.hidden = isBurning;

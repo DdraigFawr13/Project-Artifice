@@ -99,6 +99,9 @@ describe('grade', () => {
       { cause: 'quench-hot', points: 4, count: 1 },
     ]);
     expect(g.score).toBe(78);
+    // A line shown is never "for 0 s": under half a second still reads 1 s.
+    const short = graded(quench({ ...worked(), lost: { 'out-of-band': 0.6 } }, 830));
+    expect(short.lines).toEqual([{ cause: 'out-of-band', points: 1, count: 1 }]);
   });
 
   it('never scores below 0', () => {

@@ -40,7 +40,7 @@ export function showResult(item: Item, data: ResultData, on: { choose(): void; a
       el('div', { className: 'score' }, el('b', { testId: 'score', text: String(g.score) }), el('span', { testId: 'tier', text: g.tier })),
       el('p', { className: 'sub', testId: 'material', text: `Material quality ${g.materialQuality} · not in the score` }),
       el('div', { className: 'lines' }, row('Start', '100'), ...g.lines.map((l) => row(lineText(l), `−${l.points}`, true))),
-      el('p', { text: data.newBest ? `New best for ${/^[aeiou]/.test(name) ? 'an' : 'a'} ${name}.` : `Best: ${data.previousBest}` }),
+      el('p', { className: 'sub', text: data.newBest ? `New best for ${/^[aeiou]/.test(name) ? 'an' : 'a'} ${name}.` : `Best: ${data.previousBest}` }),
     );
   } else {
     const cause =
@@ -60,7 +60,7 @@ export function showResult(item: Item, data: ResultData, on: { choose(): void; a
   again.addEventListener('click', () => on.again());
   show(
     el('div', { className: 'screen result' },
-      el('div', { className: 'top' }, el('span', { text: `${item.name} ${g.ruined ? 'ruined' : 'finished'}` }), el('span', { text: data.saved ? 'Saved' : 'Not saved' })),
+      el('div', { className: 'top' }, el('span', { text: `${item.name} ${g.ruined ? 'ruined' : 'finished'}` }), el('span', { className: 'sub', text: data.saved ? 'Saved' : 'Not saved' })),
       el('div', { className: 'panel fill' }, ...body),
       el('div', { className: 'panel pair' }, choose, again),
     ),

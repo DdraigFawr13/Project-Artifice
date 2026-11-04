@@ -26,14 +26,14 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 S3 merged (PR #5, ea9687b); main CI passed.
 
-- 2026-11-04 S4 built (02ab8e4): zero-decision re-check (reviewer) found 7 consequential gaps; all answered by the spec, D-005 or mock-up frames 5–7, so none went to Morgan; defaults in the spec's S4 list. J4 checks failed first, then passed (91 unit, 17 e2e); 21 mutants, all killed after 2 checks were sharpened. Screens screenshotted at the Pixel size and matched to frames 5–7. CC0 hiss (ATTRIBUTION).
+- 2026-11-04 S4 built (02ab8e4): zero-decision re-check (reviewer) found 7 consequential gaps; all answered by the spec, D-005 or mock-up frames 5–7, so none went to Morgan; defaults in the spec's S4 list. J4 checks failed first, then passed (91 unit, 17 e2e); 21 mutants, all killed after 2 checks were sharpened. Screens screenshotted at the Pixel size and matched to frames 5–7. CC0 hiss (ATTRIBUTION). Spec review: 10 findings, 8 fixed (save written over an unreadable one, "for 0 s", spread case past the reach, hint counted before the pick-up, burning advice in hand, Saved status, .dim text, stale spec lines), 2 declined (disabled buttons in the 0.8 s end, a real-time delay check).
 
 - 2026-11-04 S3 built: zero-decision re-check (reviewer) found 26 items; Morgan chose the free local close-up edit (no credits; OpenArt quote was 20 credits a try, balance 3,345) and a 9 px strike reach (targets sit 19–22 px apart); defaults recorded in the spec's S3 list. J3 checks failed first, then passed (57 unit, 11 e2e); 10 unit and 3 e2e mutants, all killed after one test was sharpened. CC0 hammer sound (ATTRIBUTION).
 
 ## Next
 
-1. Post-build spec review of S4 (fresh reviewer) is running: fix or record each finding, re-check fixed lines (VER-08), push, mark PR #6 ready so CI runs, then ask Morgan to play the preview and approve.
-2. After approval and green CI: merge PR #6, check Vercel production equals the merge commit, then S5 in a fresh session.
+1. Morgan plays the S4 preview (PR #6, draft) and approves or asks for changes. The approval page links the preview.
+2. After approval: mark PR #6 ready (CI runs only then, GIT-07), check CI, merge, check Vercel production equals the merge commit, then S5 in a fresh session.
 
 ## Open questions
 

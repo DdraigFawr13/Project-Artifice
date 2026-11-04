@@ -45,6 +45,9 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   // The best survives a reload, and "Forge another" starts the same item.
   await page.reload();
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 94');
+  // The hint counts were written with the craft: each step's hint shown once.
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
+  expect(saved.hintsSeen).toEqual({ heat: 1, hammer: 1, quench: 1 });
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
 });
@@ -69,6 +72,10 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(32));
   // "Back to the anvil" returns to the close view; Quench again, then the fire takes it for a reheat.
+  // White heat in hand: the alert's advice fits the quench, not the fire.
+  await api(page, (a) => { a.pinTemp(1275); a.advance(32); });
+  await expect(page.getByRole('alert')).toContainText('Let it cool before you quench it.');
+  await api(page, (a) => { a.pinTemp(950); a.advance(32); });
   await page.getByRole('button', { name: 'Back to the anvil' }).click();
   await api(page, (a) => a.advance(32));
   expect((await api(page, (a) => a.state()))!.location).toBe('anvil');
