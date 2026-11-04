@@ -18,11 +18,21 @@ function measure(): DebugInfo {
 const stage = document.getElementById('stage');
 if (!stage) throw new Error('#stage is missing from index.html');
 
-/** The canvas holds game px; CSS zoom of scale ÷ dpr makes each game px exactly `scale` physical px. */
+/**
+ * The canvas holds game px; a CSS zoom of scale ÷ dpr makes each game px exactly `scale` physical px.
+ * The stage is centred with its corner on a whole physical pixel, so no game pixel is split.
+ */
 function fitStage(i: DebugInfo): number {
-  const zoom = i.scale / i.devicePixelRatio;
-  stage!.style.width = `${i.visibleWidth * zoom}px`;
-  stage!.style.height = `${i.visibleHeight * zoom}px`;
+  const dpr = i.devicePixelRatio;
+  const zoom = i.scale / dpr;
+  const physW = i.visibleWidth * i.scale;
+  const physH = i.visibleHeight * i.scale;
+  const left = Math.floor((Math.floor(i.cssWidth * dpr) - physW) / 2);
+  const top = Math.floor((Math.floor(i.cssHeight * dpr) - physH) / 2);
+  stage!.style.width = `${physW / dpr}px`;
+  stage!.style.height = `${physH / dpr}px`;
+  stage!.style.left = `${left / dpr}px`;
+  stage!.style.top = `${top / dpr}px`;
   return zoom;
 }
 

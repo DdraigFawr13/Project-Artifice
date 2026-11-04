@@ -49,11 +49,9 @@ body {
 }
 
 /* The stage is sized in main.ts to the canvas's CSS size and centred. */
+/* Positioned in main.ts on whole physical pixels, so game pixels stay crisp. */
 #stage {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   overflow: hidden;
 }
 #game canvas {

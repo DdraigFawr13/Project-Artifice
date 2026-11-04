@@ -38,12 +38,24 @@ describe('loadSave', () => {
     ['an unknown version', JSON.stringify({ ...sample, version: 99 })],
     ['bad JSON', '{"version": 1, best'],
     ['a version 1 save with the wrong shape', JSON.stringify({ version: 1, best: 'knife', scrap: 0, hintsSeen: {} })],
+    ['a best score over 100', JSON.stringify({ ...sample, best: { knife: 101 } })],
+    ['a fractional best score', JSON.stringify({ ...sample, best: { knife: 74.5 } })],
+    ['negative scrap', JSON.stringify({ ...sample, scrap: -1 })],
+    ['fractional scrap', JSON.stringify({ ...sample, scrap: 2.5 })],
+    ['a negative hint count', JSON.stringify({ ...sample, hintsSeen: { heat: -1 } })],
   ])('keeps %s aside and starts fresh (GAME-05)', (_label, raw) => {
     const storage = memoryStorage({ [SAVE_KEY]: raw });
     const r = loadSave(storage);
     expect(r.save).toEqual(freshSave());
     expect(r.recovered).toBe(true);
     expect(storage.getItem(UNREADABLE_KEY)).toBe(raw);
+  });
+
+  it('never overwrites an earlier unreadable copy', () => {
+    const storage = memoryStorage({ [UNREADABLE_KEY]: 'first', [SAVE_KEY]: 'second' });
+    expect(loadSave(storage).recovered).toBe(true);
+    expect(storage.getItem(UNREADABLE_KEY)).toBe('first');
+    expect(storage.getItem(`${UNREADABLE_KEY}.2`)).toBe('second');
   });
 
   it('runs without storage and says progress is not saved', () => {

@@ -37,8 +37,17 @@ export function browserStorage(): Storage | null {
   }
 }
 
-function isNumberRecord(v: unknown): v is Record<string, number> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((n) => typeof n === 'number' && Number.isFinite(n));
+const isCount = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0;
+const isScore = (n: unknown): n is number => isCount(n) && n <= 100;
+
+function isRecordOf(v: unknown, ok: (n: unknown) => boolean): v is Record<string, number> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every(ok);
+}
+
+/** The first free key for an unreadable save, so an earlier unreadable copy is never overwritten. */
+function unreadableKey(storage: Storage): string {
+  if (storage.getItem(UNREADABLE_KEY) === null) return UNREADABLE_KEY;
+  for (let n = 2; ; n++) if (storage.getItem(`${UNREADABLE_KEY}.${n}`) === null) return `${UNREADABLE_KEY}.${n}`;
 }
 
 function parseSave(raw: string): Save | null {
@@ -48,8 +57,8 @@ function parseSave(raw: string): Save | null {
     const o = v as Record<string, unknown>;
     // Only version 1 exists. A later version adds its upgrade step here (GAME-05).
     if (o.version !== 1) return null;
-    if (!isNumberRecord(o.best) || !isNumberRecord(o.hintsSeen)) return null;
-    if (typeof o.scrap !== 'number' || !Number.isFinite(o.scrap) || o.scrap < 0) return null;
+    // Scores are whole numbers 0–100; scrap and hint counts are whole numbers from 0.
+    if (!isRecordOf(o.best, isScore) || !isRecordOf(o.hintsSeen, isCount) || !isCount(o.scrap)) return null;
     return { version: 1, best: { ...o.best }, scrap: o.scrap, hintsSeen: { ...o.hintsSeen } };
   } catch {
     return null;
@@ -69,7 +78,7 @@ export function loadSave(storage: Storage | null): LoadResult {
   const save = parseSave(raw);
   if (save) return { save, saving: true, recovered: false };
   try {
-    storage.setItem(UNREADABLE_KEY, raw);
+    storage.setItem(unreadableKey(storage), raw);
     storage.removeItem(SAVE_KEY);
   } catch {
     // The original stays where it was; nothing is overwritten.
