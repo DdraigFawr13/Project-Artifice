@@ -1,3 +1,4 @@
+import type { CraftState, Input } from '../engine/craft';
 import type { ScaleInfo } from '../game/scale';
 
 /** What `window.__artifice.info()` returns (forge spec, Debug API). */
@@ -7,8 +8,33 @@ export interface DebugInfo extends ScaleInfo {
   devicePixelRatio: number;
 }
 
-export interface DebugApi {
+/** A box in CSS px, relative to the page. */
+export interface CssBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** What the forge screen offers tests while it is open (forge spec, Debug API). */
+export interface ForgeDebug {
+  state(): CraftState;
+  /** Stop real time driving the fixed step. */
+  pause(): void;
+  /** Run the fixed step for `ms`; a part step is carried to the next call. */
+  advance(ms: number): void;
+  /** Feed one input to the next step. */
+  send(input: Input): void;
+  /** Hold the temperature at `c` °C after every step, or stop holding it. */
+  pinTemp(c: number | null): void;
+  /** The metal's bounding box (the piece itself, not its glow). */
+  metalBox(): CssBox;
+}
+
+export interface DebugApi extends Omit<ForgeDebug, 'state'> {
   info(): DebugInfo;
+  /** The craft in progress, or null outside the forge. */
+  state(): CraftState | null;
 }
 
 declare global {
@@ -21,16 +47,36 @@ export function debugEnabled(search = location.search): boolean {
   return new URLSearchParams(search).has('debug');
 }
 
+let forge: ForgeDebug | null = null;
+
+/** The forge screen registers itself while open, and passes null when it closes. Does nothing without ?debug. */
+export function setForgeDebug(api: ForgeDebug | null): void {
+  forge = api;
+}
+
+const noForge = (): never => {
+  throw new Error('The forge is not open');
+};
+
 /** Install the debug API and the corner readout. Only called with ?debug; it never ships otherwise. */
-export function installDebug(stage: HTMLElement, current: () => DebugInfo): (info: DebugInfo) => void {
+export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: () => number): (info: DebugInfo) => void {
   const readout = document.createElement('div');
   readout.className = 'debug';
   readout.dataset.testid = 'debug-readout';
   stage.append(readout);
-  window.__artifice = { info: current };
+  window.__artifice = {
+    info: current,
+    state: () => forge?.state() ?? null,
+    pause: () => (forge ?? noForge()).pause(),
+    advance: (ms) => (forge ?? noForge()).advance(ms),
+    send: (input) => (forge ?? noForge()).send(input),
+    pinTemp: (c) => (forge ?? noForge()).pinTemp(c),
+    metalBox: () => (forge ?? noForge()).metalBox(),
+  };
   const render = (i: DebugInfo) => {
-    readout.textContent = `${i.cssWidth}×${i.cssHeight} css · dpr ${i.devicePixelRatio} · ×${i.scale} · ${i.visibleWidth}×${i.visibleHeight}`;
+    readout.textContent = `${i.cssWidth}×${i.cssHeight} css · dpr ${i.devicePixelRatio} · ×${i.scale} · ${i.visibleWidth}×${i.visibleHeight} · ${Math.round(fps())} fps`;
   };
   render(current());
+  setInterval(() => render(current()), 1000);
   return render;
 }

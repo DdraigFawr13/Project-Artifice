@@ -82,4 +82,19 @@ body {
 .loading { flex: 1; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; padding: 24px; background: var(--night-1); }
 .loadbar { width: 240px; height: 16px; border: 2px solid var(--soot); background: var(--night-0); }
 .loadbar i { display: block; height: 100%; width: 0; background: var(--fire-2); }
-.debug { position: absolute; top: 4px; right: 4px; z-index: 10; font-size: 14px; background: var(--night-0); border: 2px solid var(--soot); padding: 2px 6px; pointer-events: none; }
+.debug { position: absolute; top: 56px; right: 4px; z-index: 10; font-size: 14px; background: var(--night-0); border: 2px solid var(--soot); padding: 2px 6px; pointer-events: none; }
+
+/* Forge (mock-up frames 3 and 3b). The middle of the screen is the scene: touches pass through to the canvas. */
+#ui { pointer-events: none; }
+#ui .top, #ui .panel, #ui .screen:not(.forge) { pointer-events: auto; }
+.screen.forge .scene-gap { flex: 1; }
+.screen.forge { touch-action: none; user-select: none; -webkit-user-select: none; }
+.steps { display: flex; gap: 6px; }
+.steps span { padding: 2px 8px; border: 2px solid var(--soot); color: var(--ink); font-size: 14px; }
+.steps span.on { border-color: var(--fire-3); color: var(--fire-4); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.alert { background: var(--ember-1); border: 2px solid var(--fire-1); padding: 12px; }
+.alert b { color: var(--fire-5); }
+.alert p { margin: 6px 0 0; }
+#game canvas { touch-action: none; }
+[hidden] { display: none !important; }

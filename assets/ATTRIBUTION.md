@@ -13,4 +13,8 @@ Every file in `assets/` is listed here with where it came from and its licence (
 
 ## Sounds
 
-- None yet. CC0 packs arrive in S2 (D-005).
+All CC0 (D-005). Downloaded and converted on 2026-11-04 with ffmpeg (mono Ogg Vorbis); no other edits.
+
+- `sfx/fire.ogg`: "Fireplace Sound loop" by PagDev, CC0 1.0. https://opengameart.org/content/fireplace-sound-loop (file `fire.wav`, 29 s; source SHA-256 85ca0cc6…f59e330). Quality 2.
+- `sfx/bellows.ogg`: "wind whoosh loop" by SketchMan3, CC0 1.0. https://opengameart.org/content/wind-whoosh-loop (file `wind woosh loop.ogg`, 6 s; source SHA-256 0cfdbd3f…2191dac). Quality 3. Used as the bellows' air.
+- The forge hum is not a file: it is a Web Audio oscillator made in `src/game/Forge.ts`.

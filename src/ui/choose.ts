@@ -41,16 +41,3 @@ function forgeLabel(item: Item): string {
   const name = item.name.toLowerCase();
   return `Forge ${/^[aeiou]/.test(name) ? 'an' : 'a'} ${name}`;
 }
-
-/** Stand-in for the forge until slice S2. */
-export function showForgePlaceholder(item: Item, onBack: () => void): void {
-  const back = el('button', { className: 'btn ghost', text: 'Back', attrs: { type: 'button' } });
-  back.addEventListener('click', onBack);
-  show(
-    el('div', { className: 'screen' },
-      el('div', { className: 'top' }, el('span', { text: item.name }), el('span')),
-      el('div', { className: 'panel fill' }, el('p', { text: 'Forge coming next' }), el('div', { className: 'hint', text: 'The heat step lands in the next build.' })),
-      el('div', { className: 'panel' }, back),
-    ),
-  );
-}

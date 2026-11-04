@@ -1,5 +1,5 @@
 [
-  { "id": "horseshoe", "name": "Horseshoe", "parts": 3, "minutes": 1 },
-  { "id": "knife", "name": "Knife", "parts": 5, "minutes": 2 },
-  { "id": "sword", "name": "Sword", "parts": 8, "minutes": 3 }
+  { "id": "horseshoe", "name": "Horseshoe", "parts": 3, "minutes": 1, "defaultAlloy": { "ore2": 2, "ore1": 1 } },
+  { "id": "knife", "name": "Knife", "parts": 5, "minutes": 2, "defaultAlloy": { "ore2": 4, "ore1": 1 } },
+  { "id": "sword", "name": "Sword", "parts": 8, "minutes": 3, "defaultAlloy": { "ore2": 7, "ore1": 1 } }
 ]
