@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Build: slice S3 (hammer) approved by Morgan on 2026-11-04 after playing it ([PR #5](https://github.com/DdraigFawr13/Project-Artifice/pull/5), merged when CI is green). Next: S4 in a fresh session. S2 merged (PR #4, 19e6e3b); S1 merged (PR #3).
+Build: slice S4 (quench and grade) in progress on `claude/forge-s4-quench`, [PR #6](https://github.com/DdraigFawr13/Project-Artifice/pull/6) draft. S3 merged (PR #5, ea9687b; main CI green); S2 merged (PR #4, 19e6e3b); S1 merged (PR #3).
 
 ## Plan map
 
@@ -16,8 +16,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Plan: forge spec approved 2026-11-04.
 - ✔ Build S1: skeleton and playtest link (merged, PR #3).
 - ✔ Build S2: heat (merged, PR #4).
-- ✔ Build S3: hammer (approved; PR #5).
-- ▶ Build S4: quench and grade (fresh session).
+- ✔ Build S3: hammer (merged, PR #5).
+- ▶ Build S4: quench and grade (PR #6).
 - ○ Build S5: full loop and the 10-craft test.
 
 ## Just done
@@ -30,11 +30,13 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 S2 merged (PR #4, 19e6e3b) after Morgan's approval; Vercel production is that commit, all aliases login-protected (302).
 
+- 2026-11-04 S3 merged (PR #5, ea9687b); main CI passed.
+
 - 2026-11-04 S3 built: zero-decision re-check (reviewer) found 26 items; Morgan chose the free local close-up edit (no credits; OpenArt quote was 20 credits a try, balance 3,345) and a 9 px strike reach (targets sit 19–22 px apart); defaults recorded in the spec's S3 list. J3 checks failed first, then passed (57 unit, 11 e2e); 10 unit and 3 e2e mutants, all killed after one test was sharpened. CC0 hammer sound (ATTRIBUTION).
 
 ## Next
 
-1. Fresh session for S4 (quench and grade), from the latest `main` after PR #5 merges: read the spec's S3 "Settled at S3 start" list first (rounds, shapes, the −3 per missing hit note for S4), then the zero-decision re-check against S3's merged code (src/engine/craft.ts, strike.ts, grade.ts, src/game/Forge.ts, shapes.ts, src/ui/forge.ts, e2e/hammer.spec.ts).
+1. S4 zero-decision re-check (reviewer agent, against S3's merged code) running; then ask Morgan any consequential gap, one at a time, and record defaults in a spec "Settled at S4 start" list. Hiss sound already added (CC0, ATTRIBUTION).
 2. S4 adds the result and ruin screens (mock-up frames for the grade and ruin); check them against `mockups/forge.html` (ui-mockups rule).
 
 ## Open questions
