@@ -1,6 +1,6 @@
 # Forge prototype
 
-- **Status:** Draft
+- **Status:** Approved 2026-11-04
 - **Planned in:** [design round 1](https://claude.ai/artifact/NA4KTBCDvhGa22LTUzwbDy), [review](https://claude.ai/artifact/4dzk1d8JqTw6gcPtE4p7kQ), art direction ([1](https://claude.ai/artifact/1MpZv8TsgQK6DXwHRtRnNT), [2](https://claude.ai/artifact/LMMZGoVFjiwkUbSt4yBYnH)), [forge mock-up](https://claude.ai/artifact/8MATSEHtmtMVsXEF7X8faQ), [final plan](https://claude.ai/artifact/Dp2hubybfACEV2c8WHrftx), all 2026-11-04. Answers: [planning-answers.md](../design/planning-answers.md). **Decisions:** D-001 to D-006.
 
 ## Problem

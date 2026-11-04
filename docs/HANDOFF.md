@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Plan: forge spec drafted and checked (`docs/specs/forge-prototype.md`); waiting for Morgan's answers to its open questions and approval.
+Build: forge spec approved ([docs/specs/forge-prototype.md](specs/forge-prototype.md)); next is slice S1 in a fresh build session.
 
 ## Plan map
 
@@ -13,8 +13,9 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Brainstorm: concept chosen and brief committed.
 - ✔ Bootstrap: shared rules, starter docs and CI ([PR #1](https://github.com/DdraigFawr13/Project-Artifice/pull/1)).
 - ✔ Design: rounds, review, art direction, forge mock-up, final plan approved.
-- ▶ Plan: the forge prototype spec with `write-spec` (`docs/specs/forge-prototype.md`).
-- ○ Build: the smithing prototype, in slice sessions.
+- ✔ Plan: forge spec approved 2026-11-04.
+- ▶ Build S1: skeleton and playtest link (fresh session).
+- ○ Build S2 heat, S3 hammer, S4 quench and grade, S5 full loop and the 10-craft test (one fresh session each).
 
 ## Just done
 
@@ -40,8 +41,9 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Write `docs/specs/forge-prototype.md` with `write-spec` from its step 3 (inputs: CONCEPT.md, D-003 to D-006, docs/design/planning-answers.md, UI_STYLE.md, mockups/forge.html). Re-sample UI_STYLE tokens from the new reference art. Then reconcile, run the 3 fresh checks and ask Morgan to approve.
-2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
+1. Merge PR #2 (design docs and spec) once its CI is green.
+2. Start a fresh session on Project-Artifice for slice S1, as the spec's "S1 Skeleton and playtest link" says. Ask Morgan before the OpenArt batch and before linking Vercel. Re-run the zero-decision check on S1 first if anything changed (write-spec step 8).
+
 
 ## Open questions
 
@@ -55,3 +57,4 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Concept chosen ([D-001](DECISIONS.md#d-001-concept-chosen)).
 - 2026-11-04 Full setup with the game layer ([D-002](DECISIONS.md#d-002-full-ai-master-setup-with-the-game-layer)).
+- 2026-11-04 Forge spec approved: five tiers, unlimited ore, painted glow for now (D-003 updated), previews on every push.
