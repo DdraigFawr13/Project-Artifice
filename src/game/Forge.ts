@@ -168,16 +168,18 @@ export class Forge extends Phaser.Scene {
         this.queue.push({ grab: true }, { drop: 'fire' });
       },
       quench: () => {
-        // Pick the piece up off the anvil: the wide view shows it in hand, over the anvil, cooling (S4; mock-up frame 5).
-        if (this.craft.location !== 'anvil' || this.pendingMove()) return;
+        // Pick the piece up off the anvil or out of the fire: the wide view shows it in hand where it was, cooling
+        // (S4; mock-up frame 5; from the fire too, Morgan's S4 playtest).
+        const from = this.craft.location;
+        if ((from !== 'anvil' && from !== 'fire') || this.dragging || this.pendingMove()) return;
         this.cancelStrike();
-        this.heldPos = { x: this.bgX + REST.anvil.x, y: this.bgY + REST.anvil.y };
+        this.heldPos = { x: this.bgX + REST[from].x, y: this.bgY + REST[from].y };
         this.quenching = true;
-        this.queue.push({ grab: true });
+        this.queue.push({ bellows: false }, { grab: true });
       },
-      toAnvil: () => {
+      putBack: () => {
         if (this.craft.location !== 'held' || this.dragging || this.pendingMove()) return;
-        this.queue.push({ drop: 'anvil' });
+        this.queue.push({ drop: this.craft.heldFrom });
       },
     });
 
@@ -541,6 +543,7 @@ export class Forge extends Phaser.Scene {
       targets: this.craft.targets.length,
       lost: pointsLost(this.craft),
       tub: this.mode === 'quench' ? this.tubLabelPos() : null,
+      heldFrom: this.craft.heldFrom,
     });
     this.updateSound(l.humHz);
   }

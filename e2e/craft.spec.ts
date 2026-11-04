@@ -95,3 +95,30 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Forge a knife' })).toBeVisible();
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 46');
 });
+
+test('the piece can go from the fire straight to the quench', async ({ page }, testInfo) => {
+  await page.goto('/?debug');
+  await page.waitForFunction(() => (window as unknown as { __artifice?: unknown }).__artifice != null);
+  await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.waitForFunction(() => (window as unknown as { __artifice: { state(): unknown } }).__artifice.state() != null);
+  await api(page, (a) => {
+    a.pause();
+    a.pinTemp(830);
+    a.advance(32);
+  });
+  await page.screenshot({ path: testInfo.outputPath('wide.png') });
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => a.advance(48));
+  expect((await api(page, (a) => a.state()))!.location).toBe('held');
+  await expect(page.locator('.top .steps .on')).toHaveText('Quench');
+  // Back where it came from: the fire.
+  await page.getByRole('button', { name: 'Back to the fire' }).click();
+  await api(page, (a) => a.advance(32));
+  expect((await api(page, (a) => a.state()))!.location).toBe('fire');
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => a.advance(48));
+  await dragTo(page, 'tub');
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
+  await api(page, (a) => a.advance(800));
+  await expect(page.getByTestId('score')).toHaveText('46');
+});

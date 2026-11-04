@@ -251,6 +251,8 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
   - Debug: `zone(name)` gives a drop zone's box in CSS px, so `craft.spec.ts` drags to the tub through the real controls. The result is checked in the DOM (`state()` is null once the forge closes).
   - S3 checks that change on purpose: the tub-return unit tests in `heat.test.ts`, "Quench waits for S4" and the ruin placeholder test in `hammer.spec.ts`.
   - Sound: "Steam release sounds" by bart, CC0, from OpenGameArt (ATTRIBUTION).
+  - Changed 2026-11-04 during S4 (Morgan, after playing it: "I should be able to go from the fire to the quench"): the wide view has a third button, "Quench", beside "Hold: bellows" and "To the anvil". It picks the piece up from the fire or the anvil into the quench view; the back button there reads "Back to the fire" or "Back to the anvil" and returns it where it came from. The held-bar line names the tub ("Let go over the fire, the anvil or the tub."). Dragging from the fire to the tub already quenched; the engine is unchanged.
+  - Noted for later (Morgan, S4 playtest): "The quench action is not very satisfying but it's fine." Candidates: a steam burst and the piece sinking at the tub.
 
 ### S5 Full loop
 

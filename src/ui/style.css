@@ -93,6 +93,8 @@ body {
 .steps span { padding: 2px 8px; border: 2px solid var(--soot); color: var(--ink); font-size: 14px; }
 .steps span.on { border-color: var(--fire-3); color: var(--fire-4); }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.trio { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
+.trio .btn { padding: 0 8px; }
 .alert { background: var(--ember-1); border: 2px solid var(--fire-1); padding: 12px; }
 .alert b { color: var(--fire-5); }
 .alert p { margin: 6px 0 0; }

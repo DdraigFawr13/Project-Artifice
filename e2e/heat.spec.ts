@@ -103,7 +103,7 @@ test('the controls move the bar: drag, the buttons, and the bellows only in the 
   await page.mouse.down();
   await page.mouse.move(anvil.x, anvil.y, { steps: 8 });
   await expect.poll(loc).toBe('held');
-  await expect(page.getByTestId('intro')).toContainText('Let go over the fire or the anvil');
+  await expect(page.getByTestId('intro')).toContainText('Let go over the fire, the anvil or the tub');
   await expect(bellows).toBeDisabled(); // the bellows work only in the fire
   await page.mouse.up();
   await expect.poll(loc).toBe('anvil');

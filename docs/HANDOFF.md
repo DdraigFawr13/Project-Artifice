@@ -46,6 +46,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Decisions since the last plan update
 
+- 2026-11-04 S4 playtest (Morgan): "works pretty well"; quench from the fire too (a wide-view Quench button added); the quench feels unsatisfying but fine (steam and a sinking piece noted for later, spec S4 list).
+
 - 2026-11-04 S3 art (Morgan): the knife is the concept's own knife, and every piece starts as bar stock; each target shapes its own stretch, in two strict rounds: the first hit gives a halfway shape, the second the finished one (section by section). Spec S3 list updated.
 - 2026-11-04 Checks run at Morgan's measured Pixel size only: 443 × 816 CSS px at dpr 2.4375, ×3, 359 × 663 game px (the `?debug` readout; D-004 updated).
 - 2026-11-04 S3: close-up art from a free local edit, no OpenArt spend; strike reach 9 game px with −1 per px beyond 3, up to −6 (Morgan; spec S3 "Settled at S3 start" and Data → grading.json).

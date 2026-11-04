@@ -22,6 +22,8 @@ export interface ForgeView {
   lost: number;
   /** Where the tub's label sits, in CSS px over the canvas (the quench view only). */
   tub: { x: number; y: number } | null;
+  /** Where a held piece was picked up from. */
+  heldFrom: 'fire' | 'anvil';
 }
 
 export interface ForgePanel {
@@ -38,7 +40,7 @@ export interface ForgeHandlers {
   move(): void;
   back(): void;
   quench(): void;
-  toAnvil(): void;
+  putBack(): void;
 }
 
 const STEPS: Step[] = ['Alloy', 'Heat', 'Hammer', 'Quench'];
@@ -64,7 +66,7 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   // ── Wide view (mock-up frame 3) ──
   const INTRO = 'Hold to work the bellows. Keep the metal in the working heat. Too cool or too hot costs points.';
   // Shown in place of the intro while the bar is held and the bellows are disabled (UI_STYLE Controls: a reason).
-  const HELD = 'Let go over the fire or the anvil. Anywhere else, the bar goes back.';
+  const HELD = 'Let go over the fire, the anvil or the tub. Anywhere else, the bar goes back.';
   const intro = el('p', { testId: 'intro', text: INTRO });
   const heatHint = hints.heat ? el('div', { className: 'hint', testId: 'hint', text: hints.heat }) : null;
   const bellows = el('button', { className: 'btn', text: 'Hold: bellows', attrs: { type: 'button' } });
@@ -87,7 +89,12 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   move.addEventListener('click', () => {
     if (!move.disabled) on.move();
   });
-  const wide = el('div', { className: 'group' }, intro, ...(heatHint ? [heatHint] : []), el('div', { className: 'pair' }, bellows, move));
+  // Quench straight from the fire or the anvil (Morgan, S4 playtest): picks the piece up for the quench view.
+  const quenchWide = el('button', { className: 'btn ghost', text: 'Quench', attrs: { type: 'button' } });
+  quenchWide.addEventListener('click', () => {
+    if (!quenchWide.disabled) on.quench();
+  });
+  const wide = el('div', { className: 'group' }, intro, ...(heatHint ? [heatHint] : []), el('div', { className: 'trio' }, bellows, move, quenchWide));
 
   // ── Close-up anvil view (mock-up frame 4) ──
   const closeIntro = el('p', { testId: 'close-intro', text: 'Read the metal: its colour, glow and sparks tell you the heat.' });
@@ -102,9 +109,10 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   // ── Quench, in the wide view with the piece in hand (mock-up frame 5) ──
   const quenchIntro = el('p', { testId: 'quench-intro', text: 'Read the metal, then plunge it. The right moment is in its colour, glow and sparks.' });
   const quenchHint = hints.quench ? el('div', { className: 'hint', testId: 'quench-hint', text: hints.quench }) : null;
-  const toAnvil = el('button', { className: 'btn ghost', text: 'Back to the anvil', attrs: { type: 'button' } });
-  toAnvil.addEventListener('click', () => on.toAnvil());
-  const quenching = el('div', { className: 'group' }, quenchIntro, ...(quenchHint ? [quenchHint] : []), toAnvil);
+  // Back where the piece was picked up from (the fire or the anvil).
+  const putBack = el('button', { className: 'btn ghost', text: 'Back to the anvil', attrs: { type: 'button' } });
+  putBack.addEventListener('click', () => on.putBack());
+  const quenching = el('div', { className: 'group' }, quenchIntro, ...(quenchHint ? [quenchHint] : []), putBack);
   quenching.hidden = true;
 
   // The strikes label sits at the scene's top left (mock-up frame 4); points float over the canvas.
@@ -158,8 +166,11 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
       if (hammerHint) hammerHint.hidden = isBurning;
       const text = `Round ${v.round} · ${v.struck} of ${v.targets} · −${v.lost}`;
       if (label.textContent !== text) label.textContent = text;
+      const back = `Back to the ${v.heldFrom}`;
+      if (putBack.textContent !== back) putBack.textContent = back;
       if (v.mode !== 'wide') return;
       bellows.disabled = !v.inFire;
+      quenchWide.disabled = v.held;
       if (!v.inFire) release();
       move.disabled = v.held;
       const t = v.held ? HELD : INTRO;
