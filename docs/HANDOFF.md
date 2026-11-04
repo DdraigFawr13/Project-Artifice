@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Design: style doc written (D-003); forge mock-up out for approval.
+Design: forge mock-up approved; final plan page out for approval.
 
 ## Plan map
 
@@ -30,9 +30,11 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Taste 2: Ember Night leads the forge, Daylight for the shop later; 360×640; live forge/metal lights; AI placeholders; heat readable without colour (D-003). Target phone: Pixel 10 Pro XL, 412 px. `docs/UI_STYLE.md` and `docs/design/planning-answers.md` written. [Forge mock-up](https://claude.ai/artifact/8MATSEHtmtMVsXEF7X8faQ) (`mockups/forge.html`), fresh check $0.18.
 
+- 2026-11-04 Forge mock-up approved after 6 rounds (close-up anvil view, side on, knife along the face tip right; Press Start 2P for scores). [Final plan page](https://claude.ai/artifact/Dp2hubybfACEV2c8WHrftx) (collection `final`). OpenArt credits now 3,425 (measured).
+
 ## Next
 
-1. Morgan answers the mock-up: approve, change or rethink. Then publish the final plan page (planning-interview "Final check"), record DECISIONS, and write the forge spec with `write-spec`.
+1. When Morgan says "final done", read `final`. If approved: record every settled choice in DECISIONS, update HANDOFF, then write the forge spec with `write-spec` (from its step 3).
 2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
 
 ## Open questions
