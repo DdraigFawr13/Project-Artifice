@@ -7,7 +7,7 @@ Picked on 2026-11-04 through two taste boards: [step 1](https://claude.ai/artifa
 ## Target devices
 <!-- Devices and widths in px, and which width is first (mock-ups and checks start there). Write the minimums as `Minimum text: <n> px` and `Minimum tap: <n> px`; `ui-mockups` reads them for its lint. Take these from the project's docs; if none say, ask Morgan. -->
 
-- First target: Morgan's Google Pixel 10 Pro XL, in portrait, touch. Mock-ups and checks start at **412 px** wide (CSS px). Sources disagree: 412 × 914 or 414 × 921 at a device pixel ratio of 3.25–3.5 ([screensizechecker.com](https://screensizechecker.com/devices/android-viewport-sizes), [mobileviewer.github.io](https://mobileviewer.github.io/2026-flagship-phones-responsive-design)). Confirm with `window.innerWidth` on the device at the first playtest.
+- First target: Morgan's Google Pixel 10 Pro XL, in portrait, touch. Mock-ups and checks start at **412 px** wide (CSS px). Sources disagree: 412 × 914 or 414 × 921 at a device pixel ratio of 3.25–3.5 ([screensizechecker.com](https://screensizechecker.com/devices/android-viewport-sizes), [mobileviewer.github.io](https://mobileviewer.github.io/2026-flagship-phones-responsive-design)). Measured on Morgan's phone on 2026-11-04 (the `?debug` readout, in the Claude app's in-app browser): **443 × 816 CSS px at dpr 2.4375** (1080 physical px wide). Automated checks run at that size (D-004).
 - Also works with a mouse on PC (design round 1). No layout for landscape.
 - Minimum text: 14 px
 - Minimum tap: 44 px
@@ -71,7 +71,7 @@ Spacing: game pixels on a 4 px grid (4, 8, 12, 16, 24).
 <!-- Columns, gutters and spacing at each target width; what moves or hides at each width. -->
 
 - The game is authored at 360 × 640 game pixels in portrait and drawn at a whole-number scale that keeps a central 336 × 640 safe zone on screen (D-003); backgrounds are 400 × 800. The scale rule is in the forge spec, Scale and screen, and in `src/game/scale.ts`.
-- On the Pixel 10 Pro XL (1344 physical px wide, reported, not checked) a ×4 scale shows 336 game px across. Keep everything that matters inside the central 336 px; the outer 12 px on each side may be cropped.
+- On Morgan's Pixel (1080 physical px wide, measured) the scale is ×3 and 359 × 663 game px show; at the spec-sheet size (1344 px) it is ×4 and 336 × 748. Keep everything that matters inside the central 336 px; the outer 32 px on each side of the 400 px background may be cropped.
 - Two views while forging: a wide shot of the smithy for the fire, moving the piece and the quench, and a close-up at the anvil for hammering (Morgan, forge mock-up).
 - The forge scene fills the screen. Controls and the grade sit in the bottom third, within thumb reach.
 

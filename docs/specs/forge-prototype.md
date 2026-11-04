@@ -26,8 +26,8 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 ### J1 Open the game
 
 - **Given** the playtest build
-- **When** it opens at 414 × 921 CSS px with a device pixel ratio of 3.25 (one reported Pixel 10 Pro XL size, UI_STYLE.md)
-- **Then** a loading screen, then the item list (mock-up frame 1). The game is drawn at scale 4, with about 336 × 748 game px visible. **Check:** `e2e/open.spec.ts` reads the scale and visible size from the debug API and asserts scale 4 and a visible width of 336–337, sees 3 item rows, and saves a screenshot.
+- **When** it opens at 443 × 816 CSS px with a device pixel ratio of 2.4375 (measured on Morgan's Pixel 10 Pro XL, 2026-11-04; was 414 × 921 at 3.25 from a spec sheet)
+- **Then** a loading screen, then the item list (mock-up frame 1). The game is drawn at scale 3, with 359 × 663 game px visible. **Check:** `e2e/open.spec.ts` reads the scale and visible size from the debug API and asserts scale 3 and 359 × 663, sees 3 item rows, and saves a screenshot.
 
 ### J2 Heat
 
@@ -39,7 +39,7 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 
 - **Given** the hot piece in the close-up anvil view
 - **When** the player touches and lifts a finger
-- **Then** the strike lands 40 game px above the touch point at the moment of lift and counts for the nearest unstruck target within 24 game px; a spark, a sound and a mark answer at once, and the strike's points show live. **Check:** `src/engine/strike.test.ts` (nearest target; the distance penalty; wild, cold, hot and repeat strikes); `e2e/hammer.spec.ts` reads a target from the debug API, taps 40 game px below it, and sees that target marked struck and the strike count rise in `state()`.
+- **Then** the strike lands 40 game px above the touch point at the moment of lift and counts for the nearest unstruck target within 9 game px (24 until 2026-11-04, see S3); a spark, a sound and a mark answer at once, and the strike's points show live. **Check:** `src/engine/strike.test.ts` (nearest target; the distance penalty; wild, cold, hot and repeat strikes); `e2e/hammer.spec.ts` reads a target from the debug API, taps 40 game px below it, and sees that target marked struck and the strike count rise in `state()`.
 
 ### J4 Quench and grade
 
@@ -68,7 +68,7 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 - **A heat gauge:** makes reading the metal trivial (mock-up check record). Would fail the "reading the metal" skill (planning-answers.md:11).
 - **Material quality inside the craft score:** CONCEPT.md has rarity = material quality + craft grade, so the craft score shows only the player's work. Would double-count material when rarity arrives in the shop phase.
 - **Live Phaser lights now:** with flat placeholder normal maps they give only the radial falloff a painted glow gives, at a speed cost on the phone. Morgan chose the painted glow for now (D-003, updated 2026-11-04).
-- **Fitting the whole 360 px width (×3 on the Pixel):** leaves black bars about 66 physical px wide each side. Cropping to a 336 px safe zone at ×4 fills the screen (UI_STYLE.md Layout). D-003's "360 × 640" is updated in this change to say so.
+- **Fitting the whole 360 px width (×3 on the Pixel):** leaves black bars about 66 physical px wide each side. Cropping to a 336 px safe zone at ×4 fills the screen (UI_STYLE.md Layout). D-003's "360 × 640" is updated in this change to say so. (Measured 2026-11-04: Morgan's phone is 1080 physical px wide, so the same scale rule gives ×3 there with 359 game px shown and no bars; the rule is unchanged.)
 - **Heat colour in steps per band:** the player couldn't see a threshold in the middle of a band yet would be charged for it (critic re-check). Colour, brightness and glow change continuously with temperature instead.
 
 ## Risks
@@ -95,7 +95,7 @@ src/game/           # Phaser scenes: Boot, Choose, Alloy, Forge (wide and close 
 src/save/save.ts
 src/ui/             # DOM overlay panels from UI_STYLE tokens; debug.ts (shown with ?debug)
 assets/             # images, sounds, fonts; assets/ATTRIBUTION.md lists every file's source and licence (SAFE-05)
-e2e/                # Playwright at 414 × 921, deviceScaleFactor 3.25 (the J1 size), against `vite preview`
+e2e/                # Playwright at 443 × 816, deviceScaleFactor 2.4375 (the J1 size), against `vite preview`
 docs/playtests/TEMPLATE.md
 ```
 
@@ -140,7 +140,7 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
   - `sword`: 8 parts, 15 targets, 3 min
   - Targets are spaced evenly along the blade's centre line in the close view, from 20 px inside the tang end to 20 px inside the tip, with exact coordinates fixed in S3 against the close-up art. The default alloy for S2–S4 is `ore2` for all parts but one, and `ore1` for that one (horseshoe 2 + 1, knife 4 + 1, sword 7 + 1).
 - `grading.json`:
-  - A strike counts for the nearest unstruck target within 24 game px. Off-centre: −1 per 2 game px beyond 4, up to −6 per strike. No unstruck target within 24 px: −2 (wild strike), or −1 (repeat) if a struck one is within 24 px.
+  - A strike counts for the nearest unstruck target within 9 game px. Off-centre: −1 per game px beyond 3, in fractions, up to −6 per strike (reached at 9 px). No unstruck target within 9 px: −2 (wild strike), or −1 (repeat) if a struck one is within 9 px. (Changed 2026-11-04 at S3 start, Morgan: targets sit 19–22 px apart, so the old 24 px reach overlapped its neighbours.)
   - Cold strike (below the working band): −4. Hot strike (above it): −2. These add to any off-centre points. Each target left unstruck at the quench: −6.
   - Out of band while on the anvil: −2 per second. Burning (`white` band, anywhere): −5 per second.
   - Quench band 780–880 °C; −1 per 25 °C outside it, in fractions.
@@ -211,10 +211,27 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 
 ### S3 Hammer
 
-- **Morgan tries:** drags the hot knife to the anvil and gets the close-up view; strikes along the blade and sees each strike's points live; drags back to the fire to reheat and returns. The hammer hint shows.
+- **Morgan tries:** drags the hot knife to the anvil and gets the close-up view; strikes along the blade and sees each strike's points live; taps "Back to the fire" to reheat and returns. The hammer hint shows.
 - **Checks that fail now:** J3.
 - **Files:** `src/engine/strike.ts`, `strike.test.ts`, `grade.ts` (strike, out-of-band and burning causes, the live total), `determinism.test.ts`; `src/data/items.json` targets, `grading.json` strike values; `src/game/Forge.ts` close view, strike ring, marks, the two buttons; `assets/close.png` (a blade-free edit of the close-up reference, 400 × 800); `assets/sfx/` hammer; ATTRIBUTION; the debug API's `setSeed`, `targets`; `e2e/hammer.spec.ts`. The 3rd black-band strike ends the craft with a placeholder "Ruined" message; the ruin screen comes in S4.
 - **Waits on:** S2, and Morgan's OK for the OpenArt edit.
+
+- **Settled at S3 start (2026-11-04):** the zero-decision re-check against S2's merged code found 26 items. Morgan chose the free local edit for `assets/close.png` (`tools/art/deblade_close.py`, no credits) and the 9 px reach (Data → grading.json). Defaults for the rest:
+  - Close-view game px are `close.png`'s own px (400 × 800), like the wide view's `wideLayout.ts`. `close.png` is the reference scaled to 360 px wide and centred on 400 × 800 as `tools/art/pad.py` does; the blade line sits at y 390. The screen centres that line between the top bar and the panel.
+  - Pieces in the close view are drawn in code at close-up size along the anvil face, tip right: knife 214 px long (x 107–321), sword 320 (x 40–360, over the horn), horseshoe a U of centre-line radius 36 with 34 px legs. Targets lie on each piece's centre line from 20 px inside one end to 20 px inside the other, evenly spaced, rounded to whole px (knife about 22 px apart, sword 20, horseshoe 35), stored in `items.json`. A unit test checks every target lies on its piece.
+  - The seed moves each target by whole px in x and y, each drawn as floor(next() × 7) − 3 from `mulberry32(seed)`, x then y, target by target.
+  - `CraftState` gains `targets: {x, y, struck}[]`, `strikes: {step, x, y, target, kind: "hit" | "repeat" | "wild", black, lines}[]`, `lost` (per-second causes, in fractions), `burning` (the `white` band) and `ruin: "black-strikes" | null`. `state().strikes` is that list, so the J3 check reads its length.
+  - Distance is straight-line, the reach inclusive; ties go to the lower target index. Strikes count only on the anvil; elsewhere they are logged and ignored. A strike is scored at its step's temperature before that step's heat change. Cold and hot apply to hits and repeats; a wild strike misses the metal, so it costs only −2 and doesn't count towards the black-band ruin.
+  - The 3rd hit or repeat in the `black` band is scored, then ends the craft: `location` `done`, `ruin` `black-strikes`. A placeholder panel says so with "Forge again" (the same item); S4's ruin screen replaces it.
+  - `grade.ts` in S3 gives the live lines (strike causes summed per cause, plus out-of-band and burning, each rounded, zeros hidden) and their total. Missed targets wait for the quench (S4).
+  - The screen: an anvil drop (drag or button) shows the close view, with Hammer lit in the top bar. A touch shows the ring 40 game px above it, following the finger; the lift strikes there. Only the first finger strikes; a lift over the panel or off the canvas cancels. Each strike gives sparks, the hammer sound and, on the metal, a dent mark; a struck target loses its dashed square. Its points rise from the strike in the figures face ("−3", or "Clean" when they round to 0) for 0.8 s, advancing with engine steps. A label at the scene's top left reads "Strikes 5 of 9 · −7" (targets struck, live total).
+  - The close panel: the mock-up's line "Read the metal: its colour, glow and sparks tell you the heat.", the hammer hint (first 3 crafts that reach the anvil), "Back to the fire" (grab, then drop in the fire) and "Quench", disabled until S4 with the reason "Quenching comes in the next build." The close view has no piece dragging; touches there are strikes. "Burning!" shows from the engine's `burning` flag in both views.
+  - Debug: `setSeed(n)` sets the seed for the next craft started (it works outside the forge); `targets()` gives the targets' centres in CSS px with their struck flags; `metalBox()` gives the close piece in the close view. `pinTemp` also holds the temperature before each step, so a strike scores at the pinned heat.
+  - `e2e/heat.spec.ts` changes with the close view: the anvil now shows the close panel, so "a drop in empty space returns it" is checked from the fire, and "bellows disabled out of the fire" while the bar is held.
+  - Sound: "Blacksmith's Hammer" by VishwaJai, CC0, from OpenGameArt (ATTRIBUTION).
+  - Changed 2026-11-04 during S3 (Morgan: the drawn knife didn't look like the art): the finished knife is the concept's own knife, cut out with `tools/art/knife_close.py` at the spot it was painted (x 109–315) as data, tinted with the heat colour, with an untinted dark outline. Its targets follow that knife's centre line, 20–21 px apart. The sword and horseshoe have no concept art, so their finished shapes are drawn outlines.
+  - Changed 2026-11-04 during S3 (Morgan chose strict passes): each target takes 2 hits (`grading.json` `passes`), in rounds. A strike counts for the nearest target still open in the round in progress; round 2 opens once every target has its first hit. A second hit on a target in round 1, or any hit once both rounds are done, is a repeat (−1). `CraftState.targets` carry `hits` (0–2) instead of a struck flag; `targets()` in the debug API gives `hits`. The label reads "Round 1 · 5 of 9 · −7" (targets hit this round). For S4: missed-target becomes −3 per missing hit, so a target never hit still costs −6. Per-strike values are unchanged, so a craft has twice the strikes to get right; tune by playtest.
+  - Changed 2026-11-04 during S3 (Morgan chose section by section; with rounds, a target's first hit gives the halfway shape and its second the finished one; the halfway shape is every pixel nearer the bar's edge than the finished piece's edge): every piece starts as bar stock along its centre path (half-thickness 5 px, horseshoe 6), as long as the finished piece. Each target owns the pixels nearer to it than to any other target; striking it turns that stretch into the finished shape, so a missed target stays bar at the quench. Visual only: the shape follows the engine's struck flags, with no new rules (`src/game/shapes.ts`). The wide view shows the same worked piece scaled down (knife and sword ×0.45, horseshoe ×0.35), tip left in the fire.
 
 ### S4 Quench and grade
 

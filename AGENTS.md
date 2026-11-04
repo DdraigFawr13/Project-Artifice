@@ -15,7 +15,7 @@ Shared rules come from AI-Master-Instructions and load through CLAUDE.md (`.clau
 ## Local checks (run before pushing)
 
 - Every push: `node .claude/master/sync.mjs --check && npm run check` (typecheck and unit tests).
-- When screens change: also `npm run e2e` (Playwright at the Pixel size, 414 × 921 at ×3.25, against `vite preview`).
+- When screens change: also `npm run e2e` (Playwright at Morgan's measured Pixel size, 443 × 816 at dpr 2.4375, against `vite preview`).
 - Install with `npm ci`. npm 10.9 fails `npm install` on this tree ("Cannot read properties of null (reading 'edgesOut')"); change dependencies with `npx npm@11 install`.
 
 ## What CI runs

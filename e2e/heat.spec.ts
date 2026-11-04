@@ -104,21 +104,26 @@ test('the controls move the bar: drag, the buttons, and the bellows only in the 
   await page.mouse.move(anvil.x, anvil.y, { steps: 8 });
   await expect.poll(loc).toBe('held');
   await expect(page.getByTestId('intro')).toContainText('Let go over the fire or the anvil');
+  await expect(bellows).toBeDisabled(); // the bellows work only in the fire
   await page.mouse.up();
   await expect.poll(loc).toBe('anvil');
-  await expect(bellows).toBeDisabled();
-  await expect(page.getByTestId('intro')).toContainText('only while the bar is in the fire');
+  // On the anvil the close-up view takes over (S3); its button takes the bar back to the fire.
+  await page.getByRole('button', { name: 'Back to the fire' }).click();
+  await expect.poll(loc).toBe('fire');
 
   // A drop in empty space sends it back where it came from.
   const b2 = await api(page, (a) => a.metalBox());
   await page.mouse.move(b2.x + b2.width / 2, b2.y + b2.height / 2);
   await page.mouse.down();
-  await page.mouse.move(b2.x - 150, b2.y - 250, { steps: 5 });
+  await page.mouse.move(b2.x + 150, b2.y - 250, { steps: 5 });
+  await expect.poll(loc).toBe('held');
   await page.mouse.up();
-  await expect.poll(loc).toBe('anvil');
+  await expect.poll(loc).toBe('fire');
 
-  // The button moves it back to the fire, and holding the bellows heats it until released.
-  await page.getByRole('button', { name: 'To the fire' }).click();
+  // The button moves it to the anvil and back again; holding the bellows heats it until released.
+  await page.getByRole('button', { name: 'To the anvil' }).click();
+  await expect.poll(loc).toBe('anvil');
+  await page.getByRole('button', { name: 'Back to the fire' }).click();
   await expect.poll(loc).toBe('fire');
   await expect(bellows).toBeEnabled();
   await expect(page.getByTestId('hint')).toHaveText('Watch the colour, glow and sparks. Let go to ease off.');

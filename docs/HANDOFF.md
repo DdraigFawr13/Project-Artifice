@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Build: slice S2 (heat) built on `claude/forge-s2-heat`, [PR #4](https://github.com/DdraigFawr13/Project-Artifice/pull/4) draft; waiting for Morgan's playtest and approval. S1 merged (PR #3, merge commit 84654be).
+Build: slice S3 (hammer) approved by Morgan on 2026-11-04 after playing it ([PR #5](https://github.com/DdraigFawr13/Project-Artifice/pull/5), merged when CI is green). Next: S4 in a fresh session. S2 merged (PR #4, 19e6e3b); S1 merged (PR #3).
 
 ## Plan map
 
@@ -15,34 +15,30 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Design: rounds, review, art direction, forge mock-up, final plan approved.
 - ✔ Plan: forge spec approved 2026-11-04.
 - ✔ Build S1: skeleton and playtest link (merged, PR #3).
-- ▶ Build S2: heat (built; Morgan's check on the Pixel next).
-- ○ Build S3 hammer, S4 quench and grade, S5 full loop and the 10-craft test (one fresh session each).
+- ✔ Build S2: heat (merged, PR #4).
+- ✔ Build S3: hammer (approved; PR #5).
+- ▶ Build S4: quench and grade (fresh session).
+- ○ Build S5: full loop and the 10-craft test.
 
 ## Just done
 
-- Earlier entries (brainstorm to taste board 2): [archive](archive/handoff-2026-11.md).
-
-- 2026-11-04 Taste 2: Ember Night leads the forge, Daylight for the shop later; 360×640; live forge/metal lights; AI placeholders; heat readable without colour (D-003). Target phone: Pixel 10 Pro XL, 412 px. `docs/UI_STYLE.md` and `docs/design/planning-answers.md` written. [Forge mock-up](https://claude.ai/artifact/8MATSEHtmtMVsXEF7X8faQ) (`mockups/forge.html`), fresh check $0.18.
-
-- 2026-11-04 Forge mock-up approved after 6 rounds (close-up anvil view, side on, knife along the face tip right; Press Start 2P for scores). [Final plan page](https://claude.ai/artifact/Dp2hubybfACEV2c8WHrftx) (collection `final`). OpenArt credits now 3,425 (measured).
-
-- 2026-11-04 Art refined at Morgan's request: close-up anvil (side on, cleaner, knife tip right) and the wide shot redrawn to match. These two replace Ember concept 3 as the style reference; resample UI_STYLE tokens from them when the spec is written.
-
-- 2026-11-04 Final plan approved in chat (the page saved only on the device): 14/44 px minimums, reheat any time, drag to quench, CC0 sound, Vercel free plan. Recorded as D-004 to D-006.
+- Earlier entries (brainstorm to the forge spec): [archive](archive/handoff-2026-11.md).
 
 - 2026-11-04 S1 built: zero-decision re-check (reviewer agent) found 10 consequential gaps, 8 filled with defaults, 2 put to Morgan; all S1 checks failed first, then passed. Morgan chose the mock-up's item list (select, then "Forge a knife"), a free local blade edit before any OpenArt spend, and linking Vercel. Cool tokens re-sampled; CI-05 override added. Spec review: 7 of 8 findings fixed. Vercel project `project-artifice` (team Golden Goose Engineering Group) linked, Node 22, login protection on all deployments; [PR #3](https://github.com/DdraigFawr13/Project-Artifice/pull/3) draft.
 
-- 2026-11-04 Forge spec drafted; 3 fresh checks, 2 re-checks and a final zero-decision check, all findings fixed or put to Morgan. Spec check agents $1.25 measured in total. D-003 scale rule and D-006 CI-05 override recorded.
-
 - 2026-11-04 S2 built: zero-decision re-check (reviewer) found 14 open choices; Morgan chose both control styles (buttons and drag), 13 defaults recorded in the spec's S2 list. J2 checks failed first, then passed (39 unit, 6 e2e); greyscale, between-anchor and controls checks each mutation-tested once. Spec review: 13 of 20 fixed, 7 declined or left for S3. CC0 sounds from OpenGameArt (ATTRIBUTION). Preview builds are login-protected (302 checked).
+
+- 2026-11-04 S2 merged (PR #4, 19e6e3b) after Morgan's approval; Vercel production is that commit, all aliases login-protected (302).
+
+- 2026-11-04 S3 built: zero-decision re-check (reviewer) found 26 items; Morgan chose the free local close-up edit (no credits; OpenArt quote was 20 credits a try, balance 3,345) and a 9 px strike reach (targets sit 19–22 px apart); defaults recorded in the spec's S3 list. J3 checks failed first, then passed (57 unit, 11 e2e); 10 unit and 3 e2e mutants, all killed after one test was sharpened. CC0 hammer sound (ATTRIBUTION).
 
 ## Next
 
-1. Morgan plays S2 on the Pixel, signed in to Vercel: https://project-artifice-git-clau-cdfdb5-golden-goose-engineering-group.vercel.app/?debug (PR #4). Hold the bellows, drag the bar between fire and anvil, try the buttons, reach "Burning!", listen for the fire, bellows and hum. Report the `?debug` line (width, height, dpr, scale, fps); still not reported since S1.
-2. Merge S2 once Morgan approves; mark the PR ready first so CI runs, and merge when green (GIT-07).
-3. Fresh session for S3 (hammer): zero-decision re-check against S2's merged code first; S3 needs Morgan's OK before the OpenArt close-up edit (SAFE-01).
+1. Fresh session for S4 (quench and grade), from the latest `main` after PR #5 merges: read the spec's S3 "Settled at S3 start" list first (rounds, shapes, the −3 per missing hit note for S4), then the zero-decision re-check against S3's merged code (src/engine/craft.ts, strike.ts, grade.ts, src/game/Forge.ts, shapes.ts, src/ui/forge.ts, e2e/hammer.spec.ts).
+2. S4 adds the result and ruin screens (mock-up frames for the grade and ruin); check them against `mockups/forge.html` (ui-mockups rule).
 
 ## Open questions
+
 
 - Art style, platform, and whether anyone else helps: open in CONCEPT.md, for design.
 
@@ -52,6 +48,9 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Decisions since the last plan update
 
+- 2026-11-04 S3 art (Morgan): the knife is the concept's own knife, and every piece starts as bar stock; each target shapes its own stretch, in two strict rounds: the first hit gives a halfway shape, the second the finished one (section by section). Spec S3 list updated.
+- 2026-11-04 Checks run at Morgan's measured Pixel size only: 443 × 816 CSS px at dpr 2.4375, ×3, 359 × 663 game px (the `?debug` readout; D-004 updated).
+- 2026-11-04 S3: close-up art from a free local edit, no OpenArt spend; strike reach 9 game px with −1 per px beyond 3, up to −6 (Morgan; spec S3 "Settled at S3 start" and Data → grading.json).
 - 2026-11-04 S2 controls: the mock-up's "Hold: bellows" and "To the anvil" buttons plus dragging the bar both work (Morgan; spec S2 "Settled at S2 start").
 
 - 2026-11-04 Concept chosen ([D-001](DECISIONS.md#d-001-concept-chosen)).

@@ -1,7 +1,9 @@
 import * as Phaser from 'phaser';
 import wideUrl from '../../assets/wide.png?url';
+import closeUrl from '../../assets/close.png?url';
 import fireUrl from '../../assets/sfx/fire.ogg?url';
 import bellowsUrl from '../../assets/sfx/bellows.ogg?url';
+import hammerUrl from '../../assets/sfx/hammer.ogg?url';
 import { showLoading } from '../ui/loading';
 
 const FONT_WAIT_MS = 3000;
@@ -18,8 +20,10 @@ export class Boot extends Phaser.Scene {
     this.setProgress = showLoading();
     this.load.on('progress', (p: number) => this.setProgress(p * 0.9));
     this.load.image('wide', wideUrl);
+    this.load.image('close', closeUrl);
     this.load.audio('fire', fireUrl);
     this.load.audio('bellows', bellowsUrl);
+    this.load.audio('hammer', hammerUrl);
   }
 
   create(): void {

@@ -86,9 +86,8 @@ describe('heat', () => {
     s = step(s, { grab: true }); // already held
     expect(s.location).toBe('held');
     expect(s.heldFrom).toBe('fire');
-    s = step(s, { drop: 'anvil' });
     const before = s;
-    s = step(s, { strike: { x: 10, y: 10 } }); // strikes arrive in S3
+    s = step(s, { strike: { x: 10, y: 10 } }); // strikes count only on the anvil (S3)
     expect({ ...s, log: [], step: 0, temp: 0 }).toEqual({ ...before, log: [], step: 0, temp: 0 });
   });
 
