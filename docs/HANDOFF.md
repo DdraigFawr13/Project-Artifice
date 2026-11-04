@@ -32,6 +32,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 Forge mock-up approved after 6 rounds (close-up anvil view, side on, knife along the face tip right; Press Start 2P for scores). [Final plan page](https://claude.ai/artifact/Dp2hubybfACEV2c8WHrftx) (collection `final`). OpenArt credits now 3,425 (measured).
 
+- 2026-11-04 Art refined at Morgan's request: close-up anvil (side on, cleaner, knife tip right) and the wide shot redrawn to match. These two replace Ember concept 3 as the style reference; resample UI_STYLE tokens from them when the spec is written.
+
 ## Next
 
 1. When Morgan says "final done", read `final`. If approved: record every settled choice in DECISIONS, update HANDOFF, then write the forge spec with `write-spec` (from its step 3).
