@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Design: `planning-interview` round 1 is out, waiting for Morgan's answers.
+Design: round 1 answered; review page out, waiting for Morgan.
 
 ## Plan map
 
@@ -22,9 +22,11 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-04 Bootstrap merged ([PR #1](https://github.com/DdraigFawr13/Project-Artifice/pull/1), 8fc3611): AI-Master v4.8.0 with `core` and `project-types/game`.
 - 2026-11-04 Design round 1 published: [round 1](https://claude.ai/artifact/NA4KTBCDvhGa22LTUzwbDy) (collection `round1`): platform, tools, forging steps, skill, failure, craft length, grade display, art, scope, prototype test.
 
+- 2026-11-04 Round 1 answered. Reviewer ($0.53 measured) and own review done; [review page](https://claude.ai/artifact/4dzk1d8JqTw6gcPtE4p7kQ) (collection `review1`): 11 findings, keep list, draft phases, 5 questions.
+
 ## Next
 
-1. When Morgan says "round 1 done", read the `round1` answers, start the adversarial reviewer on them, and publish the review page.
+1. When Morgan says "review done", read `review1`, then publish the final page (or another round if questions remain).
 2. Then later rounds and the final approval page; after approval, record DECISIONS and write the first spec with `write-spec`.
 
 ## Open questions
