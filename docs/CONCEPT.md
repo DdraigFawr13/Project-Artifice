@@ -47,8 +47,7 @@ Players who love crafting and want it to be the whole game, not a side menu, wit
 - Phone, PC or both first: affects the controls for hands-on crafting (touch vs mouse).
 - Making and selling your own items, not only commissions: wanted later, "not necessary at start".
 - Whether it's solo work: Morgan gave 20–40 hours a week, low art and tool cost, and about $50 to start, but didn't say whether anyone else helps.
-- **Brainstorm trial**
-  - 2026-11-04: 5 concepts made; dropped with reasons: yes; kill criteria: yes; rounds: 2; measured agent cost $1.12; measure 2 (planning-interview round 1 asks nothing the brief answered): pending; measure 3 (concept unchanged after design): pending.
+- Brainstorm trial entry: moved to [HANDOFF](HANDOFF.md#brainstorm-trial-d-048-in-ai-master-instructions).
 
 ## Design brief
 
