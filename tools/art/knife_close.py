@@ -1,11 +1,10 @@
-# Usage: python3 tools/art/knife_close.py <close-up concept.jpg from mockups/forge.html> <assets dir> <mask json out>
-# Cuts the hot knife out of the close-up concept at the spot it was painted, for the game to draw in code (D-003):
-#  - knife-close.png: the knife's shading in grey (alpha = the knife), tinted with the heat colour at run time;
-#  - knife-close-edge.png: its outline in one dark colour, never tinted, so a cold knife still reads on the anvil;
-#  - a mask (rows of '#' and '.') in close.png px, for target placement and its test.
+# Usage: python3 tools/art/knife_close.py <close-up concept.jpg from mockups/forge.html> <json out>
+# Cuts the hot knife out of the close-up concept at the spot it was painted, as data the game draws in code (D-003):
+# its shape and shading steps in close.png px. The game tints the shading with the heat colour and adds a dark outline
+# (src/game/shapes.ts).
 # The concept is scaled by 2/3 and offset by (20, 80) into close.png, as deblade_close.py does.
 import sys, json, cv2, numpy as np
-src, out_dir, mask_out = sys.argv[1], sys.argv[2], sys.argv[3]
+src, mask_out = sys.argv[1], sys.argv[2]
 im = cv2.imread(src).astype(np.float32)
 b, g, r = im[:, :, 0], im[:, :, 1], im[:, :, 2]
 region = np.zeros(r.shape, bool); region[430:500, 120:460] = True
@@ -28,10 +27,9 @@ def down(a):
     return cv2.resize(a[y0:y1, x0:x1].astype(np.float32), None, fx=k, fy=k, interpolation=cv2.INTER_AREA)
 a = down(fill.astype(np.float32)) >= 0.5
 s = down(shade * fill) / np.maximum(down(fill.astype(np.float32)), 1e-6)
-edge = cv2.dilate(a.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool) & ~a
-ys, xs = np.where(a | edge)
+ys, xs = np.where(a)
 top, left, bottom, right = ys.min(), xs.min(), ys.max() + 1, xs.max() + 1
-a, s, edge = a[top:bottom, left:right], s[top:bottom, left:right], edge[top:bottom, left:right]
+a, s = a[top:bottom, left:right], s[top:bottom, left:right]
 h, w = a.shape
 # Flat pixel-art steps instead of JPEG mottling: smooth, then round the shading to 4 levels.
 s = cv2.GaussianBlur(np.where(a, s, 0).astype(np.float32), (3, 3), 0) / np.maximum(cv2.GaussianBlur(a.astype(np.float32), (3, 3), 0), 1e-6)
@@ -40,12 +38,12 @@ s = levels[np.abs(s[..., None] - levels).argmin(axis=-1)]
 # The painted knife's darker rim: the outermost knife pixels at 0.4, still tinted, so they glow with the heat.
 rim = a & ~cv2.erode(a.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
 s = np.where(rim, 0.4, s)
-grey = np.round(np.clip(s, 0, 1) * 255).astype(np.uint8)
-fill_rgba = np.dstack([grey, grey, grey, (a * 255).astype(np.uint8)])
-EDGE = (0x14, 0x08, 0x12)  # BGR of a dark plum near --night-0, the art's outline darkened
-edge_rgba = np.zeros((h, w, 4), np.uint8); edge_rgba[edge] = (*EDGE, 255)
-cv2.imwrite(f'{out_dir}/knife-close.png', fill_rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
-cv2.imwrite(f'{out_dir}/knife-close-edge.png', edge_rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
+# One character per pixel: '.' empty, 'r' the rim, '1'–'4' the shading steps (0.62, 0.76, 0.88, 1.0).
 X = int(round(x0 * k)) + 20 + int(left); Y = int(round(y0 * k)) + 80 + int(top)
-json.dump({'x': X, 'y': Y, 'w': int(w), 'h': int(h), 'rows': [''.join('#' if v else '.' for v in row) for row in a]}, open(mask_out, 'w'))
+def code(on, v):
+    if not on: return '.'
+    if v <= 0.45: return 'r'
+    return str(int(np.abs(levels - v).argmin()) + 1)
+rows = [''.join(code(a[y, x], s[y, x]) for x in range(w)) for y in range(h)]
+json.dump({'x': X, 'y': Y, 'w': int(w), 'h': int(h), 'rows': rows}, open(mask_out, 'w'))
 print('knife at', X, Y, 'size', w, h)

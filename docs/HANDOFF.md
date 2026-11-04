@@ -48,6 +48,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Decisions since the last plan update
 
+- 2026-11-04 S3 art (Morgan): the knife is the concept's own knife, and every piece starts as bar stock; each struck target shapes its own stretch (section by section). Spec S3 list updated.
 - 2026-11-04 Checks run at Morgan's measured Pixel size only: 443 × 816 CSS px at dpr 2.4375, ×3, 359 × 663 game px (the `?debug` readout; D-004 updated).
 - 2026-11-04 S3: close-up art from a free local edit, no OpenArt spend; strike reach 9 game px with −1 per px beyond 3, up to −6 (Morgan; spec S3 "Settled at S3 start" and Data → grading.json).
 - 2026-11-04 S2 controls: the mock-up's "Hold: bellows" and "To the anvil" buttons plus dragging the bar both work (Morgan; spec S2 "Settled at S2 start").

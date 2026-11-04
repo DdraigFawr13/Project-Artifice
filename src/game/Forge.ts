@@ -9,9 +9,9 @@ import { pointsLost } from '../engine/grade';
 import { mulberry32, type Rng } from '../engine/rng';
 import { debugEnabled, setForgeDebug, takeDebugSeed, type CssBox } from '../ui/debug';
 import { showForgePanel, type ForgeMode, type ForgePanel } from '../ui/forge';
-import { CLOSE_LINE_Y, closeOutlineFor, closeSpriteFor, type CloseSprite, type Pt } from './closeLayout';
+import { CLOSE_LINE_Y } from './closeLayout';
 import type { GameContext } from './context';
-import { outlineFor, type Outline } from './metal';
+import { outline, scaled, shapesFor, worked, WIDE_SCALE, type PieceShapes, type Raster } from './shapes';
 import { CONTENT_BOTTOM_Y, CONTENT_MID_Y, FIRE_GLOW, inside, REST, ZONES } from './wideLayout';
 
 const BG_W = 400;
@@ -21,7 +21,8 @@ const HINT_TIMES = 3;
 const MAX_FRAME_MS = 250;
 /** Smallest hit area around the piece: 44 CSS px at the Pixel's ×3 on 2.4375 dpr is about 36 game px. */
 const MIN_HIT = 36;
-const OUTLINE = 0x735b44; // --ink-dim
+/** The piece's outline: a dark plum near --night-0, never tinted, so a cold piece still reads on the anvil. */
+const EDGE_RGB = [0x12, 0x08, 0x14] as const;
 const SPARK = 0xfdd479; // --fire-5
 const FORGE_GLOW = 0xf87f33; // --fire-3
 const INK = 0xead59c; // --ink: unstruck targets
@@ -51,13 +52,16 @@ export class Forge extends Phaser.Scene {
   private bgY = 0;
   private closeX = 0;
   private closeY = 0;
-  private outline!: Outline;
-  private closeOutline: Pt[] = [];
-  private sprite: CloseSprite | null = null;
-  private spriteFill?: Phaser.GameObjects.Image;
-  private spriteEdge?: Phaser.GameObjects.Image;
+  // The piece as worked so far (shapes.ts), drawn at close size and at wide size; repainted when a target is struck.
+  private shapes!: PieceShapes;
+  private shapeKey = '';
+  private closeR!: Raster;
+  private wideR!: Raster;
+  private closeFill!: Phaser.GameObjects.Image;
+  private closeEdge!: Phaser.GameObjects.Image;
+  private wideFill!: Phaser.GameObjects.Image;
+  private wideEdge!: Phaser.GameObjects.Image;
   private mode: ForgeMode = 'wide';
-  private metal!: Phaser.GameObjects.Graphics;
   private sparkGfx!: Phaser.GameObjects.Graphics;
   private metalGlow!: Phaser.GameObjects.Image;
   private fireGlow!: Phaser.GameObjects.Image;
@@ -119,9 +123,8 @@ export class Forge extends Phaser.Scene {
     this.craft = createCraft(seed, this.item.id, defaultAlloy(this.item));
     this.sparkRng = mulberry32(seed ^ 0x5eed);
     this.flickerRng = mulberry32(seed ^ 0xf1c4);
-    this.outline = outlineFor(this.item.id);
-    this.sprite = closeSpriteFor(this.item.id);
-    this.closeOutline = this.sprite ? [] : closeOutlineFor(this.item.id);
+    this.shapes = shapesFor(this.item.id);
+    this.shapeKey = '';
 
     // Hint counts stay in memory until the craft ends (S4 writes them). The hammer hint counts when the anvil is reached.
     const seen = this.ctx.load.save.hintsSeen;
@@ -155,11 +158,12 @@ export class Forge extends Phaser.Scene {
     this.bgClose = this.add.image(0, 0, 'close').setOrigin(0, 0).setVisible(false);
     this.fireGlow = this.add.image(0, 0, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(FORGE_GLOW);
     this.metalGlow = this.add.image(0, 0, 'glow').setBlendMode(Phaser.BlendModes.ADD);
-    this.metal = this.add.graphics();
-    if (this.sprite) {
-      this.spriteFill = this.add.image(0, 0, this.sprite.fill).setOrigin(0, 0).setVisible(false);
-      this.spriteEdge = this.add.image(0, 0, this.sprite.edge).setOrigin(0, 0).setVisible(false);
-    }
+    this.makePieceTextures();
+    this.wideEdge = this.add.image(0, 0, 'piece-wide-edge');
+    this.wideFill = this.add.image(0, 0, 'piece-wide-fill');
+    this.closeEdge = this.add.image(0, 0, 'piece-close-edge').setOrigin(0, 0);
+    this.closeFill = this.add.image(0, 0, 'piece-close-fill').setOrigin(0, 0);
+    this.paintPiece();
     this.targetGfx = this.add.graphics();
     this.ringGfx = this.add.graphics();
     this.sparkGfx = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
@@ -241,26 +245,53 @@ export class Forge extends Phaser.Scene {
     return { x: this.bgX + r.x, y: this.bgY + r.y, dir: r.dir };
   }
 
-  /** The piece's outline in game px, in whichever view shows it. */
-  private piecePoints(): Pt[] {
-    if (this.mode !== 'wide' && this.sprite) {
-      const s = this.sprite;
-      const x = this.closeX + s.x;
-      const y = this.closeY + s.y;
-      return [{ x, y }, { x: x + s.w - 1, y }, { x: x + s.w - 1, y: y + s.h - 1 }, { x, y: y + s.h - 1 }];
-    }
-    if (this.mode !== 'wide') return this.closeOutline.map((q) => ({ x: Math.round(this.closeX + q.x), y: Math.round(this.closeY + q.y) }));
+  /** The piece's box in game px, in whichever view shows it (its raster's box, outline included). */
+  private pieceBox(): { x: number; y: number; w: number; h: number } {
+    if (this.mode !== 'wide') return { x: this.closeX + this.closeR.x, y: this.closeY + this.closeR.y, w: this.closeR.w, h: this.closeR.h };
     const p = this.piecePos();
-    return this.outline.map((q) => ({ x: Math.round(p.x + q.x * p.dir), y: Math.round(p.y + q.y) }));
+    const { w, h } = this.wideR;
+    return { x: Math.round(p.x - w / 2), y: Math.round(p.y - h / 2), w, h };
   }
 
-  private pieceBox(): { x: number; y: number; w: number; h: number } {
-    const pts = this.piecePoints();
-    const xs = pts.map((q) => q.x);
-    const ys = pts.map((q) => q.y);
-    const x = Math.min(...xs);
-    const y = Math.min(...ys);
-    return { x, y, w: Math.max(...xs) - x + 1, h: Math.max(...ys) - y + 1 };
+  // ── The piece's shape: bar stock, shaped stretch by stretch as targets are struck ──
+
+  private makePieceTextures(): void {
+    const s = this.shapes.final;
+    const k = WIDE_SCALE[this.item.id] ?? 0.45;
+    const sizes = { close: [s.w, s.h], wide: [Math.max(1, Math.round(s.w * k)), Math.max(1, Math.round(s.h * k))] } as const;
+    for (const view of ['close', 'wide'] as const) {
+      for (const layer of ['fill', 'edge'] as const) {
+        const key = `piece-${view}-${layer}`;
+        if (this.textures.exists(key)) this.textures.remove(key);
+        this.textures.createCanvas(key, sizes[view][0], sizes[view][1]);
+      }
+    }
+  }
+
+  /** Repaint both views' textures when the struck targets change: grey shading (tinted at draw) and a dark outline. */
+  private paintPiece(): void {
+    const struck = this.craft.targets.map((t) => t.struck);
+    const key = struck.map((b) => (b ? 1 : 0)).join('');
+    if (key === this.shapeKey) return;
+    this.shapeKey = key;
+    this.closeR = worked(this.shapes, struck);
+    this.wideR = scaled(this.closeR, WIDE_SCALE[this.item.id] ?? 0.45);
+    const paint = (r: Raster, view: 'close' | 'wide') => {
+      const edge = outline(r);
+      for (const layer of ['fill', 'edge'] as const) {
+        const tex = this.textures.get(`piece-${view}-${layer}`) as Phaser.Textures.CanvasTexture;
+        const img = tex.context.createImageData(r.w, r.h);
+        for (let i = 0; i < r.w * r.h; i++) {
+          const v = r.shade[i]!;
+          if (layer === 'fill' && v > 0) img.data.set([v * 255, v * 255, v * 255, 255], i * 4);
+          if (layer === 'edge' && edge[i]) img.data.set([...EDGE_RGB, 255], i * 4);
+        }
+        tex.context.putImageData(img, 0, 0);
+        tex.refresh();
+      }
+    };
+    paint(this.closeR, 'close');
+    paint(this.wideR, 'wide');
   }
 
   private viewMode(): ForgeMode {
@@ -405,18 +436,14 @@ export class Forge extends Phaser.Scene {
     const color = Phaser.Display.Color.HexStringToColor(l.color).color;
     const wide = this.mode === 'wide';
 
-    this.metal.clear();
-    this.metal.fillStyle(color, 1);
-    this.metal.lineStyle(1, OUTLINE, 1);
-    // A piece with concept art is its sprite, tinted with the heat colour; others are drawn from their outline.
-    const useSprite = !wide && this.sprite !== null;
-    this.spriteFill?.setVisible(useSprite).setPosition(this.closeX + (this.sprite?.x ?? 0), this.closeY + (this.sprite?.y ?? 0)).setTint(color);
-    this.spriteEdge?.setVisible(useSprite).setPosition(this.closeX + (this.sprite?.x ?? 0), this.closeY + (this.sprite?.y ?? 0));
-    if (!useSprite) {
-      const pts = this.piecePoints().map((q) => new Phaser.Math.Vector2(q.x, q.y));
-      this.metal.fillPoints(pts, true);
-      this.metal.strokePoints(pts, true);
-    }
+    // The piece as worked so far, its shading tinted with the heat colour; the outline stays dark.
+    this.paintPiece();
+    this.closeFill.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y).setTint(color);
+    this.closeEdge.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y);
+    const pb = this.pieceBox();
+    const flip = this.piecePos().dir < 0;
+    this.wideFill.setVisible(wide).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip).setTint(color);
+    this.wideEdge.setVisible(wide).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip);
     if (!wide) this.drawClose(color);
     else {
       this.targetGfx.clear();

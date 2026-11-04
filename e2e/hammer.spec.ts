@@ -86,6 +86,37 @@ test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) =
   await testInfo.attach('close-view', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
+/** Mean RGB of a screenshot clip, decoded in the page (no image library needed). */
+async function meanRgb(page: Page, clip: { x: number; y: number; width: number; height: number }): Promise<number[]> {
+  const png = await page.screenshot({ clip });
+  return page.evaluate(async (b64) => {
+    const img = await createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob());
+    const c = new OffscreenCanvas(img.width, img.height);
+    const g = c.getContext('2d')!;
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, img.width, img.height).data;
+    const sum = [0, 0, 0];
+    for (let i = 0; i < d.length; i += 4) for (let j = 0; j < 3; j++) sum[j]! += d[i + j]!;
+    return sum.map((v) => v / (d.length / 4));
+  }, png.toString('base64'));
+}
+
+test('a strike shapes its own stretch of the bar, and only that', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  const targets = await api(page, (a) => a.targets());
+  const k = await cssPerGame(page);
+  // A strip 7–11 game px below a target: anvil beside the bar, knife once that stretch is shaped (src/game/shapes.ts).
+  const strip = (t: Pt) => ({ x: t.x - 5 * k, y: t.y + 7 * k, width: 10 * k, height: 4 * k });
+  const diff = (a: number[], b: number[]) => Math.max(...a.map((v, i) => Math.abs(v - b[i]!)));
+  const before4 = await meanRgb(page, strip(targets[4]!));
+  const before8 = await meanRgb(page, strip(targets[8]!));
+  await strikeAt(page, targets[4]!);
+  await api(page, (a) => a.advance(800)); // let the strike's points and sparks clear
+  await frames(page);
+  expect(diff(await meanRgb(page, strip(targets[4]!)), before4), 'the struck stretch changes shape').toBeGreaterThan(20);
+  expect(diff(await meanRgb(page, strip(targets[8]!)), before8), 'an unstruck stretch stays bar').toBeLessThan(3);
+});
+
 test('a lift over the panel cancels the strike', async ({ page }) => {
   await knifeOnAnvil(page, 950);
   const t = (await api(page, (a) => a.targets()))[0]!;

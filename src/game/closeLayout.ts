@@ -1,41 +1,9 @@
 /**
  * The close-up anvil view, in the background image's own game px (assets/close.png, 400 × 800), like wideLayout.ts
  * for the wide shot. Pieces lie along the anvil face, tip right (forge spec S3, "Settled at S3 start").
- * Targets in src/data/items.json sit on these pieces' centre lines; closeLayout.test.ts checks they stay on them.
+ * Targets in src/data/items.json sit on these pieces' centre lines; shapes.test.ts checks they stay on them.
  */
-import knifeMask from './sprites/knife-close.json';
-
 export type Pt = { x: number; y: number };
-
-/**
- * A piece cut from the close-up concept (tools/art/knife_close.py): a grey shading layer tinted with the heat colour,
- * a dark outline that is never tinted, and its mask, all at the spot it was painted, in close.png px.
- */
-export interface CloseSprite {
-  fill: string;
-  edge: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  /** One string per row, '#' where the piece is. */
-  rows: string[];
-}
-
-const SPRITES: Record<string, CloseSprite> = {
-  knife: { fill: 'knife-close', edge: 'knife-close-edge', ...knifeMask },
-};
-
-/** The piece's sprite in the close view, if it has one; otherwise it is drawn from its outline. */
-export function closeSpriteFor(itemId: string): CloseSprite | null {
-  return SPRITES[itemId] ?? null;
-}
-
-/** Whether close.png px (x, y) is on a sprite piece. */
-export function onSprite(s: CloseSprite, x: number, y: number): boolean {
-  const r = s.rows[Math.round(y) - s.y];
-  return r !== undefined && r[Math.round(x) - s.x] === '#';
-}
 
 /** The anvil face's blade line, kept centred between the top bar and the panel. */
 export const CLOSE_LINE_Y = 390;
@@ -68,13 +36,13 @@ function horseshoe(): Pt[] {
   return pts;
 }
 
-/** Pieces with no concept art yet are drawn from these outlines. */
+/** Finished shapes for pieces with no concept art yet; the knife comes from the concept (sprites/knife-close.json). */
 const OUTLINES: Record<string, Pt[]> = {
   horseshoe: horseshoe(),
   sword: blade(40, 360, 70, 5, 12),
 };
 
-/** The piece's outline in the close view, in close.png px (pieces without a sprite). */
+/** The finished piece's outline in the close view, in close.png px (pieces without concept art). */
 export function closeOutlineFor(itemId: string): Pt[] {
   const o = OUTLINES[itemId];
   if (!o) throw new Error(`No close outline for ${itemId}`);
