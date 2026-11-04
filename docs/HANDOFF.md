@@ -26,14 +26,12 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - Earlier entries (brainstorm to S3 built): [archive](archive/handoff-2026-11.md).
 
-- 2026-11-04 S4 merged by Morgan (PR #6, b6f0f8f) after playing it; PR CI green; Vercel production b6f0f8f, aliases 302.
-
 - 2026-11-04 S4 built (02ab8e4): zero-decision re-check (reviewer) found 7 consequential gaps; all answered by the spec, D-005 or mock-up frames 5–7, so none went to Morgan; defaults in the spec's S4 list. J4 checks failed first, then passed (91 unit, 17 e2e); 21 mutants, all killed after 2 checks were sharpened. Screens screenshotted at the Pixel size and matched to frames 5–7. CC0 hiss (ATTRIBUTION). Spec review: 10 findings, 8 fixed (save written over an unreadable one, "for 0 s", spread case past the reach, hint counted before the pick-up, burning advice in hand, Saved status, .dim text, stale spec lines), 2 declined (disabled buttons in the 0.8 s end, a real-time delay check).
 
 ## Next
 
-1. S5 on `claude/forge-s5-loop` (PR #7, draft): Morgan plays the 10-craft test on the preview, fills the [playtest form](https://claude.ai/artifact/2vWLEDRUzSoXhzNRSe4rxz) (db `playtests/s5-10-craft`), and approves or not (GIT-07). Copy its answers into `docs/playtests/2026-11-04-s5-loop.md` from the template.
-2. Open from S4 for Morgan's playtest: a no-strike knife scores 46 (missed hit −3 may be too light); the quench feels unsatisfying (steam and a sinking piece noted in the spec).
+1. S5 on `claude/forge-s5-loop` (PR #7, draft): Morgan replays the new quench (c882540) and approves or not (GIT-07). Playtest note: `docs/playtests/2026-11-04-s5-loop.md` ([form](https://claude.ai/artifact/2vWLEDRUzSoXhzNRSe4rxz)).
+2. After S5 merges, with Morgan: the 10-craft test (6 played) answered "unsure" to forging another ("needs more depth"), and crafts run "way shorter" than the 1/2/3 min goal; both bear on CONCEPT.md's kill criteria. Also open: a no-strike knife scores 46.
 
 ## Open questions
 
@@ -44,6 +42,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-04: 5 concepts made; dropped with reasons: yes; kill criteria: yes; rounds: 2; measured agent cost $1.12; measure 2 (planning-interview round 1 asks nothing the brief answered): passed, round 1 asked only the brief's open questions; measure 3 (concept unchanged after design): passed, the concept survived design unchanged. Both recorded 2026-11-04 from Morgan's report. A master session copies this to `decisions/benchmarks/brainstorm-trial.md` when done.
 
 ## Decisions since the last plan update
+
+- 2026-11-04 S5 playtest (Morgan): quench "very flat", fixed in this PR (steam, the piece slides into the water, 1.6 s hold; spec S5 list); alloy choice matters; unsure about forging another.
 
 - 2026-11-04 S5 start (Morgan): each ore shows quality and a plain line about how it works, no temperatures; the alloy screen remembers the last mix per item (page load only) and "Forge another" / "Try again" skip it; ore names stay Ore 1–3 (spec S5 "Settled at S5 start").
 

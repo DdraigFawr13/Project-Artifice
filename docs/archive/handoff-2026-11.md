@@ -18,3 +18,4 @@ Finished "Just done" entries moved from HANDOFF.md.
 - 2026-11-04 S2 merged (PR #4, 19e6e3b) after Morgan's approval; Vercel production is that commit, all aliases login-protected (302).
 - 2026-11-04 S3 built: zero-decision re-check (reviewer) found 26 items; Morgan chose the free local close-up edit (no credits; OpenArt quote was 20 credits a try, balance 3,345) and a 9 px strike reach (targets sit 19–22 px apart); defaults recorded in the spec's S3 list. J3 checks failed first, then passed (57 unit, 11 e2e); 10 unit and 3 e2e mutants, all killed after one test was sharpened. CC0 hammer sound (ATTRIBUTION).
 - 2026-11-04 S3 merged (PR #5, ea9687b); main CI passed.
+- 2026-11-04 S4 merged by Morgan (PR #6, b6f0f8f) after playing it; PR CI green; Vercel production b6f0f8f, aliases 302.
