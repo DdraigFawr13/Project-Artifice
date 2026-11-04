@@ -50,6 +50,8 @@ export class Forge extends Phaser.Scene {
   private draft = 0; // the bellows' effect on the forge, eased 0–1
 
   private dragging = false;
+  private dragPointer = -1;
+  private panelObserver?: ResizeObserver;
   private dragOffset = { x: 0, y: 0 };
   private heldPos = { x: 0, y: 0 };
 
@@ -89,8 +91,13 @@ export class Forge extends Phaser.Scene {
     this.panel = showForgePanel(this.item.name, hint, {
       bellows: (down) => this.queue.push({ bellows: down }),
       move: () => {
-        const to = this.craft.location === 'fire' ? 'anvil' : 'fire';
-        this.queue.push({ bellows: false }, { grab: true }, { drop: to });
+        if (this.dragging || this.pendingMove()) return;
+        const from = this.craft.location;
+        if (from !== 'fire' && from !== 'anvil') return;
+        // The bar is held for one step on its way; draw it where it rests, not where the last drag left it.
+        const r = REST[from];
+        this.heldPos = { x: this.bgX + r.x, y: this.bgY + r.y };
+        this.queue.push({ bellows: false }, { grab: true }, { drop: from === 'fire' ? 'anvil' : 'fire' });
       },
     });
 
@@ -102,6 +109,9 @@ export class Forge extends Phaser.Scene {
     this.sparkGfx = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
     this.layout();
     this.scale.on('resize', this.layout, this);
+    // The panel changes height when the Burning alert replaces the intro; keep the scene between the bars.
+    this.panelObserver = new ResizeObserver(() => this.layout());
+    this.panelObserver.observe(this.panel.panel);
 
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
@@ -174,7 +184,8 @@ export class Forge extends Phaser.Scene {
 
   private onDown(p: Phaser.Input.Pointer): void {
     const loc = this.craft.location;
-    if (this.dragging || (loc !== 'fire' && loc !== 'anvil')) return;
+    // `location` lags the queue by a step or two; a move already queued wins.
+    if (this.dragging || this.pendingMove() || (loc !== 'fire' && loc !== 'anvil')) return;
     const b = this.pieceBox();
     const padX = Math.max(8, (MIN_HIT - b.w) / 2);
     const padY = Math.max(8, (MIN_HIT - b.h) / 2);
@@ -183,16 +194,21 @@ export class Forge extends Phaser.Scene {
     this.dragOffset = { x: c.x - p.x, y: c.y - p.y };
     this.heldPos = { x: c.x, y: c.y };
     this.dragging = true;
+    this.dragPointer = p.id;
     this.queue.push({ bellows: false }, { grab: true });
   }
 
+  private pendingMove(): boolean {
+    return this.queue.some((i) => 'grab' in i || 'drop' in i);
+  }
+
   private onMove(p: Phaser.Input.Pointer): void {
-    if (!this.dragging) return;
+    if (!this.dragging || p.id !== this.dragPointer) return;
     this.heldPos = { x: Math.round(p.x + this.dragOffset.x), y: Math.round(p.y + this.dragOffset.y) };
   }
 
-  private onUp(): void {
-    if (!this.dragging) return;
+  private onUp(p: Phaser.Input.Pointer): void {
+    if (!this.dragging || p.id !== this.dragPointer) return;
     this.dragging = false;
     const x = this.heldPos.x - this.bgX;
     const y = this.heldPos.y - this.bgY;
@@ -351,6 +367,8 @@ export class Forge extends Phaser.Scene {
 
   private cleanup(): void {
     setForgeDebug(null);
+    this.panel.destroy();
+    this.panelObserver?.disconnect();
     this.scale.off('resize', this.layout, this);
     this.fireSound?.destroy();
     this.bellowsSound?.destroy();

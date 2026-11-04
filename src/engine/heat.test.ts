@@ -71,6 +71,34 @@ describe('heat', () => {
     expect(s.location).toBe('anvil');
   });
 
+  it('returns a bar dropped in the tub to the fire when it came from the fire', () => {
+    let s = createCraft(1, 'knife', defaultAlloy(knife));
+    s = step(s, { grab: true });
+    s = step(s, { drop: 'tub' });
+    expect(s.location).toBe('fire');
+  });
+
+  it('ignores inputs that make no sense where the bar is', () => {
+    let s = createCraft(1, 'knife', defaultAlloy(knife));
+    s = step(s, { drop: 'anvil' }); // not held: no teleport
+    expect(s.location).toBe('fire');
+    s = step(s, { grab: true });
+    s = step(s, { grab: true }); // already held
+    expect(s.location).toBe('held');
+    expect(s.heldFrom).toBe('fire');
+    s = step(s, { drop: 'anvil' });
+    const before = s;
+    s = step(s, { strike: { x: 10, y: 10 } }); // strikes arrive in S3
+    expect({ ...s, log: [], step: 0, temp: 0 }).toEqual({ ...before, log: [], step: 0, temp: 0 });
+  });
+
+  it('logs a copy of each input', () => {
+    const input = { strike: { x: 1, y: 2 } };
+    const s = step(createCraft(1, 'knife', defaultAlloy(knife)), input);
+    input.strike.x = 99;
+    expect(s.log[0]!.input).toEqual({ strike: { x: 1, y: 2 } });
+  });
+
   it('logs each input with its step number, so a craft replays', () => {
     let s = createCraft(7, 'knife', defaultAlloy(knife));
     s = step(s, { none: true });

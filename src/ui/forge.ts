@@ -7,6 +7,8 @@ export interface ForgePanel {
   panel: HTMLElement;
   /** Update the panel for where the bar is and whether it is burning. */
   update(view: { inFire: boolean; held: boolean; burning: boolean }): void;
+  /** Remove listeners that outlive the screen. */
+  destroy(): void;
 }
 
 export interface ForgeHandlers {
@@ -25,6 +27,7 @@ export function showForgePanel(itemName: string, hint: string | null, on: ForgeH
   const INTRO = 'Hold to work the bellows. Keep the metal in the working heat. Too cool or too hot costs points.';
   // Shown in place of the intro while the bellows button is disabled (UI_STYLE Controls: disabled with a reason).
   const OUT = 'The bellows work only while the bar is in the fire. Drag it back, or tap "To the fire".';
+  const HELD = 'Let go over the fire or the anvil. Anywhere else, the bar goes back.';
   const intro = el('p', { testId: 'intro', text: INTRO });
   const hintEl = hint ? el('div', { className: 'hint', testId: 'hint', text: hint }) : null;
   const burning = el('div', { className: 'alert', testId: 'burning', attrs: { role: 'alert' } },
@@ -69,8 +72,11 @@ export function showForgePanel(itemName: string, hint: string | null, on: ForgeH
       if (!inFire) release();
       move.disabled = held;
       move.textContent = inFire || held ? 'To the anvil' : 'To the fire';
-      const text = inFire || held ? INTRO : OUT;
+      const text = held ? HELD : inFire ? INTRO : OUT;
       if (intro.textContent !== text) intro.textContent = text;
+    },
+    destroy() {
+      window.removeEventListener('pointerup', release);
     },
   };
 }

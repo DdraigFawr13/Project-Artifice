@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 // reading of the metal's bounding box, that mean brightness strictly rises.
 type Box = { x: number; y: number; width: number; height: number };
 type Api = {
-  state(): { location: string; temp: number } | null;
+  state(): { location: string; temp: number; bellows: boolean } | null;
   pause(): void;
   advance(ms: number): void;
   send(input: unknown): void;
@@ -15,6 +15,11 @@ type Api = {
 const api = <T>(page: Page, fn: (a: Api) => T) =>
   page.evaluate((src) => new Function('a', `return (${src})(a)`)((window as unknown as { __artifice: Api }).__artifice), fn.toString()) as Promise<T>;
 const ANCHORS = [285, 650, 825, 975, 1125, 1275];
+/** Between the cherry and orange anchors: a screen that draws one colour per band would show cherry here. */
+const BETWEEN = 900;
+
+/** Wait for two drawn frames, so the canvas shows the state just set. */
+const frames = (page: Page) => page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
 
 async function startKnife(page: Page) {
   await page.goto('/?debug');
@@ -55,16 +60,21 @@ test('the metal gets brighter at every band anchor, in greyscale', async ({ page
   await startKnife(page);
   await api(page, (a) => { a.pause(); a.send({ grab: true }); a.advance(16); a.send({ drop: 'anvil' }); a.advance(16); });
   const means: number[] = [];
-  for (const c of ANCHORS) {
+  const measure = async (c: number) => {
     await page.evaluate((t) => { const a = (window as unknown as { __artifice: Api }).__artifice; a.pinTemp(t); a.advance(32); }, c);
-    await page.waitForTimeout(100); // two rendered frames at 60 Hz
+    await frames(page);
     expect((await api(page, (a) => a.state()))!.temp).toBe(c);
     const box = await api(page, (a) => a.metalBox());
     const shot = await page.screenshot({ clip: box });
-    means.push(await meanGrey(page, shot));
     await testInfo.attach(`metal-${c}`, { body: shot, contentType: 'image/png' });
-  }
+    return meanGrey(page, shot);
+  };
+  for (const c of ANCHORS) means.push(await measure(c));
   for (let i = 1; i < means.length; i++) expect(means[i], `brightness at ${ANCHORS[i]} °C vs ${ANCHORS[i - 1]} °C: ${means.join(', ')}`).toBeGreaterThan(means[i - 1]!);
+  // Continuous, not stepped per band: between two anchors the metal is between them in brightness.
+  const mid = await measure(BETWEEN);
+  expect(mid, `brightness at ${BETWEEN} °C: ${mid}, anchors ${means.join(', ')}`).toBeGreaterThan(means[2]!);
+  expect(mid).toBeLessThan(means[3]!);
 });
 
 test('"Burning!" shows only at white heat', async ({ page }) => {
@@ -73,4 +83,50 @@ test('"Burning!" shows only at white heat', async ({ page }) => {
   await expect(page.getByText('Burning!')).toBeHidden();
   await api(page, (a) => { a.pinTemp(1275); a.advance(32); });
   await expect(page.getByText('Burning!')).toBeVisible();
+});
+
+test('the controls move the bar: drag, the buttons, and the bellows only in the fire', async ({ page }) => {
+  await startKnife(page);
+  const loc = () => api(page, (a) => a.state()!.location);
+  const bellows = page.getByRole('button', { name: 'Hold: bellows' });
+
+  // Drag the bar from the fire onto the anvil.
+  const box = await api(page, (a) => a.metalBox());
+  // The anvil zone's middle is (227, 457) in the wide shot, 127 and 73 game px from the bar's rest in the fire
+  // (src/game/wideLayout.ts); convert game px to CSS px with the canvas's own scale.
+  const anvil = await page.evaluate(({ bx, by }) => {
+    const c = document.querySelector('#game canvas') as HTMLCanvasElement;
+    const k = c.getBoundingClientRect().width / c.width;
+    return { x: bx + 127 * k, y: by + 73 * k };
+  }, { bx: box.x + box.width / 2, by: box.y + box.height / 2 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(anvil.x, anvil.y, { steps: 8 });
+  await expect.poll(loc).toBe('held');
+  await expect(page.getByTestId('intro')).toContainText('Let go over the fire or the anvil');
+  await page.mouse.up();
+  await expect.poll(loc).toBe('anvil');
+  await expect(bellows).toBeDisabled();
+  await expect(page.getByTestId('intro')).toContainText('only while the bar is in the fire');
+
+  // A drop in empty space sends it back where it came from.
+  const b2 = await api(page, (a) => a.metalBox());
+  await page.mouse.move(b2.x + b2.width / 2, b2.y + b2.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b2.x - 150, b2.y - 250, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(loc).toBe('anvil');
+
+  // The button moves it back to the fire, and holding the bellows heats it until released.
+  await page.getByRole('button', { name: 'To the fire' }).click();
+  await expect.poll(loc).toBe('fire');
+  await expect(bellows).toBeEnabled();
+  await expect(page.getByTestId('hint')).toHaveText('Watch the colour, glow and sparks. Let go to ease off.');
+  const t0 = await api(page, (a) => a.state()!.temp);
+  await bellows.hover();
+  await page.mouse.down();
+  await expect.poll(() => api(page, (a) => a.state()!.bellows)).toBe(true);
+  await page.waitForFunction((t) => (window as unknown as { __artifice: Api & { state(): { temp: number } } }).__artifice.state()!.temp > t + 100, t0);
+  await page.mouse.up();
+  await expect.poll(() => api(page, (a) => a.state()!.bellows)).toBe(false);
 });

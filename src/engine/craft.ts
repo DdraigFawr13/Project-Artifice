@@ -65,7 +65,8 @@ function applyInput(s: CraftState, input: Input): CraftState {
 /** Advance one fixed step of STEP_MS with one input. Pure. */
 export function step(state: CraftState, input: Input): CraftState {
   if (state.location === 'done') return state;
-  const logged = 'none' in input ? state.log : [...state.log, { step: state.step, input }];
+  // A copy, so the replay log can't change after the fact.
+  const logged = 'none' in input ? state.log : [...state.log, { step: state.step, input: structuredClone(input) }];
   const s = applyInput({ ...state, log: logged }, input);
   const temp = heatStep(s.temp, s.location, s.bellows, s.props.cool, STEP_MS / 1000);
   return { ...s, temp, step: s.step + 1 };

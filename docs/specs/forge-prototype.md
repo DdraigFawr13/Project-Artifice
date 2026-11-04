@@ -206,6 +206,8 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
   - Debug: `pinTemp` overrides the temperature after each step while location still changes, `advance(ms)` carries any part step over, `metalBox()` is in CSS px, and `state()` is null outside the forge. The greyscale check decodes the screenshot in the page, so it needs no new dependency.
   - Hint counts stay in memory until a craft ends (S4), so in S2 the heat hint shows on every craft after a reload. S2 doesn't change `save.ts`.
   - The forge has no way back to the list until S4's result screen; reload to choose again. `e2e/open.spec.ts` changes from the placeholder to the forge.
+  - Real time is capped at 250 ms a frame, so a tab returning from the background doesn't run a burst of steps.
+  - For S3 (from the S2 review): "Burning!" uses the band from `look()`; S3's burning cause should come from the engine, and the screen should show that flag. `state()` gains `targets` and `strikes` in S3.
 
 ### S3 Hammer
 
