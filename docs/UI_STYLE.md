@@ -54,7 +54,8 @@ Spacing: game pixels on a 4 px grid (4, 8, 12, 16, 24).
 <!-- Faces, sizes and number settings (tabular figures, units). Copy settings from the accepted specimen, not from memory (adventure-manager LESSONS:10). -->
 
 - Face: Pixelify Sans (Google Fonts, weights 400 and 600), as on the Ember Night sample in taste board 1. Fallback `monospace`.
-- Body 16 px, labels 14 px (the minimum), grade score 48 px at weight 600 (the result is the screen's main fact; changed from 24 px in the forge mock-up).
+- Figures: Press Start 2P (Google Fonts) for scores and point lines. Morgan found Pixelify Sans's 7 "a little off" in the forge mock-up: it has a hook at the top left.
+- Body 16 px, labels 14 px (the minimum), grade score 40 px in the figures face (the result is the screen's main fact; changed from 24 px in the forge mock-up).
 - Scores use tabular figures so they don't jump as they count.
 
 ## Controls
@@ -69,6 +70,7 @@ Spacing: game pixels on a 4 px grid (4, 8, 12, 16, 24).
 
 - The game renders at 360 × 640 game pixels in portrait (D-003), scaled by a whole number so pixels stay sharp. The viewport grows in height for taller phones.
 - On the Pixel 10 Pro XL (1344 physical px wide, reported, not checked) a ×4 scale shows 336 game px across. Keep everything that matters inside the central 336 px; the outer 12 px on each side may be cropped.
+- Two views while forging: a wide shot of the smithy for the fire, moving the piece and the quench, and a close-up at the anvil for hammering (Morgan, forge mock-up).
 - The forge scene fills the screen. Controls and the grade sit in the bottom third, within thumb reach.
 
 ## Avoid
