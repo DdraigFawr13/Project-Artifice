@@ -1,5 +1,5 @@
 [
-  { "id": "horseshoe", "name": "Horseshoe", "parts": 3, "minutes": 1, "defaultAlloy": { "ore2": 2, "ore1": 1 } },
-  { "id": "knife", "name": "Knife", "parts": 5, "minutes": 2, "defaultAlloy": { "ore2": 4, "ore1": 1 } },
-  { "id": "sword", "name": "Sword", "parts": 8, "minutes": 3, "defaultAlloy": { "ore2": 7, "ore1": 1 } }
+  { "id": "horseshoe", "name": "Horseshoe", "parts": 3, "minutes": 1, "defaultAlloy": { "ore2": 2, "ore1": 1 }, "targets": [{"x": 219, "y": 354}, {"x": 185, "y": 360}, {"x": 169, "y": 390}, {"x": 185, "y": 420}, {"x": 219, "y": 426}] },
+  { "id": "knife", "name": "Knife", "parts": 5, "minutes": 2, "defaultAlloy": { "ore2": 4, "ore1": 1 }, "targets": [{"x": 127, "y": 390}, {"x": 149, "y": 390}, {"x": 171, "y": 390}, {"x": 192, "y": 390}, {"x": 214, "y": 390}, {"x": 236, "y": 390}, {"x": 258, "y": 390}, {"x": 279, "y": 390}, {"x": 301, "y": 390}] },
+  { "id": "sword", "name": "Sword", "parts": 8, "minutes": 3, "defaultAlloy": { "ore2": 7, "ore1": 1 }, "targets": [{"x": 60, "y": 390}, {"x": 80, "y": 390}, {"x": 100, "y": 390}, {"x": 120, "y": 390}, {"x": 140, "y": 390}, {"x": 160, "y": 390}, {"x": 180, "y": 390}, {"x": 200, "y": 390}, {"x": 220, "y": 390}, {"x": 240, "y": 390}, {"x": 260, "y": 390}, {"x": 280, "y": 390}, {"x": 300, "y": 390}, {"x": 320, "y": 390}, {"x": 340, "y": 390}] }
 ]

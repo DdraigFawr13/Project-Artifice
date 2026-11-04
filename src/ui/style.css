@@ -98,3 +98,11 @@ body {
 .alert p { margin: 6px 0 0; }
 #game canvas { touch-action: none; }
 [hidden] { display: none !important; }
+
+/* Forge close-up anvil view (mock-up frame 4; forge spec S3). */
+.screen.forge .scene-gap { position: relative; }
+.panel .group { display: grid; gap: 12px; }
+.panel .reason { font-size: 14px; color: var(--ink); text-align: right; }
+.label { position: absolute; left: 16px; top: 16px; font-size: 14px; background: var(--night-0); padding: 2px 6px; border: 2px solid var(--soot); }
+.floats { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.points { position: absolute; font-family: var(--figures); font-size: 14px; color: var(--fire-5); font-variant-numeric: tabular-nums; text-shadow: 2px 2px 0 var(--night-0); white-space: nowrap; transform: translate(-50%, -100%); }

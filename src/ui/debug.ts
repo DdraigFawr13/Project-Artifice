@@ -27,12 +27,16 @@ export interface ForgeDebug {
   send(input: Input): void;
   /** Hold the temperature at `c` °C after every step, or stop holding it. */
   pinTemp(c: number | null): void;
-  /** The metal's bounding box (the piece itself, not its glow). */
+  /** The metal's bounding box (the piece itself, not its glow), in whichever view shows it. */
   metalBox(): CssBox;
+  /** The strike targets' centres in CSS px, relative to the page, with whether each is struck. */
+  targets(): { x: number; y: number; struck: boolean }[];
 }
 
 export interface DebugApi extends Omit<ForgeDebug, 'state'> {
   info(): DebugInfo;
+  /** Use seed `n` for the next craft started. Works outside the forge. */
+  setSeed(n: number): void;
   /** The craft in progress, or null outside the forge. */
   state(): CraftState | null;
 }
@@ -48,6 +52,14 @@ export function debugEnabled(search = location.search): boolean {
 }
 
 let forge: ForgeDebug | null = null;
+let nextSeed: number | null = null;
+
+/** The seed set with `setSeed`, once; null when none was set (the forge then takes one from the clock). */
+export function takeDebugSeed(): number | null {
+  const s = nextSeed;
+  nextSeed = null;
+  return s;
+}
 
 /** The forge screen registers itself while open, and passes null when it closes. Does nothing without ?debug. */
 export function setForgeDebug(api: ForgeDebug | null): void {
@@ -66,6 +78,10 @@ export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: 
   stage.append(readout);
   window.__artifice = {
     info: current,
+    setSeed: (n) => {
+      nextSeed = n >>> 0;
+    },
+    targets: () => (forge ?? noForge()).targets(),
     state: () => forge?.state() ?? null,
     pause: () => (forge ?? noForge()).pause(),
     advance: (ms) => (forge ?? noForge()).advance(ms),
