@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 type Pt = { x: number; y: number; struck: boolean };
 type Api = {
   setSeed(n: number): void;
-  state(): { location: string; temp: number; ruin: string | null; strikes: { kind: string }[]; targets: Pt[] } | null;
+  state(): { location: string; temp: number; ruin: string | null; strikes: { kind: string; lines: { cause: string; points: number }[] }[]; targets: Pt[] } | null;
   targets(): Pt[];
   pause(): void;
   advance(ms: number): void;
@@ -65,11 +65,24 @@ test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) =
   const s = (await api(page, (a) => a.state()))!;
   expect(s.strikes).toHaveLength(1);
   expect(s.strikes[0]!.kind).toBe('hit');
+  // Exactly 40 game px above the touch: a centre hit costs nothing.
+  expect(s.strikes[0]!.lines).toEqual([]);
   expect(s.targets[4]!.struck).toBe(true);
   expect((await api(page, (a) => a.targets()))[4]!.struck).toBe(true);
   expect(s.targets.filter((t) => t.struck)).toHaveLength(1);
-  await expect(page.getByTestId('strikes')).toHaveText(/^Strikes 1 of 9 · −\d+$/);
-  await expect(page.getByTestId('points').first()).toBeVisible();
+  await expect(page.getByTestId('strikes')).toHaveText('Strikes 1 of 9 · −0');
+  await expect(page.getByTestId('points')).toHaveText('Clean');
+
+  // About 6 game px off-centre: the strike costs points, and the screen shows what the engine scored for it.
+  // (Touch positions are rounded by the browser, so the exact distance comes from the engine, not from here.)
+  const k = await cssPerGame(page);
+  await strikeAt(page, { x: targets[6]!.x + 6 * k, y: targets[6]!.y });
+  const off = (await api(page, (a) => a.state()))!.strikes[1]!;
+  expect(off.kind).toBe('hit');
+  const pts = Math.round(off.lines.reduce((t, l) => t + l.points, 0));
+  expect(pts).toBeGreaterThan(0);
+  await expect(page.getByTestId('points')).toHaveText(`−${pts}`);
+  await expect(page.getByTestId('strikes')).toHaveText(`Strikes 2 of 9 · −${pts}`);
   await testInfo.attach('close-view', { body: await page.screenshot(), contentType: 'image/png' });
 });
 

@@ -81,6 +81,7 @@ export class Forge extends Phaser.Scene {
   private seenStrikes = 0;
   private popups: Popup[] = [];
   private hammerHintCounted = false;
+  private layoutPending = false;
 
   private fireSound?: Phaser.Sound.BaseSound;
   private bellowsSound?: Phaser.Sound.BaseSound;
@@ -106,6 +107,7 @@ export class Forge extends Phaser.Scene {
     this.seenStrikes = 0;
     this.popups = [];
     this.hammerHintCounted = false;
+    this.layoutPending = false;
   }
 
   create(): void {
@@ -193,6 +195,12 @@ export class Forge extends Phaser.Scene {
 
   /** Centre the fire-to-tub area between the top bar and the panel, as in mock-up frame 3. */
   private layout(): void {
+    // Don't move the scene under a finger that is aiming; lay out again when it lifts.
+    if (this.strikePointer >= 0) {
+      this.layoutPending = true;
+      return;
+    }
+    this.layoutPending = false;
     const W = this.scale.width;
     const H = this.scale.height;
     const k = this.gamePerCss();
@@ -311,6 +319,7 @@ export class Forge extends Phaser.Scene {
   private cancelStrike(): void {
     this.strikePointer = -1;
     this.ring = null;
+    if (this.layoutPending) this.layout();
   }
 
   /** Every new strike answers at once: sparks, the hammer sound, and its points rising from it (UI_STYLE Controls). */

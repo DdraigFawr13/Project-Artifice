@@ -1,3 +1,4 @@
+import grading from '../data/grading.json';
 import { el, show } from './dom';
 
 export type Step = 'Alloy' | 'Heat' | 'Hammer' | 'Quench';
@@ -95,7 +96,7 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   const ruined = el('div', { className: 'group' },
     el('div', { className: 'alert', attrs: { role: 'alert' } },
       el('b', { text: 'Ruined' }),
-      el('p', { text: `Three strikes on black, cold metal cracked the ${itemName.toLowerCase()}.` }),
+      el('p', { text: `${grading.ruin.blackStrikes} strikes on black, cold metal cracked the ${itemName.toLowerCase()}.` }),
     ),
     again);
   ruined.hidden = true;
