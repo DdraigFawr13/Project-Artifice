@@ -26,8 +26,6 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - Earlier entries (brainstorm to S3 built): [archive](archive/handoff-2026-11.md).
 
-- 2026-11-04 S3 merged (PR #5, ea9687b); main CI passed.
-
 - 2026-11-04 S4 merged by Morgan (PR #6, b6f0f8f) after playing it; PR CI green; Vercel production b6f0f8f, aliases 302.
 
 - 2026-11-04 S4 built (02ab8e4): zero-decision re-check (reviewer) found 7 consequential gaps; all answered by the spec, D-005 or mock-up frames 5–7, so none went to Morgan; defaults in the spec's S4 list. J4 checks failed first, then passed (91 unit, 17 e2e); 21 mutants, all killed after 2 checks were sharpened. Screens screenshotted at the Pixel size and matched to frames 5–7. CC0 hiss (ATTRIBUTION). Spec review: 10 findings, 8 fixed (save written over an unreadable one, "for 0 s", spread case past the reach, hint counted before the pick-up, burning advice in hand, Saved status, .dim text, stale spec lines), 2 declined (disabled buttons in the 0.8 s end, a real-time delay check).
