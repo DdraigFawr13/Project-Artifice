@@ -3,6 +3,7 @@ import './ui/style.css';
 import { Boot } from './game/Boot';
 import { Choose } from './game/Choose';
 import { Forge } from './game/Forge';
+import { Result } from './game/Result';
 import { createContext } from './game/context';
 import { computeScale } from './game/scale';
 import { debugEnabled, installDebug, type DebugInfo } from './ui/debug';
@@ -47,7 +48,7 @@ const game = new Phaser.Game({
   pixelArt: true,
   backgroundColor: NIGHT_0,
   scale: { mode: Phaser.Scale.NONE, zoom: fitStage(info) },
-  scene: [new Boot(), new Choose(ctx), new Forge(ctx)],
+  scene: [new Boot(), new Choose(ctx), new Forge(ctx), new Result()],
 });
 
 const renderDebug = debugEnabled() ? installDebug(stage, () => info, () => game.loop.actualFps) : undefined;

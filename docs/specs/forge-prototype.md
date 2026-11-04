@@ -45,7 +45,7 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 
 - **Given** a hammered piece
 - **When** the player drags it to the tub and lets go
-- **Then** the result screen shows the score, its tier, the material quality beside it, and one line per cause, with score = max(0, round(100 − sum of points lost)); or the ruin screen with floor(parts ÷ 2) parts returned as scrap. **Check:** `src/engine/grade.test.ts` (sum rule, rounding, floor at 0, every ruin rule, scrap); `src/engine/spread.test.ts` (a careful knife (every strike within 4 px and in band, quench at 830 °C) and a sloppy one (every strike 12 px off, quench at 980 °C), with the default alloy differ by 25 points or more); `e2e/craft.spec.ts` plays a scripted knife through the debug API's `send()` and asserts the score, tier and cause lines; `e2e/ruin.spec.ts` quenches at white heat and sees the ruin screen.
+- **Then** the result screen shows the score, its tier, the material quality beside it, and one line per cause, with score = max(0, 100 − the sum of the rounded lines) (as Engine → grade; was "round(100 − sum)", corrected at S4 start); or the ruin screen with floor(parts ÷ 2) parts returned as scrap. **Check:** `src/engine/grade.test.ts` (sum rule, rounding, floor at 0, every ruin rule, scrap); `src/engine/spread.test.ts` (a careful knife (every strike within 4 px and in band, quench at 830 °C) and a sloppy one (every strike 12 px off, quench at 980 °C), with the default alloy differ by 25 points or more); `e2e/craft.spec.ts` plays a scripted knife through the debug API's `send()` and asserts the score, tier and cause lines; `e2e/ruin.spec.ts` quenches at white heat and sees the ruin screen.
 
 ### J5 Full loop
 
@@ -141,7 +141,7 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
   - Targets are spaced evenly along the blade's centre line in the close view, from 20 px inside the tang end to 20 px inside the tip, with exact coordinates fixed in S3 against the close-up art. The default alloy for S2–S4 is `ore2` for all parts but one, and `ore1` for that one (horseshoe 2 + 1, knife 4 + 1, sword 7 + 1).
 - `grading.json`:
   - A strike counts for the nearest unstruck target within 9 game px. Off-centre: −1 per game px beyond 3, in fractions, up to −6 per strike (reached at 9 px). No unstruck target within 9 px: −2 (wild strike), or −1 (repeat) if a struck one is within 9 px. (Changed 2026-11-04 at S3 start, Morgan: targets sit 19–22 px apart, so the old 24 px reach overlapped its neighbours.)
-  - Cold strike (below the working band): −4. Hot strike (above it): −2. These add to any off-centre points. Each target left unstruck at the quench: −6.
+  - Cold strike (below the working band): −4. Hot strike (above it): −2. These add to any off-centre points. Each hit left missing at the quench: −3 (a target never hit costs −6; changed in S3, see S3 list).
   - Out of band while on the anvil: −2 per second. Burning (`white` band, anywhere): −5 per second.
   - Quench band 780–880 °C; −1 per 25 °C outside it, in fractions.
   - Tiers: Crude 0–39, Common 40–59, Fine 60–74, Superior 75–89, Masterwork 90–100 (D-005).
@@ -150,7 +150,7 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 
 ### Debug API
 
-- With `?debug`, `window.__artifice` offers `info()` (scale, visible size, device pixel ratio), `setSeed(n)`, `pinTemp(°C | null)`, `targets()`, `state()` and `pause()` / `advance(ms)` to drive the fixed step from tests. `send(input)` feeds one `Input` to the next step, and `metalBox()` gives the metal's bounding box in screen px. `state()` includes `location`, `temp`, `targets` with a struck flag, and `strikes`. Each slice adds what its checks need. It never ships without `?debug`.
+- With `?debug`, `window.__artifice` offers `info()` (scale, visible size, device pixel ratio), `setSeed(n)`, `pinTemp(°C | null)`, `targets()`, `state()` and `pause()` / `advance(ms)` to drive the fixed step from tests. `send(input)` feeds one `Input` to the next step, and `metalBox()` gives the metal's bounding box in screen px. `state()` includes `location`, `temp`, `targets` with their `hits` (0–2; a struck flag until S3), and `strikes`. Each slice adds what its checks need. It never ships without `?debug`.
 
 ### Screens
 
@@ -239,6 +239,18 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 - **Checks that fail now:** J4.
 - **Files:** `src/engine/quench.ts`, `grade.ts` (quench causes, tiers, rounding, floor at 0, ruin, scrap), `grade.test.ts`, `spread.test.ts`; `src/data/grading.json` quench, ruin and tier values; `src/game/Result.ts` (result and ruin; "Choose item" and "Forge another" go back to the list or start the same item); `src/game/Choose.ts` (bests and scrap); `src/save/save.ts` (written at craft end); `assets/sfx/` hiss; `e2e/craft.spec.ts`, `e2e/ruin.spec.ts`.
 - **Waits on:** S3.
+- **Settled at S4 start (2026-11-04):** the zero-decision re-check against S3's merged code found 7 consequential gaps and several small ones; each has an answer in this spec, D-005 or the approved mock-up (frames 5–7), so none went to Morgan. Defaults:
+  - Engine: `CraftState` gains `quenchC: number | null`, and `ruin` gains `white-quench`. A `{drop: "tub"}` while held ends the craft (`location` `done`) at that step's temperature, before any heat change, like a strike; 1200 °C or more is `white-quench`. `quench.ts` gives the quench lines: −1 per 25 °C below 780 or above 880, in fractions (boundaries cost 0).
+  - `grade(state)` works on an ended craft only. Each line carries a `count` for its wording: strikes with that cause, missing hits, whole seconds (per-second causes), or 1 (quench). Score = max(0, 100 − sum of rounded lines); tiers from the whole score; `materialQuality` is the alloy quality rounded (knife default 56). Scrap is floor(parts ÷ 2) for either ruin (horseshoe 1, knife 2, sword 4); the mock-up's "2½" becomes "2" because the save holds whole parts.
+  - The screen: "Quench" sends `{grab}` and shows the wide view with the piece held over the anvil, the Quench step lit, and mock-up frame 5's panel ("Read the metal, then plunge it. The right moment is in its colour, glow and sparks.", the quench hint, "Back to the anvil"). The piece cools in the hand at the alloy's rate. Dragging it and letting go over the tub quenches; over the fire or anvil drops it there; anywhere else it goes back to the anvil (the S2 rule). Temperatures are never shown as numbers.
+  - The quench hint reads "Drag the piece to the tub and let go to quench." ("blade" doesn't fit the horseshoe) and counts on the craft's first Quench press, shown the first 3 times.
+  - When a craft ends, the save is written once (best = the higher score, a 0 included; scrap added for a ruin; hint counts), the hiss plays on a quench, and 0.8 s of engine time later (so a ruin's last points show) the Result scene opens. Reload in that 0.8 s keeps the save.
+  - Result (frame 6): top bar "<Item> finished" and "Saved" / "Not saved"; the score and tier, "Material quality 56 · not in the score"; a "Start 100" row, then one row per line worded from its cause and count ("3 strikes off-centre", "4 hits missing", "Out of the working heat for 4 s", "Quenched too hot"); then "New best for a <item>." or "Best: N". Buttons "Choose item" (back to the list, same item selected) and "Forge another" (same item, a new seed).
+  - Ruin (frame 7): top bar "<Item> ruined"; an alert with the cause ("The knife cracked in the quench." / "It went into the water far too hot." for `white-quench`; "The knife cracked on the anvil." / "3 strikes on black, cold metal." for `black-strikes`); "Half the metal, rounded down, comes back as scrap."; rows "Metal used 5 parts" and "Scrap returned 2 parts"; "The ruin counts. Your best grades are unchanged."; buttons "Choose item" and "Try again" (the mock-up's label). S3's placeholder panel goes.
+  - The item list shows "Scrap kept: N parts" once scrap is above 0.
+  - Debug: `zone(name)` gives a drop zone's box in CSS px, so `craft.spec.ts` drags to the tub through the real controls. The result is checked in the DOM (`state()` is null once the forge closes).
+  - S3 checks that change on purpose: the tub-return unit tests in `heat.test.ts`, "Quench waits for S4" and the ruin placeholder test in `hammer.spec.ts`.
+  - Sound: "Steam release sounds" by bart, CC0, from OpenGameArt (ATTRIBUTION).
 
 ### S5 Full loop
 

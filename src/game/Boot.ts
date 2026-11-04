@@ -4,6 +4,7 @@ import closeUrl from '../../assets/close.png?url';
 import fireUrl from '../../assets/sfx/fire.ogg?url';
 import bellowsUrl from '../../assets/sfx/bellows.ogg?url';
 import hammerUrl from '../../assets/sfx/hammer.ogg?url';
+import hissUrl from '../../assets/sfx/hiss.ogg?url';
 import { showLoading } from '../ui/loading';
 
 const FONT_WAIT_MS = 3000;
@@ -24,6 +25,7 @@ export class Boot extends Phaser.Scene {
     this.load.audio('fire', fireUrl);
     this.load.audio('bellows', bellowsUrl);
     this.load.audio('hammer', hammerUrl);
+    this.load.audio('hiss', hissUrl);
   }
 
   create(): void {

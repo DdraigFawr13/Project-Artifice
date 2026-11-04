@@ -3,6 +3,7 @@ import { bandAt, heatRules } from '../data/heatBands';
 import { itemById, type AlloyMix } from '../data/items';
 import { alloyProps, type AlloyProps } from './alloy';
 import { heatStep, type Place } from './heat';
+import { isWhiteQuench } from './quench';
 import { mulberry32 } from './rng';
 import { scoreStrike, type CauseId, type Line, type StrikeKind, type Target } from './strike';
 
@@ -39,11 +40,15 @@ export interface CraftState {
   lost: Partial<Record<CauseId, number>>;
   /** True while the metal is in the `white` band: it is being damaged. The screen shows "Burning!" from this. */
   burning: boolean;
+  /** The metal's temperature when it went into the tub, or null before the quench. */
+  quenchC: number | null;
   /** Set when the craft ends in ruin; `location` is then `done`. */
-  ruin: 'black-strikes' | null;
+  ruin: Ruin | null;
   /** Every input except `{none}`, with the step it arrived on, so a craft replays from seed plus log (GAME-01). */
   log: { step: number; input: Input }[];
 }
+
+export type Ruin = 'black-strikes' | 'white-quench';
 
 export interface CraftTarget {
   x: number;
@@ -100,6 +105,7 @@ export function createCraft(seed: number, itemId: string, alloy: AlloyMix): Craf
     strikes: [],
     lost: {},
     burning: false,
+    quenchC: null,
     ruin: null,
     log: [],
   };
@@ -113,8 +119,9 @@ function applyInput(s: CraftState, input: Input): CraftState {
   }
   if ('drop' in input) {
     if (s.location !== 'held') return s;
-    // The tub (quench) arrives in S4; until then a tub drop returns the bar to where it was.
-    return { ...s, location: input.drop === 'tub' ? s.heldFrom : input.drop };
+    // The quench ends the craft at this step's temperature, before any heat change (S4); white heat cracks it.
+    if (input.drop === 'tub') return { ...s, location: 'done', bellows: false, quenchC: s.temp, ruin: isWhiteQuench(s.temp) ? 'white-quench' : null };
+    return { ...s, location: input.drop };
   }
   if ('strike' in input) {
     // Strikes count only on the anvil; elsewhere they are logged and ignored.

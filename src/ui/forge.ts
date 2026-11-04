@@ -1,10 +1,13 @@
-import grading from '../data/grading.json';
 import { el, show } from './dom';
 
 export type Step = 'Alloy' | 'Heat' | 'Hammer' | 'Quench';
 
-/** What the forge screen shows: the wide view, the close-up anvil view, or the ruin placeholder (S3; S4 replaces it). */
-export type ForgeMode = 'wide' | 'close' | 'ruined';
+/**
+ * What the forge screen shows: the wide view at the fire, the close-up anvil view, the wide view with the piece in
+ * hand for the quench (mock-up frame 5), or the craft just ended (the last view stays, its buttons off, until the
+ * result or ruin screen opens).
+ */
+export type ForgeMode = 'wide' | 'close' | 'quench' | 'done';
 
 export interface ForgeView {
   mode: ForgeMode;
@@ -17,6 +20,8 @@ export interface ForgeView {
   struck: number;
   targets: number;
   lost: number;
+  /** Where the tub's label sits, in CSS px over the canvas (the quench view only). */
+  tub: { x: number; y: number } | null;
 }
 
 export interface ForgePanel {
@@ -32,16 +37,17 @@ export interface ForgeHandlers {
   bellows(down: boolean): void;
   move(): void;
   back(): void;
-  again(): void;
+  quench(): void;
+  toAnvil(): void;
 }
 
 const STEPS: Step[] = ['Alloy', 'Heat', 'Hammer', 'Quench'];
-const STEP_FOR: Record<ForgeMode, Step> = { wide: 'Heat', close: 'Hammer', ruined: 'Hammer' };
+const STEP_FOR: Record<Exclude<ForgeMode, 'done'>, Step> = { wide: 'Heat', close: 'Hammer', quench: 'Quench' };
 /** How far a strike's points rise before they fade, in CSS px. */
 const RISE = 28;
 
 /** The forge's top bar, scene labels and bottom panel (mock-up frames 3, 3b and 4). */
-export function showForgePanel(itemName: string, hints: { heat: string | null; hammer: string | null }, on: ForgeHandlers): ForgePanel {
+export function showForgePanel(itemName: string, hints: { heat: string | null; hammer: string | null; quench: string | null }, on: ForgeHandlers): ForgePanel {
   const stepEls = STEPS.map((s) => el('span', { text: s }));
   const top = el('div', { className: 'top' }, el('div', { className: 'steps' }, ...stepEls), el('span', { text: itemName }));
 
@@ -84,31 +90,29 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   const hammerHint = hints.hammer ? el('div', { className: 'hint', testId: 'hammer-hint', text: hints.hammer }) : null;
   const back = el('button', { className: 'btn ghost', text: 'Back to the fire', attrs: { type: 'button' } });
   const quench = el('button', { className: 'btn ghost', text: 'Quench', attrs: { type: 'button' } });
-  quench.disabled = true; // until S4
   back.addEventListener('click', () => on.back());
-  const close = el('div', { className: 'group' }, closeIntro, ...(hammerHint ? [hammerHint] : []),
-    el('div', { className: 'pair' }, back, quench),
-    el('p', { className: 'reason', text: 'Quenching comes in the next build.' }));
+  quench.addEventListener('click', () => on.quench());
+  const close = el('div', { className: 'group' }, closeIntro, ...(hammerHint ? [hammerHint] : []), el('div', { className: 'pair' }, back, quench));
   close.hidden = true;
 
-  // ── Ruin placeholder (S4's ruin screen replaces it) ──
-  const again = el('button', { className: 'btn', text: 'Forge again', attrs: { type: 'button' } });
-  again.addEventListener('click', () => on.again());
-  const ruined = el('div', { className: 'group' },
-    el('div', { className: 'alert', attrs: { role: 'alert' } },
-      el('b', { text: 'Ruined' }),
-      el('p', { text: `${grading.ruin.blackStrikes} strikes on black, cold metal cracked the ${itemName.toLowerCase()}.` }),
-    ),
-    again);
-  ruined.hidden = true;
+  // ── Quench, in the wide view with the piece in hand (mock-up frame 5) ──
+  const quenchIntro = el('p', { testId: 'quench-intro', text: 'Read the metal, then plunge it. The right moment is in its colour, glow and sparks.' });
+  const quenchHint = hints.quench ? el('div', { className: 'hint', testId: 'quench-hint', text: hints.quench }) : null;
+  const toAnvil = el('button', { className: 'btn ghost', text: 'Back to the anvil', attrs: { type: 'button' } });
+  toAnvil.addEventListener('click', () => on.toAnvil());
+  const quenching = el('div', { className: 'group' }, quenchIntro, ...(quenchHint ? [quenchHint] : []), toAnvil);
+  quenching.hidden = true;
 
   // The strikes label sits at the scene's top left (mock-up frame 4); points float over the canvas.
   const label = el('span', { className: 'label', testId: 'strikes' });
   label.hidden = true;
+  // The quench view names the tub (mock-up frame 5).
+  const tubLabel = el('span', { className: 'label tub', testId: 'tub-label', text: 'Quench tub' });
+  tubLabel.hidden = true;
   const floats = el('div', { className: 'floats' });
 
-  const panel = el('div', { className: 'panel' }, burning, wide, close, ruined);
-  show(el('div', { className: 'screen forge' }, top, el('div', { className: 'scene-gap' }, label), panel, floats));
+  const panel = el('div', { className: 'panel' }, burning, wide, close, quenching);
+  show(el('div', { className: 'screen forge' }, top, el('div', { className: 'scene-gap' }, label), panel, floats, tubLabel));
 
   let mode: ForgeMode | null = null;
   return {
@@ -117,17 +121,33 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
     update(v) {
       if (v.mode !== mode) {
         mode = v.mode;
-        stepEls.forEach((e, i) => (e.className = STEPS[i] === STEP_FOR[v.mode] ? 'on' : ''));
+        if (v.mode === 'done') {
+          // The craft has ended: the last view stays as it was, with nothing left to press.
+          for (const b of panel.querySelectorAll('button')) b.disabled = true;
+          release();
+          return;
+        }
+        stepEls.forEach((e, i) => (e.className = STEPS[i] === STEP_FOR[v.mode as Exclude<ForgeMode, 'done'>] ? 'on' : ''));
         wide.hidden = v.mode !== 'wide';
         close.hidden = v.mode !== 'close';
-        ruined.hidden = v.mode !== 'ruined';
-        label.hidden = v.mode === 'wide';
+        quenching.hidden = v.mode !== 'quench';
+        label.hidden = v.mode !== 'close';
         if (v.mode !== 'wide') release();
       }
-      const isBurning = v.burning && v.mode !== 'ruined';
+      if (v.mode === 'done') return;
+      tubLabel.hidden = v.mode !== 'quench' || !v.tub;
+      if (v.tub) {
+        // Kept 8 px inside the screen's right edge.
+        const half = tubLabel.offsetWidth / 2;
+        tubLabel.style.left = `${Math.min(v.tub.x, floats.clientWidth - 8 - half)}px`;
+        tubLabel.style.top = `${v.tub.y}px`;
+      }
+      const isBurning = v.burning;
       if (burning.hidden === isBurning) burning.hidden = !isBurning;
       intro.hidden = isBurning;
       closeIntro.hidden = isBurning;
+      quenchIntro.hidden = isBurning;
+      if (quenchHint) quenchHint.hidden = isBurning;
       if (heatHint) heatHint.hidden = isBurning;
       if (hammerHint) hammerHint.hidden = isBurning;
       const text = `Round ${v.round} · ${v.struck} of ${v.targets} · −${v.lost}`;

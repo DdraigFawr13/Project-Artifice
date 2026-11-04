@@ -97,3 +97,17 @@ export function writeSave(storage: Storage | null, save: Save): boolean {
     return false;
   }
 }
+
+/** What a craft's end changes in the save: a score (ruined false) or a ruin's scrap. */
+export type CraftEnd = { ruined: false; score: number } | { ruined: true; scrapParts: number };
+
+/**
+ * The save after a craft ends (forge spec, Save): the best is the higher score, a 0 included; a ruin adds its scrap
+ * and leaves the bests alone. Returns a new save, and whether the score is a new best.
+ */
+export function recordCraft(save: Save, itemId: string, end: CraftEnd): { save: Save; newBest: boolean; previousBest: number | null } {
+  const previousBest = save.best[itemId] ?? null;
+  if (end.ruined) return { save: { ...save, scrap: save.scrap + end.scrapParts }, newBest: false, previousBest };
+  const newBest = previousBest === null || end.score > previousBest;
+  return { save: newBest ? { ...save, best: { ...save.best, [itemId]: end.score } } : { ...save }, newBest, previousBest };
+}

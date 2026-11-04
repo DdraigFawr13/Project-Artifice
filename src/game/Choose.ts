@@ -9,8 +9,8 @@ export class Choose extends Phaser.Scene {
     super('Choose');
   }
 
-  create(): void {
-    this.list('knife');
+  create(data: { selectedId?: string } = {}): void {
+    this.list(data.selectedId ?? 'knife');
   }
 
   private list(selectedId: string): void {

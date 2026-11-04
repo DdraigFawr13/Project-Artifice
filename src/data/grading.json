@@ -2,5 +2,14 @@
   "passes": 2,
   "strike": { "offsetPx": 40, "reachPx": 9, "centrePx": 3, "offCentrePerPx": 1, "offCentreMax": 6, "wild": 2, "repeat": 1, "cold": 4, "hot": 2 },
   "perSecond": { "outOfBand": 2, "burning": 5 },
-  "ruin": { "blackStrikes": 3 }
+  "missedHit": 3,
+  "quench": { "lowC": 780, "highC": 880, "degreesPerPoint": 25 },
+  "tiers": [
+    { "name": "Crude", "min": 0 },
+    { "name": "Common", "min": 40 },
+    { "name": "Fine", "min": 60 },
+    { "name": "Superior", "min": 75 },
+    { "name": "Masterwork", "min": 90 }
+  ],
+  "ruin": { "blackStrikes": 3, "whiteQuenchC": 1200, "scrapShare": 0.5 }
 }

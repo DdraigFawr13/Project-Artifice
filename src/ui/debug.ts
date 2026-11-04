@@ -29,6 +29,8 @@ export interface ForgeDebug {
   pinTemp(c: number | null): void;
   /** The metal's bounding box (the piece itself, not its glow), in whichever view shows it. */
   metalBox(): CssBox;
+  /** A drop zone in the wide view (fire, anvil or tub), in CSS px relative to the page. */
+  zone(name: 'fire' | 'anvil' | 'tub'): CssBox;
   /** The strike targets' centres in CSS px, relative to the page, with how many hits each has had. */
   targets(): { x: number; y: number; hits: number }[];
 }
@@ -88,6 +90,7 @@ export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: 
     send: (input) => (forge ?? noForge()).send(input),
     pinTemp: (c) => (forge ?? noForge()).pinTemp(c),
     metalBox: () => (forge ?? noForge()).metalBox(),
+    zone: (name) => (forge ?? noForge()).zone(name),
   };
   const render = (i: DebugInfo) => {
     readout.textContent = `${i.cssWidth}×${i.cssHeight} css · dpr ${i.devicePixelRatio} · ×${i.scale} · ${i.visibleWidth}×${i.visibleHeight} · ${Math.round(fps())} fps`;

@@ -25,6 +25,7 @@ export function showChoose(items: readonly Item[], load: LoadResult, onForge: (i
 
   const notes: HTMLElement[] = [];
   if (Object.keys(load.save.best).length === 0) notes.push(el('div', { className: 'hint', text: 'No crafts yet. Your best grade for each item will show here.' }));
+  if (load.save.scrap > 0) notes.push(el('p', { className: 'sub', text: `Scrap kept: ${load.save.scrap} ${load.save.scrap === 1 ? 'part' : 'parts'}` }));
   if (!load.saving) notes.push(el('div', { className: 'hint', text: "Progress won't be saved on this device." }));
   if (load.recovered) notes.push(el('div', { className: 'hint', text: "Your old save couldn't be read. It is kept aside, and a fresh save has started." }));
 

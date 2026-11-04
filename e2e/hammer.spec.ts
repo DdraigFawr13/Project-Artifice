@@ -152,10 +152,9 @@ test('a lift over the panel cancels the strike', async ({ page }) => {
   expect((await api(page, (a) => a.state()))!.strikes).toHaveLength(0);
 });
 
-test('Back to the fire returns to the wide view; Quench waits for S4 with a reason', async ({ page }) => {
+test('Back to the fire returns to the wide view; Quench is ready', async ({ page }) => {
   await knifeOnAnvil(page, 950);
-  await expect(page.getByRole('button', { name: 'Quench' })).toBeDisabled();
-  await expect(page.getByText('Quenching comes in the next build.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Quench' })).toBeEnabled();
   await page.getByRole('button', { name: 'Back to the fire' }).click();
   await api(page, (a) => a.advance(64));
   expect((await api(page, (a) => a.state()))!.location).toBe('fire');
@@ -176,8 +175,10 @@ test('three strikes on black metal ruin the craft', async ({ page }) => {
   for (const t of targets.slice(0, 3)) await strikeAt(page, t);
   const s = (await api(page, (a) => a.state()))!;
   expect(s).toMatchObject({ location: 'done', ruin: 'black-strikes' });
-  await expect(page.getByText('Ruined')).toBeVisible();
-  await page.getByRole('button', { name: 'Forge again' }).click();
+  // The ruin screen follows once the last strike's points have shown (S4; e2e/ruin.spec.ts checks its content).
+  await api(page, (a) => a.advance(800));
+  await expect(page.getByText('Knife ruined')).toBeVisible();
+  await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
   expect((await api(page, (a) => a.state()))!.location).toBe('fire');
 });

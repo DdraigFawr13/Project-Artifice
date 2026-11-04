@@ -5,7 +5,9 @@ import { itemById, type Item } from '../data/items';
 import { defaultAlloy } from '../engine/alloy';
 import grading from '../data/grading.json';
 import { createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
-import { pointsLost } from '../engine/grade';
+import { grade, pointsLost } from '../engine/grade';
+import { recordCraft, writeSave } from '../save/save';
+import type { ResultData } from './Result';
 import { mulberry32, type Rng } from '../engine/rng';
 import { debugEnabled, setForgeDebug, takeDebugSeed, type CssBox } from '../ui/debug';
 import { showForgePanel, type ForgeMode, type ForgePanel } from '../ui/forge';
@@ -29,6 +31,8 @@ const INK = 0xead59c; // --ink: targets still open this round
 const RING = 0xfdd479; // --fire-5: where the strike will land
 /** A strike's points show for this long, advancing with engine steps (S3). */
 const POINTS_S = 0.8;
+/** After a craft ends, the last view stays this long (so a ruin's last points show) before the result or ruin screen. */
+const END_S = 0.8;
 /** Target squares: 11 game px, about the mock-up's 14 CSS px on the Pixel (1.23 CSS px per game px). */
 const TARGET_PX = 11;
 
@@ -88,7 +92,14 @@ export class Forge extends Phaser.Scene {
   private seenStrikes = 0;
   private popups: Popup[] = [];
   private hammerHintCounted = false;
+  private quenchHintCounted = false;
   private layoutPending = false;
+  /** True from a Quench press until the piece is dropped on the fire or anvil: the held piece is shown for the quench. */
+  private quenching = false;
+  /** Set once the craft has ended and the save is written; then the engine time since. */
+  private ended: ResultData | null = null;
+  private endedS = 0;
+  private leaving = false;
 
   private fireSound?: Phaser.Sound.BaseSound;
   private bellowsSound?: Phaser.Sound.BaseSound;
@@ -114,7 +125,12 @@ export class Forge extends Phaser.Scene {
     this.seenStrikes = 0;
     this.popups = [];
     this.hammerHintCounted = false;
+    this.quenchHintCounted = false;
     this.layoutPending = false;
+    this.quenching = false;
+    this.ended = null;
+    this.endedS = 0;
+    this.leaving = false;
   }
 
   create(): void {
@@ -130,9 +146,10 @@ export class Forge extends Phaser.Scene {
     const seen = this.ctx.load.save.hintsSeen;
     const heatHint = (seen.heat ?? 0) < HINT_TIMES ? hints.heat : null;
     const hammerHint = (seen.hammer ?? 0) < HINT_TIMES ? hints.hammer : null;
+    const quenchHint = (seen.quench ?? 0) < HINT_TIMES ? hints.quench : null;
     seen.heat = (seen.heat ?? 0) + 1;
 
-    this.panel = showForgePanel(this.item.name, { heat: heatHint, hammer: hammerHint }, {
+    this.panel = showForgePanel(this.item.name, { heat: heatHint, hammer: hammerHint, quench: quenchHint }, {
       bellows: (down) => this.queue.push({ bellows: down }),
       move: () => {
         if (this.dragging || this.pendingMove()) return;
@@ -150,7 +167,22 @@ export class Forge extends Phaser.Scene {
         this.heldPos = { x: this.bgX + REST.anvil.x, y: this.bgY + REST.anvil.y };
         this.queue.push({ grab: true }, { drop: 'fire' });
       },
-      again: () => this.scene.restart({ itemId: this.item.id }),
+      quench: () => {
+        // Pick the piece up off the anvil: the wide view shows it in hand, over the anvil, cooling (S4; mock-up frame 5).
+        if (this.craft.location !== 'anvil' || this.pendingMove()) return;
+        this.cancelStrike();
+        this.heldPos = { x: this.bgX + REST.anvil.x, y: this.bgY + REST.anvil.y };
+        this.quenching = true;
+        if (!this.quenchHintCounted) {
+          this.quenchHintCounted = true;
+          seen.quench = (seen.quench ?? 0) + 1;
+        }
+        this.queue.push({ grab: true });
+      },
+      toAnvil: () => {
+        if (this.craft.location !== 'held' || this.dragging || this.pendingMove()) return;
+        this.queue.push({ drop: 'anvil' });
+      },
     });
 
     this.ensureGlowTexture();
@@ -200,7 +232,28 @@ export class Forge extends Phaser.Scene {
       if (this.pinned !== null) this.craft = { ...this.craft, temp: this.pinned };
       this.answerStrikes();
       this.tickEffects();
+      if (this.craft.location === 'done') {
+        if (!this.ended) this.end();
+        this.endedS += STEP_MS / 1000;
+        if (this.endedS >= END_S && !this.leaving) {
+          this.leaving = true;
+          this.scene.start('Result', this.ended!);
+          return;
+        }
+      }
     }
+  }
+
+  /** The craft has ended: grade it, write the save once (bests, scrap, hint counts), and hiss if it went in the tub. */
+  private end(): void {
+    const g = grade(this.craft);
+    const r = recordCraft(this.ctx.load.save, this.item.id, g.ruined ? { ruined: true, scrapParts: g.scrapParts } : { ruined: false, score: g.score });
+    this.ctx.load.save = r.save;
+    const saved = writeSave(this.ctx.storage, r.save);
+    this.ended = { itemId: this.item.id, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
+    if (this.craft.quenchC !== null) this.sound.play('hiss', { volume: 0.7 });
+    this.dragging = false;
+    this.cancelStrike();
   }
 
   // ── Layout ────────────────────────────────────────────────────────────────
@@ -247,7 +300,7 @@ export class Forge extends Phaser.Scene {
 
   /** The piece's box in game px, in whichever view shows it (its raster's box, outline included). */
   private pieceBox(): { x: number; y: number; w: number; h: number } {
-    if (this.mode !== 'wide') return { x: this.closeX + this.closeR.x, y: this.closeY + this.closeR.y, w: this.closeR.w, h: this.closeR.h };
+    if (this.bgClose.visible) return { x: this.closeX + this.closeR.x, y: this.closeY + this.closeR.y, w: this.closeR.w, h: this.closeR.h };
     const p = this.piecePos();
     const { w, h } = this.wideR;
     return { x: Math.round(p.x - w / 2), y: Math.round(p.y - h / 2), w, h };
@@ -295,8 +348,12 @@ export class Forge extends Phaser.Scene {
   }
 
   private viewMode(): ForgeMode {
-    if (this.craft.ruin) return 'ruined';
-    return this.craft.location === 'anvil' && !this.dragging ? 'close' : 'wide';
+    const loc = this.craft.location;
+    if (loc === 'done') return 'done';
+    // The quench ends once the piece lands on the fire or the anvil and no pick-up is still queued.
+    if (this.quenching && (loc === 'fire' || loc === 'anvil') && !this.dragging && !this.pendingMove()) this.quenching = false;
+    if (this.quenching) return 'quench';
+    return loc === 'anvil' && !this.dragging ? 'close' : 'wide';
   }
 
   // ── Input: dragging the piece ─────────────────────────────────────────────
@@ -309,10 +366,11 @@ export class Forge extends Phaser.Scene {
       this.ring = { x: Math.round(p.x), y: Math.round(p.y - grading.strike.offsetPx) };
       return;
     }
-    if (this.mode !== 'wide') return;
+    if (this.mode !== 'wide' && this.mode !== 'quench') return;
     const loc = this.craft.location;
-    // `location` lags the queue by a step or two; a move already queued wins.
-    if (this.dragging || this.pendingMove() || (loc !== 'fire' && loc !== 'anvil')) return;
+    // `location` lags the queue by a step or two; a move already queued wins. In the quench the piece is already held.
+    const canTake = this.mode === 'quench' ? loc === 'held' : loc === 'fire' || loc === 'anvil';
+    if (this.dragging || this.pendingMove() || !canTake) return;
     const b = this.pieceBox();
     const padX = Math.max(8, (MIN_HIT - b.w) / 2);
     const padY = Math.max(8, (MIN_HIT - b.h) / 2);
@@ -322,7 +380,7 @@ export class Forge extends Phaser.Scene {
     this.heldPos = { x: c.x, y: c.y };
     this.dragging = true;
     this.dragPointer = p.id;
-    this.queue.push({ bellows: false }, { grab: true });
+    if (this.mode === 'wide') this.queue.push({ bellows: false }, { grab: true });
   }
 
   private pendingMove(): boolean {
@@ -348,6 +406,7 @@ export class Forge extends Phaser.Scene {
     }
     if (!this.dragging || p.id !== this.dragPointer) return;
     this.dragging = false;
+    if (this.craft.location === 'done') return;
     const x = this.heldPos.x - this.bgX;
     const y = this.heldPos.y - this.bgY;
     const zone = (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x, y));
@@ -434,16 +493,19 @@ export class Forge extends Phaser.Scene {
     this.setMode(this.viewMode());
     const l = look(this.craft.temp);
     const color = Phaser.Display.Color.HexStringToColor(l.color).color;
-    const wide = this.mode === 'wide';
+    // After a craft ends the last view stays; the close view stays for a ruin on the anvil.
+    const wide = this.bg.visible;
+    // Once quenched, the piece is in the water.
+    const inTub = this.craft.quenchC !== null;
 
     // The piece as worked so far (bar, halfway or finished by stretch), its shading tinted with the heat colour; the outline stays dark.
     this.paintPiece();
-    this.closeFill.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y).setTint(color);
-    this.closeEdge.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y);
+    this.closeFill.setVisible(!wide && !inTub).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y).setTint(color);
+    this.closeEdge.setVisible(!wide && !inTub).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y);
     const pb = this.pieceBox();
     const flip = this.piecePos().dir < 0;
-    this.wideFill.setVisible(wide).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip).setTint(color);
-    this.wideEdge.setVisible(wide).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip);
+    this.wideFill.setVisible(wide && !inTub).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip).setTint(color);
+    this.wideEdge.setVisible(wide && !inTub).setPosition(pb.x + pb.w / 2, pb.y + pb.h / 2).setFlipX(flip);
     if (!wide) this.drawClose(color);
     else {
       this.targetGfx.clear();
@@ -452,7 +514,7 @@ export class Forge extends Phaser.Scene {
 
     // The metal's glow: its band's radius and colour, as strong as the metal is bright (forge spec, Screens).
     const b = this.pieceBox();
-    this.metalGlow.setVisible(l.glow > 0);
+    this.metalGlow.setVisible(l.glow > 0 && !inTub);
     this.metalGlow.setPosition(b.x + b.w / 2, b.y + b.h / 2);
     this.metalGlow.setDisplaySize(b.w + l.glow * 4, b.h + l.glow * 4);
     this.metalGlow.setTint(color);
@@ -480,16 +542,27 @@ export class Forge extends Phaser.Scene {
       struck: this.craft.targets.filter((t) => t.hits >= currentRound(this.craft)).length,
       targets: this.craft.targets.length,
       lost: pointsLost(this.craft),
+      tub: this.mode === 'quench' ? this.tubLabelPos() : null,
     });
     this.updateSound(l.humHz);
+  }
+
+  /** Above the tub's drop zone, in CSS px over the canvas. */
+  private tubLabelPos(): { x: number; y: number } {
+    const k = 1 / this.gamePerCss();
+    const z = ZONES.tub;
+    return { x: Math.round((this.bgX + z.x + z.w / 2) * k), y: Math.round((this.bgY + z.y) * k) };
   }
 
   /** Switch views: backgrounds, and the hammer hint's count the first time this craft reaches the anvil. */
   private setMode(mode: ForgeMode): void {
     if (mode === this.mode) return;
     this.mode = mode;
-    this.bg.setVisible(mode === 'wide');
-    this.bgClose.setVisible(mode !== 'wide');
+    if (mode !== 'done') {
+      const wide = mode !== 'close';
+      this.bg.setVisible(wide);
+      this.bgClose.setVisible(!wide);
+    }
     if (mode !== 'close') this.cancelStrike();
     if (mode === 'close' && !this.hammerHintCounted) {
       this.hammerHintCounted = true;
@@ -604,6 +677,12 @@ export class Forge extends Phaser.Scene {
         const r = this.game.canvas.getBoundingClientRect();
         const k = r.width / this.game.canvas.width;
         return this.craft.targets.map((t) => ({ x: r.left + (this.closeX + t.x) * k, y: r.top + (this.closeY + t.y) * k, hits: t.hits }));
+      },
+      zone: (name): CssBox => {
+        const r = this.game.canvas.getBoundingClientRect();
+        const k = r.width / this.game.canvas.width;
+        const z = ZONES[name];
+        return { x: r.left + (this.bgX + z.x) * k, y: r.top + (this.bgY + z.y) * k, width: z.w * k, height: z.h * k };
       },
       metalBox: (): CssBox => {
         const r = this.game.canvas.getBoundingClientRect();
