@@ -27,7 +27,7 @@ Morgan: "I just always have loved crafting and nothing has ever really scratched
 
 - **Given** the playtest build
 - **When** it opens at 414 × 921 CSS px with a device pixel ratio of 3.25 (one reported Pixel 10 Pro XL size, UI_STYLE.md)
-- **Then** a loading screen, then the item list over the wide smithy. The game is drawn at scale 4, with about 336 × 748 game px visible. **Check:** `e2e/open.spec.ts` reads the scale and visible size from the debug API and asserts scale 4 and a visible width of 336–337, sees 3 item rows, and saves a screenshot.
+- **Then** a loading screen, then the item list (mock-up frame 1). The game is drawn at scale 4, with about 336 × 748 game px visible. **Check:** `e2e/open.spec.ts` reads the scale and visible size from the debug API and asserts scale 4 and a visible width of 336–337, sees 3 item rows, and saves a screenshot.
 
 ### J2 Heat
 
@@ -171,13 +171,13 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 
 ### S1 Skeleton and playtest link
 
-- **Morgan tries:** opens the Vercel preview link on the Pixel. A loading screen, then the item list (horseshoe, knife, sword, "Best: none yet") over the wide smithy. Tapping an item opens a "Forge coming next" placeholder. Adding `?debug` shows the width, height, device pixel ratio and scale in a corner; Morgan reports them.
+- **Morgan tries:** opens the Vercel preview link on the Pixel. A loading screen, then the item list (horseshoe, knife, sword, "Best: none yet") as in mock-up frame 1: tap a row to select it, then "Forge a knife" (or the selected item) opens a "Forge coming next" placeholder with Back. Adding `?debug` shows the width, height, device pixel ratio and scale in a corner; Morgan reports them. (Changed 2026-11-04 at S1 start: Morgan chose the approved mock-up's full-panel list with select-then-forge over "list over the wide smithy, tap to start".)
 - **Checks that fail now:** J1; `src/engine/rng.test.ts`; `src/save/save.test.ts` (read, version, unreadable).
 - **Files:**
-  - `package.json`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`, `index.html`
+  - `package.json`, `package-lock.json`, `vite.config.ts` (vitest includes `src/**/*.test.ts` only), `tsconfig.json`, `playwright.config.ts` (builds, then serves `vite preview` on port 4173), `index.html`
   - `src/engine/rng.ts`, `rng.test.ts`; `src/save/save.ts`, `save.test.ts`; `src/data/items.json` (ids, names, parts, minutes; targets come in S3)
-  - `src/game/Boot.ts`, `Choose.ts`; `src/ui/` panels and `debug.ts` (the debug API's `info()`)
-  - `assets/wide.png`: a blade-free edit of the reference wide shot, padded to 400 × 800
+  - `src/main.ts` (Phaser config, scale and resize), `src/game/scale.ts`, `scale.test.ts`, `context.ts`, `Boot.ts`, `Choose.ts`; `src/data/items.ts`; `src/ui/` panels, `style.css` (tokens) and `debug.ts` (the debug API's `info()`)
+  - `assets/wide.png`: a blade-free edit of the reference wide shot, padded to 400 × 800 (edited locally with `tools/art/`, no credits; loaded in S1, first shown in S2)
   - `assets/fonts/` with Pixelify Sans and Press Start 2P (OFL); `assets/ATTRIBUTION.md`
   - `e2e/open.spec.ts`
   - `.github/workflows/ci.yml`: adds `npm ci`, `npm run check` and `npm run e2e`
@@ -191,7 +191,7 @@ Scripts: `npm run check` runs `tsc --noEmit` and `vitest run`; `npm run e2e` run
 
 - **Morgan tries:** taps Knife (default alloy), holds the bellows and watches the bar heat, glow, spark and hum; lets go and watches it cool; drags it between fire and anvil; sees "Burning!" at white heat. The heat hint shows.
 - **Checks that fail now:** J2.
-- **Files:** `src/engine/craft.ts` (the full `Input` union, `location`, `createCraft`, `step`; strikes ignored until S3, the tub until S4), `heat.ts`, `heat.test.ts`, `alloy.ts` (the default alloy and weighted means); `src/data/heat-bands.json`, `heat-bands.test.ts`, `ores.json`, `hints.json`; `src/game/Choose.ts` (tapping an item starts a craft), `Forge.ts` (wide view, bellows, grab and drop, metal drawing, glow sprites, sparks, hum, an fps readout with `?debug`); `assets/sfx/` fire, bellows, hum; ATTRIBUTION; the debug API's `pinTemp`, `pause`, `advance`, `send`, `state`, `metalBox`; `src/save/save.ts` (`hintsSeen`, written at craft end); `e2e/heat.spec.ts`.
+- **Files:** `src/engine/craft.ts` (the full `Input` union, `location`, `createCraft`, `step`; strikes ignored until S3, the tub until S4), `heat.ts`, `heat.test.ts`, `alloy.ts` (the default alloy and weighted means); `src/data/heat-bands.json`, `heat-bands.test.ts`, `ores.json`, `hints.json`; `src/game/Choose.ts` ("Forge a <item>" starts a craft), `Forge.ts` (wide view, bellows, grab and drop, metal drawing, glow sprites, sparks, hum, an fps readout with `?debug`); `assets/sfx/` fire, bellows, hum; ATTRIBUTION; the debug API's `pinTemp`, `pause`, `advance`, `send`, `state`, `metalBox`; `src/save/save.ts` (`hintsSeen`, written at craft end); `e2e/heat.spec.ts`.
 - **Waits on:** S1.
 
 ### S3 Hammer

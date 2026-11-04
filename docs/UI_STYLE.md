@@ -23,12 +23,14 @@ Ember Night for the forge: a dark smithy lit only by the fire and the hot metal,
 
 The game has one fixed dark look, so there is no light/dark switch. Colours are sampled from the picked concept images with a median-cut quantiser (Ember concept 3 and Daylight concept 2, 2026-11-04); they are a starting palette, to be tuned to 32–48 colours when the art is made.
 
+Re-sampled 2026-11-04 (forge slice S1) from the two reference images in `mockups/forge.html`, the wide shot (blade removed) and the close-up, with `tools/art/palette.py`. Only the four cool tokens changed. Re-sampling the warm ramp gave a muddy one (`--fire-2` came out mauve, #6d4a50) and dropped `--fire-3` to #9e4e38, which gives 3.3:1 under `--night-0` button text instead of 7.5:1, so the fire and ember tokens stay as sampled from Ember concept 3. Old values: `--night-0` #090610, `--night-1` #100a14, `--night-2` #17111f, `--soot` #261a29.
+
 Forge (Ember Night), darkest to brightest:
 
-- `--night-0` #090610: deepest shadow
-- `--night-1` #100a14: unlit wall; UI panel background
-- `--night-2` #17111f
-- `--soot` #261a29: stone in shadow
+- `--night-0` #0d091b: deepest shadow
+- `--night-1` #191126: unlit wall; UI panel background
+- `--night-2` #241a33
+- `--soot` #372c45: stone in shadow
 - `--ember-0` #30161c
 - `--ember-1` #451b1a
 - `--ember-2` #64281d: lit stone, far from the fire
@@ -43,8 +45,8 @@ Forge (Ember Night), darkest to brightest:
 Shop (Daylight, later phase), darkest to brightest: #251412, #2f1c18, #302728, #3e2a24, #452a21, #592d1b, #4d4037, #74452c, #735b44, #aa6a3e, #d79653, #ead59c. Name these when the shop is designed.
 
 UI ink:
-- `--ink` #ead59c: text on `--night-1` (taken from the Daylight sample's lightest colour)
-- `--ink-dim` #735b44: decoration and captions only, never information (3.08:1 on `--night-1`, measured, below 4.5:1)
+- `--ink` #ead59c: text on `--night-1`, 12.6:1 (taken from the Daylight sample's lightest colour)
+- `--ink-dim` #735b44: decoration and captions only, never information (2.88:1 on `--night-1`, measured, below 4.5:1)
 
 Heat colours for metal are not tokens yet. They are a ramp from dull red to yellow-white whose brightness rises with heat, defined in the forge spec, with a second cue for every band (D-003).
 
@@ -53,7 +55,7 @@ Spacing: game pixels on a 4 px grid (4, 8, 12, 16, 24).
 ## Type
 <!-- Faces, sizes and number settings (tabular figures, units). Copy settings from the accepted specimen, not from memory (adventure-manager LESSONS:10). -->
 
-- Face: Pixelify Sans (Google Fonts, weights 400 and 600), as on the Ember Night sample in taste board 1. Fallback `monospace`.
+- Face: Pixelify Sans (Google Fonts, weights 400 and 600), as on the Ember Night sample in taste board 1. Fallback `monospace`. Both faces are bundled in `assets/fonts/` (OFL), not loaded from Google.
 - Figures: Press Start 2P (Google Fonts) for scores and point lines. Morgan found Pixelify Sans's 7 "a little off" in the forge mock-up: it has a hook at the top left.
 - Body 16 px, labels 14 px (the minimum), grade score 40 px in the figures face (the result is the screen's main fact; changed from 24 px in the forge mock-up).
 - Scores use tabular figures so they don't jump as they count.
@@ -68,7 +70,7 @@ Spacing: game pixels on a 4 px grid (4, 8, 12, 16, 24).
 ## Layout and sizes
 <!-- Columns, gutters and spacing at each target width; what moves or hides at each width. -->
 
-- The game renders at 360 × 640 game pixels in portrait (D-003), scaled by a whole number so pixels stay sharp. The viewport grows in height for taller phones.
+- The game is authored at 360 × 640 game pixels in portrait and drawn at a whole-number scale that keeps a central 336 × 640 safe zone on screen (D-003); backgrounds are 400 × 800. The scale rule is in the forge spec, Scale and screen, and in `src/game/scale.ts`.
 - On the Pixel 10 Pro XL (1344 physical px wide, reported, not checked) a ×4 scale shows 336 game px across. Keep everything that matters inside the central 336 px; the outer 12 px on each side may be cropped.
 - Two views while forging: a wide shot of the smithy for the fire, moving the piece and the quench, and a close-up at the anvil for hammering (Morgan, forge mock-up).
 - The forge scene fills the screen. Controls and the grade sit in the bottom third, within thumb reach.
@@ -96,7 +98,8 @@ Master list: `../.claude/skills/ui-style/references/avoid.md`.
 - `docs/CONCEPT.md`: what the game is and isn't.
 - `docs/DECISIONS.md`: settled choices.
 - `docs/design/planning-answers.md`: the design answers (items, grade display, mistakes, prototype scope) until the final plan moves them into DECISIONS.
-- No content files yet. Items, alloys and heat bands will be data files in the engine (GAME-04); add them here when they exist.
+- `src/data/items.json`: item ids, names, parts and minutes. Ores, heat bands, grading and hints join `src/data/` in later slices (GAME-04).
+- `src/ui/style.css`: the tokens above as CSS variables. Keep the two in step.
 
 ## New-screen checklist
 <!-- Run before calling a screen done. Add project items at the end. -->

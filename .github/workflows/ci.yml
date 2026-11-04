@@ -1,4 +1,5 @@
-# From the AI-Master-Instructions template. No app code yet, so CI runs only the drift check; add the project checks when a stack is chosen.
+# From the AI-Master-Instructions template, plus the forge prototype's checks (forge spec, Layout):
+# the master drift check, typecheck and unit tests (`npm run check`), and the Playwright specs (`npm run e2e`).
 name: CI
 
 on:
@@ -22,10 +23,16 @@ jobs:
     # Draft PRs don't run CI; marking one ready does (CI-06).
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
+          cache: npm
       - run: node .claude/master/sync.mjs --check
+      - run: npm ci
+      - run: npm run check
+      # The browser matches the pinned @playwright/test; only the headless shell is needed.
+      - run: npx playwright install --with-deps --only-shell chromium
+      - run: npm run e2e
