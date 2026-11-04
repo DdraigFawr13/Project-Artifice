@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SAVE_KEY, UNREADABLE_KEY, freshSave, loadSave, writeSave, type Save } from './save';
+import { SAVE_KEY, UNREADABLE_KEY, freshSave, loadSave, recordCraft, writeSave, type Save } from './save';
 
 /** An in-memory Storage, so the save module is tested without a browser. */
 function memoryStorage(initial: Record<string, string> = {}, opts: { failWrites?: boolean } = {}): Storage {
@@ -74,5 +74,30 @@ describe('writeSave', () => {
   it('reports failure when storage refuses the write', () => {
     expect(writeSave(memoryStorage({}, { failWrites: true }), sample)).toBe(false);
     expect(writeSave(null, sample)).toBe(false);
+  });
+});
+
+describe('recordCraft', () => {
+  it('keeps the higher score as the best, a 0 included, and says whether it is new', () => {
+    let save = freshSave();
+    let r = recordCraft(save, 'knife', { ruined: false, score: 0 });
+    expect(r).toEqual({ save: { ...freshSave(), best: { knife: 0 } }, newBest: true, previousBest: null });
+    save = r.save;
+    r = recordCraft(save, 'knife', { ruined: false, score: 74 });
+    expect(r.newBest).toBe(true);
+    expect(r.save.best.knife).toBe(74);
+    r = recordCraft(r.save, 'knife', { ruined: false, score: 60 });
+    expect(r).toMatchObject({ newBest: false, previousBest: 74 });
+    expect(r.save.best.knife).toBe(74);
+    // Equal is not a new best.
+    expect(recordCraft(r.save, 'knife', { ruined: false, score: 74 }).newBest).toBe(false);
+    // The input save is not changed.
+    expect(save.best.knife).toBe(0);
+  });
+
+  it('adds a ruin\'s scrap and leaves the bests alone', () => {
+    const save: Save = { ...freshSave(), best: { knife: 80 }, scrap: 1 };
+    const r = recordCraft(save, 'knife', { ruined: true, scrapParts: 2 });
+    expect(r).toEqual({ save: { ...save, scrap: 3 }, newBest: false, previousBest: 80 });
   });
 });

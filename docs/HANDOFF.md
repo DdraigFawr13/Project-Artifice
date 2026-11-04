@@ -4,7 +4,7 @@ Updated: 2026-11-04. A fresh session must be able to continue from this file alo
 
 ## Phase
 
-Build: slice S3 (hammer) approved by Morgan on 2026-11-04 after playing it ([PR #5](https://github.com/DdraigFawr13/Project-Artifice/pull/5), merged when CI is green). Next: S4 in a fresh session. S2 merged (PR #4, 19e6e3b); S1 merged (PR #3).
+Build: slice S4 (quench and grade) in progress on `claude/forge-s4-quench`, [PR #6](https://github.com/DdraigFawr13/Project-Artifice/pull/6) draft. S3 merged (PR #5, ea9687b; main CI green); S2 merged (PR #4, 19e6e3b); S1 merged (PR #3).
 
 ## Plan map
 
@@ -16,26 +16,24 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Plan: forge spec approved 2026-11-04.
 - ✔ Build S1: skeleton and playtest link (merged, PR #3).
 - ✔ Build S2: heat (merged, PR #4).
-- ✔ Build S3: hammer (approved; PR #5).
-- ▶ Build S4: quench and grade (fresh session).
+- ✔ Build S3: hammer (merged, PR #5).
+- ▶ Build S4: quench and grade (PR #6).
 - ○ Build S5: full loop and the 10-craft test.
 
 ## Just done
 
-- Earlier entries (brainstorm to the forge spec): [archive](archive/handoff-2026-11.md).
+- Earlier entries (brainstorm to S2 merged): [archive](archive/handoff-2026-11.md).
 
-- 2026-11-04 S1 built: zero-decision re-check (reviewer agent) found 10 consequential gaps, 8 filled with defaults, 2 put to Morgan; all S1 checks failed first, then passed. Morgan chose the mock-up's item list (select, then "Forge a knife"), a free local blade edit before any OpenArt spend, and linking Vercel. Cool tokens re-sampled; CI-05 override added. Spec review: 7 of 8 findings fixed. Vercel project `project-artifice` (team Golden Goose Engineering Group) linked, Node 22, login protection on all deployments; [PR #3](https://github.com/DdraigFawr13/Project-Artifice/pull/3) draft.
+- 2026-11-04 S3 merged (PR #5, ea9687b); main CI passed.
 
-- 2026-11-04 S2 built: zero-decision re-check (reviewer) found 14 open choices; Morgan chose both control styles (buttons and drag), 13 defaults recorded in the spec's S2 list. J2 checks failed first, then passed (39 unit, 6 e2e); greyscale, between-anchor and controls checks each mutation-tested once. Spec review: 13 of 20 fixed, 7 declined or left for S3. CC0 sounds from OpenGameArt (ATTRIBUTION). Preview builds are login-protected (302 checked).
-
-- 2026-11-04 S2 merged (PR #4, 19e6e3b) after Morgan's approval; Vercel production is that commit, all aliases login-protected (302).
+- 2026-11-04 S4 built (02ab8e4): zero-decision re-check (reviewer) found 7 consequential gaps; all answered by the spec, D-005 or mock-up frames 5–7, so none went to Morgan; defaults in the spec's S4 list. J4 checks failed first, then passed (91 unit, 17 e2e); 21 mutants, all killed after 2 checks were sharpened. Screens screenshotted at the Pixel size and matched to frames 5–7. CC0 hiss (ATTRIBUTION). Spec review: 10 findings, 8 fixed (save written over an unreadable one, "for 0 s", spread case past the reach, hint counted before the pick-up, burning advice in hand, Saved status, .dim text, stale spec lines), 2 declined (disabled buttons in the 0.8 s end, a real-time delay check).
 
 - 2026-11-04 S3 built: zero-decision re-check (reviewer) found 26 items; Morgan chose the free local close-up edit (no credits; OpenArt quote was 20 credits a try, balance 3,345) and a 9 px strike reach (targets sit 19–22 px apart); defaults recorded in the spec's S3 list. J3 checks failed first, then passed (57 unit, 11 e2e); 10 unit and 3 e2e mutants, all killed after one test was sharpened. CC0 hammer sound (ATTRIBUTION).
 
 ## Next
 
-1. Fresh session for S4 (quench and grade), from the latest `main` after PR #5 merges: read the spec's S3 "Settled at S3 start" list first (rounds, shapes, the −3 per missing hit note for S4), then the zero-decision re-check against S3's merged code (src/engine/craft.ts, strike.ts, grade.ts, src/game/Forge.ts, shapes.ts, src/ui/forge.ts, e2e/hammer.spec.ts).
-2. S4 adds the result and ruin screens (mock-up frames for the grade and ruin); check them against `mockups/forge.html` (ui-mockups rule).
+1. Morgan plays the S4 preview (PR #6, draft) and approves or asks for changes: [approval page](https://claude.ai/artifact/SEyiCibbpabSA38E9RHaCW).
+2. After approval: mark PR #6 ready (CI runs only then, GIT-07), check CI, merge, check Vercel production equals the merge commit, then S5 in a fresh session.
 
 ## Open questions
 
@@ -47,6 +45,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-04: 5 concepts made; dropped with reasons: yes; kill criteria: yes; rounds: 2; measured agent cost $1.12; measure 2 (planning-interview round 1 asks nothing the brief answered): passed, round 1 asked only the brief's open questions; measure 3 (concept unchanged after design): passed, the concept survived design unchanged. Both recorded 2026-11-04 from Morgan's report. A master session copies this to `decisions/benchmarks/brainstorm-trial.md` when done.
 
 ## Decisions since the last plan update
+
+- 2026-11-04 S4 playtest (Morgan): "works pretty well"; quench from the fire too (a wide-view Quench button added); the quench feels unsatisfying but fine (steam and a sinking piece noted for later, spec S4 list).
 
 - 2026-11-04 S3 art (Morgan): the knife is the concept's own knife, and every piece starts as bar stock; each target shapes its own stretch, in two strict rounds: the first hit gives a halfway shape, the second the finished one (section by section). Spec S3 list updated.
 - 2026-11-04 Checks run at Morgan's measured Pixel size only: 443 × 816 CSS px at dpr 2.4375, ×3, 359 × 663 game px (the `?debug` readout; D-004 updated).

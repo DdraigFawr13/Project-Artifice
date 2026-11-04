@@ -60,22 +60,22 @@ describe('heat', () => {
     expect(s.temp).toBe(H.floorC);
   });
 
-  it('ignores the bellows out of the fire, and a drop in the tub returns the bar until S4', () => {
+  it('ignores the bellows out of the fire', () => {
     let s = createCraft(1, 'knife', defaultAlloy(knife));
     s = step(s, { grab: true });
     s = step(s, { drop: 'anvil' });
     s = run(s, steps(1000), { bellows: true });
     expect(s.temp).toBe(H.floorC);
-    s = step(s, { grab: true });
-    s = step(s, { drop: 'tub' });
-    expect(s.location).toBe('anvil');
   });
 
-  it('returns a bar dropped in the tub to the fire when it came from the fire', () => {
-    let s = createCraft(1, 'knife', defaultAlloy(knife));
-    s = step(s, { grab: true });
-    s = step(s, { drop: 'tub' });
-    expect(s.location).toBe('fire');
+  it('quenches a bar dropped in the tub, wherever it was picked up (S4)', () => {
+    for (const from of [[], [{ grab: true }, { drop: 'anvil' }]] as Input[][]) {
+      let s = createCraft(1, 'knife', defaultAlloy(knife));
+      for (const i of from) s = step(s, i);
+      s = step(s, { grab: true });
+      s = step(s, { drop: 'tub' });
+      expect(s.location).toBe('done');
+    }
   });
 
   it('ignores inputs that make no sense where the bar is', () => {
