@@ -7,6 +7,8 @@ import { PASSES, type CraftState } from './craft';
 export type StatId = 'edge' | 'toughness' | 'balance';
 /** Every stat, in display order. */
 export const STAT_IDS: readonly StatId[] = ['edge', 'toughness', 'balance'];
+/** Each stat's name as the screens show it. */
+export const STAT_NAMES: Record<StatId, string> = { edge: 'Edge', toughness: 'Toughness', balance: 'Balance' };
 
 export interface StatResult {
   /** Whole number, 0–100. */

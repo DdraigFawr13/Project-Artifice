@@ -72,7 +72,8 @@ describe('J5 ore traits', () => {
   it('rounds work x multiplier and clamps to 0-100', () => {
     // 2 hits 13 px out (10 over the centre each) among 18: work 100 - 10 x 20/18 = 88.89, x 0.83 = 73.8.
     expect(edge(ended('knife', KNIFE_MIX, { offs: { 0: [13, 13] } })).value).toBe(74);
-    expect(edge(ended('knife', E)).value).toBe(100);
+    expect(edge(ended('knife', E)).value).toBe(100);    // Work below 0 is 0: a quench 1170 °C off costs 234.
+    expect(tough(ended('knife', T, { quenchC: 2000 })).value).toBe(0);
   });
 });
 
@@ -143,6 +144,11 @@ describe('Balance', () => {
     const s = ended('knife', B, { offs: { 0: [0], 1: [] } }); // 1 + 2 missing
     expect(balance(s).value).toBe(100 - 3 * 3);
     expect(balance(s).why).toBe('hurt most by 3 hits missing');
+  });
+
+  it('names a single count in the singular', () => {
+    expect(balance(ended('knife', B, { offs: { 0: [0] } })).why).toBe('hurt most by 1 hit missing');
+    expect(edge(ended('knife', E, { offs: { 0: [5, 0] } })).why).toBe('hurt most by 1 off-centre strike');
   });
 
   it('loses 15 per slag spot left, and cleared spots cost nothing', () => {

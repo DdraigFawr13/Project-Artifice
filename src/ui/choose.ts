@@ -1,5 +1,5 @@
 import type { Item } from '../data/items';
-import { statWord } from '../engine/stats';
+import { STAT_NAMES, statWord } from '../engine/stats';
 import type { LoadResult } from '../save/save';
 import { el, show } from './dom';
 
@@ -9,7 +9,7 @@ export function showChoose(items: readonly Item[], load: LoadResult, onForge: (i
   const rows = items.map((item) => {
     const best = load.save.best[item.id];
     const bests = load.save.bestStats[item.id] ?? {};
-    const words = item.stats.filter((id) => bests[id] !== undefined).map((id) => `${id[0]!.toUpperCase()}${id.slice(1)} ${statWord(id, bests[id]!)}`);
+    const words = item.stats.filter((id) => bests[id] !== undefined).map((id) => `${STAT_NAMES[id]} ${statWord(id, bests[id]!)}`);
     const row = el('button', { className: 'item', testId: 'item-row', attrs: { type: 'button', 'aria-pressed': String(item === selected) } },
       el('b', { text: item.name }),
       el('span', { text: `about ${item.minutes} min` }),

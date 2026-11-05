@@ -1,6 +1,6 @@
 import type { Item } from '../data/items';
 import type { Graded, ResultLine } from '../engine/grade';
-import { STAT_IDS } from '../engine/stats';
+import { STAT_IDS, STAT_NAMES } from '../engine/stats';
 import type { CauseId } from '../engine/strike';
 import type { ResultData } from '../game/Result';
 import { el, show } from './dom';
@@ -33,8 +33,6 @@ const row = (label: string, value: string | Node, minus = false) =>
   el('div', { testId: 'line' }, el('span', { text: label }), el('span', { className: minus ? 'minus pts' : 'pts' }, value));
 /** "5 parts": the number in the figures face, the word in the body face. */
 const parts = (n: number) => el('span', { className: 'count' }, el('span', { className: 'pts', text: String(n) }), ` ${n === 1 ? 'part' : 'parts'}`);
-
-const STAT_NAMES = { edge: 'Edge', toughness: 'Toughness', balance: 'Balance' } as const;
 
 /** The stat card (mock-up `f-result-stats`): per stat the name, a bar of value ÷ 100, the word and the reason. */
 function statCard(item: Item, stats: Graded['stats']): HTMLElement {
