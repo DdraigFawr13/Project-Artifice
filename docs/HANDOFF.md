@@ -27,11 +27,10 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - Earlier entries (brainstorm to S3 built): [archive](archive/handoff-2026-11.md).
 
-- 2026-11-04 S4 built (02ab8e4): zero-decision re-check (reviewer) found 7 consequential gaps; all answered by the spec, D-005 or mock-up frames 5–7, so none went to Morgan; defaults in the spec's S4 list. J4 checks failed first, then passed (91 unit, 17 e2e); 21 mutants, all killed after 2 checks were sharpened. Screens screenshotted at the Pixel size and matched to frames 5–7. CC0 hiss (ATTRIBUTION). Spec review: 10 findings, 8 fixed (save written over an unreadable one, "for 0 s", spread case past the reach, hint counted before the pick-up, burning advice in hand, Saved status, .dim text, stale spec lines), 2 declined (disabled buttons in the 0.8 s end, a real-time delay check).
-
 ## Next
 
-1. With Morgan: judge the prototype against CONCEPT.md's kill criteria. The S5 playtest (`docs/playtests/2026-11-04-s5-loop.md`, 6 crafts) said "unsure" about forging another ("needs more depth") and crafts run "way shorter" than the 1/2/3 min goal; the alloy choice mattered. Also open: a no-strike knife scores 46. Then set the spec's Status to Shipped (write-spec step 9) and offer an audit (VER-09).
+1. Planning the forge **depth pass** with Morgan (write-spec; `docs/specs/forge-depth.md` not written yet). Round 1 answered ([form](https://claude.ai/artifact/K4G53fSfXyj7K3ovUrk2ZQ), collection `depth1`); round 2 out ([form](https://claude.ai/artifact/T9No24JSVbtoPS2rLXhAE3), `depth2`: blade stats, ore traits and look, grind, order). After round 2: write the spec, reconcile, 3 fresh checks, approval. Ideas page: [link](https://claude.ai/artifact/KTpAvi8EfJSm6UBfaerknz).
+2. Then the 10-craft test again. Also from S5: "unsure" about forging another, crafts "way shorter" than the goal.
 
 ## Open questions
 
@@ -42,6 +41,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-04: 5 concepts made; dropped with reasons: yes; kill criteria: yes; rounds: 2; measured agent cost $1.12; measure 2 (planning-interview round 1 asks nothing the brief answered): passed, round 1 asked only the brief's open questions; measure 3 (concept unchanged after design): passed, the concept survived design unchanged. Both recorded 2026-11-04 from Morgan's report. A master session copies this to `decisions/benchmarks/brainstorm-trial.md` when done.
 
 ## Decisions since the last plan update
+
+- 2026-11-05 Depth pass round 1 (Morgan, all as recommended): hold-to-charge strike force, right force set by heat, too light doesn't take / too hard costs and counts towards cracking; slag costs craft points, struck out before shaping, more in cheaper ore; missed hit −5; metal varies ±20 °C, cued by the hammer's sound; cooling +30%; Perfect = 1 px, in band, right force; times a guide. All 11 ideas Now (incl. blade stats, grind, streak, ore names). Depth means "actually shaping the bar… the ore really matter to stats of the item and how it looks".
 
 - 2026-11-04 S5 playtest (Morgan): quench "very flat", fixed in this PR (steam, the piece slides into the water, 1.6 s hold; spec S5 list); alloy choice matters; unsure about forging another.
 
