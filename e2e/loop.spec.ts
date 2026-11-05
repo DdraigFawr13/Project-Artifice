@@ -85,9 +85,9 @@ test('mix a 3-ore alloy, craft a knife, forge another, reload: best and scrap ke
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
   expect((await api(page, (a) => a.state()!.alloy))).toEqual({ ore1: 1, ore2: 2, ore3: 2 });
 
-  // Craft: quench in the band with no strikes. 18 hits missing, −90: 10.
+  // Craft: quench in the band with no strikes. 18 hits missing (−90) and 2 slag spots left (−6): 4.
   await quenchAt(page, 830);
-  await expect(page.getByTestId('score')).toHaveText('10');
+  await expect(page.getByTestId('score')).toHaveText('4');
   await expect(page.getByTestId('material')).toHaveText('Material quality 66 · not in the score');
 
   // Forge another skips the alloy screen and keeps the mix.
@@ -104,7 +104,7 @@ test('mix a 3-ore alloy, craft a knife, forge another, reload: best and scrap ke
 
   // Reload mid-craft abandons it; the list shows the best and the scrap.
   await page.reload();
-  await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 10');
+  await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 4');
   await expect(page.getByText('Scrap kept: 2 parts')).toBeVisible();
   // The mix lives in the page, not the save: after a reload the alloy screen starts from the default again.
   await page.getByRole('button', { name: 'Forge a knife' }).tap();

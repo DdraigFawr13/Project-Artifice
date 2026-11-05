@@ -39,6 +39,10 @@ export interface ForgeDebug {
   zone(name: 'fire' | 'anvil' | 'tub'): CssBox;
   /** The strike targets' centres in CSS px, relative to the page, with how many hits each has had. */
   targets(): { x: number; y: number; hits: number }[];
+  /** The slag spots' centres in CSS px, relative to the page, like `targets()`. */
+  slag(): { x: number; y: number; cleared: boolean }[];
+  /** Mark every slag spot cleared, so checks that strike targets directly don't depend on the seed's slag. */
+  clearSlag(): void;
 }
 
 export interface DebugApi extends Omit<ForgeDebug, 'state'> {
@@ -90,6 +94,8 @@ export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: 
       nextSeed = n >>> 0;
     },
     targets: () => (forge ?? noForge()).targets(),
+    slag: () => (forge ?? noForge()).slag(),
+    clearSlag: () => (forge ?? noForge()).clearSlag(),
     state: () => forge?.state() ?? null,
     lastSound: () => (forge ?? noForge()).lastSound(),
     hold: () => (forge ?? noForge()).hold(),

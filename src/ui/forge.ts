@@ -52,7 +52,7 @@ const STEP_FOR: Record<Exclude<ForgeMode, 'done'>, Step> = { wide: 'Heat', close
 const RISE = 28;
 
 /** The forge's top bar, scene labels and bottom panel (mock-up frames 3, 3b and 4). */
-export function showForgePanel(itemName: string, hints: { heat: string | null; hammer: string | null; force: string | null; quench: string | null }, on: ForgeHandlers): ForgePanel {
+export function showForgePanel(itemName: string, hints: { heat: string | null; hammer: string | null; force: string | null; slag: string | null; quench: string | null }, on: ForgeHandlers): ForgePanel {
   const stepEls = STEPS.map((s) => el('span', { text: s }));
   const top = el('div', { className: 'top' }, el('div', { className: 'steps' }, ...stepEls), el('span', { text: itemName }));
 
@@ -101,14 +101,15 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
 
   // ── Close-up anvil view (mock-up frame 4) ──
   const closeIntro = el('p', { testId: 'close-intro', text: 'Read the metal: its colour, glow and sparks tell you the heat.' });
-  // The hammer hint (where the strike lands) and the force hint (S2) each show their first 3 times.
+  // The hammer, force (S2) and slag (S3) hints each show their first 3 times, at most 2 at once.
   const hammerHint = hints.hammer ? el('div', { className: 'hint', testId: 'hammer-hint', text: hints.hammer }) : null;
   const forceHint = hints.force ? el('div', { className: 'hint', testId: 'force-hint', text: hints.force }) : null;
+  const slagHint = hints.slag ? el('div', { className: 'hint', testId: 'slag-hint', text: hints.slag }) : null;
   const back = el('button', { className: 'btn ghost', text: 'Back to the fire', attrs: { type: 'button' } });
   const quench = el('button', { className: 'btn ghost', text: 'Quench', attrs: { type: 'button' } });
   back.addEventListener('click', () => on.back());
   quench.addEventListener('click', () => on.quench());
-  const close = el('div', { className: 'group' }, closeIntro, ...(hammerHint ? [hammerHint] : []), ...(forceHint ? [forceHint] : []), el('div', { className: 'pair' }, back, quench));
+  const close = el('div', { className: 'group' }, closeIntro, ...(hammerHint ? [hammerHint] : []), ...(forceHint ? [forceHint] : []), ...(slagHint ? [slagHint] : []), el('div', { className: 'pair' }, back, quench));
   close.hidden = true;
 
   // ── Quench, in the wide view with the piece in hand (mock-up frame 5) ──
@@ -172,6 +173,7 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
       if (heatHint) heatHint.hidden = isBurning;
       if (hammerHint) hammerHint.hidden = isBurning;
       if (forceHint) forceHint.hidden = isBurning;
+      if (slagHint) slagHint.hidden = isBurning;
       const text = `Round ${v.round} · ${v.struck} of ${v.targets} · −${v.lost}${v.streak >= grading.streakShowAt ? ` · Clean ×${v.streak}` : ''}`;
       if (label.textContent !== text) label.textContent = text;
       const back = `Back to the ${v.heldFrom}`;

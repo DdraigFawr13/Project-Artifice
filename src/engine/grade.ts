@@ -79,6 +79,8 @@ export function grade(state: CraftState): GradeResult {
   const raw = rawLost(state);
   const missing = state.targets.reduce((n, t) => n + Math.max(0, PASSES - t.hits), 0);
   if (missing > 0) raw.set('missed-target', { points: missing * grading.missedHit, count: missing });
+  const slagLeft = state.slag.filter((p) => !p.cleared).length;
+  if (slagLeft > 0) raw.set('slag-left', { points: slagLeft * grading.slag.left, count: slagLeft });
   for (const l of quenchLines(state.quenchC ?? 0)) raw.set(l.cause, { points: l.points, count: 1 });
   const lines = rounded(raw);
   const score = Math.max(0, 100 - lines.reduce((a, l) => a + l.points, 0));

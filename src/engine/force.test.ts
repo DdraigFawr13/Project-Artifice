@@ -16,7 +16,8 @@ function run(s: CraftState, inputs: Input[]): CraftState {
   for (const i of inputs) s = step(s, i);
   return s;
 }
-const onAnvil = (seed = 42): CraftState => run(createCraft(seed, 'knife', ALLOY), [{ grab: true }, { drop: 'anvil' }]);
+// Slag cleared, so strikes at targets keep their meaning (S3).
+const onAnvil = (seed = 42): CraftState => run({ ...createCraft(seed, 'knife', ALLOY), slag: [] }, [{ grab: true }, { drop: 'anvil' }]);
 const last = (s: CraftState) => s.strikes[s.strikes.length - 1]!;
 
 describe('ideal force', () => {

@@ -15,20 +15,20 @@ function run(s: CraftState, inputs: Input[]): CraftState {
   for (const i of inputs) s = step(s, i);
   return s;
 }
-const onAnvil = (seed = 42): CraftState => run(createCraft(seed, 'knife', ALLOY), [{ grab: true }, { drop: 'anvil' }]);
+/** On the anvil with the slag cleared, so strikes at targets keep their meaning (S3); J1 uses the real craft. */
+const onAnvil = (seed = 42): CraftState => run({ ...createCraft(seed, 'knife', ALLOY), slag: [] }, [{ grab: true }, { drop: 'anvil' }]);
 /** Strike (x, y) with the metal held at `temp`. */
 const hit = (s: CraftState, x: number, y: number, temp: number): CraftState => step(at(s, temp), { strike: { x, y } });
 const last = (s: CraftState) => s.strikes[s.strikes.length - 1]!;
 
 describe('J1 missed hits and the shifted band', () => {
-  it('scores a knife with no strikes 10 and Crude, quenched at 830 °C', () => {
-    let s = onAnvil();
-    s = step(at(s, 830), { grab: true });
-    s = step(at(s, 830), { drop: 'tub' });
-    const g = grade(s) as Graded;
+  it('scores a knife with no strikes 1 and Crude (10 before its 3 slag spots, −9), quenched at 830 °C', () => {
+    const quench = (c: CraftState) => grade(step(at(step(at(run(c, [{ grab: true }, { drop: 'anvil' }]), 830), { grab: true }), 830), { drop: 'tub' })) as Graded;
+    const g = quench(createCraft(42, 'knife', ALLOY));
     expect(g.ruined).toBe(false);
-    expect(g.score).toBe(10);
+    expect(g.score).toBe(1);
     expect(g.tier).toBe('Crude');
+    expect(quench({ ...createCraft(42, 'knife', ALLOY), slag: [] }).score).toBe(10);
   });
 
   it('draws bandShiftC as a whole number in −20..20, the same for a seed, varying across seeds', () => {

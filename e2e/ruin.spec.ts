@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { api, dragTo, knifeOnAnvil, strike } from './forge';
+import { api, clearSlag, dragTo, knifeOnAnvil, strike } from './forge';
 
 // J4 ruin (forge spec; S4 "Settled at S4 start"): a quench at white heat ruins the knife; half its 5 parts, rounded
 // down, come back as scrap, and the scrap is kept.
@@ -29,6 +29,7 @@ test('a quench at white heat shows the ruin screen and returns scrap', async ({ 
 
 test('three strikes on black metal show the ruin screen; Try again starts the same item', async ({ page }) => {
   await knifeOnAnvil(page, 300);
+  await clearSlag(page);
   const targets = (await api(page, (a) => a.state()))!.targets;
   for (const t of targets.slice(0, 3)) await strike(page, t.x, t.y);
   await api(page, (a) => a.advance(800));

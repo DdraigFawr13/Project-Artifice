@@ -14,7 +14,8 @@ export type Api = {
     bandShiftC: number;
     props: { bandLowC: number; bandHighC: number };
     targets: { x: number; y: number; hits: number }[];
-    strikes: { kind: string; force: number; crack: boolean; lines: { cause: string; points: number }[]; heat: 'cold' | 'in' | 'hot'; offPx: number | null; perfect: boolean }[];
+    slag: { x: number; y: number; gap: number; cleared: boolean }[];
+    strikes: { kind: string; slag?: number; force: number; crack: boolean; lines: { cause: string; points: number }[]; heat: 'cold' | 'in' | 'hot'; offPx: number | null; perfect: boolean }[];
   } | null;
   /** The last strike's first hammer play and whether a second (Perfect) ring played; null before any strike. */
   lastSound(): { key: string; rate: number; perfect: boolean } | null;
@@ -24,6 +25,10 @@ export type Api = {
   idealHold(): number;
   /** The strike targets' centres in CSS px, relative to the page. */
   targets(): { x: number; y: number; hits: number }[];
+  /** The slag spots' centres in CSS px, relative to the page. */
+  slag(): { x: number; y: number; cleared: boolean }[];
+  /** Mark every slag spot cleared. */
+  clearSlag(): void;
   pause(): void;
   advance(ms: number): void;
   send(input: unknown): void;
@@ -55,6 +60,9 @@ export async function knifeOnAnvil(page: Page, temp: number, url = '/?debug') {
   }, temp);
   await expect(page.getByRole('button', { name: 'Back to the fire' })).toBeVisible();
 }
+
+/** Mark every slag spot cleared, so a check that strikes targets directly doesn't depend on the seed's slag (S3). */
+export const clearSlag = (page: Page) => api(page, (a) => a.clearSlag());
 
 /**
  * With a finger down, advance the engine by the steps that give the ideal force at the temperature now (a plain tap is

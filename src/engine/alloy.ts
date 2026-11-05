@@ -9,6 +9,8 @@ export interface Ore {
   bandHighC: number;
   /** °C lost per second out of the fire. */
   cool: number;
+  /** Slag spots per part of this ore in a mix (S3). */
+  slagPerPart: number;
   /** How the ore works, in words for the alloy screen; never a temperature (S5). */
   note: string;
 }

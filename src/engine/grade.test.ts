@@ -9,13 +9,15 @@ import { quenchLines } from './quench';
 const knife = itemById('knife');
 const ALLOY = knife.defaultAlloy;
 const at = (s: CraftState, temp: number): CraftState => ({ ...s, temp });
+/** A knife with its slag cleared, for checks that strike targets directly (S3). */
+const fresh = (seed: number): CraftState => ({ ...createCraft(seed, 'knife', ALLOY), slag: [] });
 function run(s: CraftState, inputs: Input[]): CraftState {
   for (const i of inputs) s = step(s, i);
   return s;
 }
 /** A knife on the anvil at `temp`, with every target hit in both rounds dead centre. */
 function worked(temp = 950): CraftState {
-  let s = at(run(createCraft(3, 'knife', ALLOY), [{ grab: true }, { drop: 'anvil' }]), temp);
+  let s = at(run(fresh(3), [{ grab: true }, { drop: 'anvil' }]), temp);
   for (let r = 0; r < PASSES; r++) for (const t of s.targets) s = at(step(s, { strike: { x: t.x, y: t.y } }), temp);
   return s;
 }
@@ -61,17 +63,22 @@ describe('grade', () => {
   });
 
   it('charges 5 per missing hit, so a target never hit costs 10', () => {
-    let s = at(run(createCraft(3, 'knife', ALLOY), [{ grab: true }, { drop: 'anvil' }]), 950);
+    let s = at(run(fresh(3), [{ grab: true }, { drop: 'anvil' }]), 950);
     const t = s.targets;
     // Round 1 complete, then round 2 on all but targets 7 and 8: 2 hits missing.
     for (const p of t) s = at(step(s, { strike: { x: p.x, y: p.y } }), 950);
     for (const p of t.slice(0, 7)) s = at(step(s, { strike: { x: p.x, y: p.y } }), 950);
     expect(graded(quench(s, 830)).lines).toEqual([{ cause: 'missed-target', points: 10, count: 2 }]);
-    // No strikes at all: every hit is missing (18 hits × 5).
+    // No strikes at all: every hit is missing (18 hits × 5), and the default knife's 3 slag spots cost 9 more.
     const bare = run(createCraft(3, 'knife', ALLOY), [{ grab: true }]);
     const g = graded(step(at(bare, 830), { drop: 'tub' }));
-    expect(g.lines).toEqual([{ cause: 'missed-target', points: 90, count: 18 }]);
-    expect(g.score).toBe(10);
+    expect(g.lines).toEqual([
+      { cause: 'missed-target', points: 90, count: 18 },
+      { cause: 'slag-left', points: 9, count: 3 },
+    ]);
+    expect(g.score).toBe(1);
+    // With the slag gone it is the old 10.
+    expect(graded(step(at(run(fresh(3), [{ grab: true }]), 830), { drop: 'tub' })).score).toBe(10);
   });
 
   it('rounds each line, then takes the sum from 100, so the shown lines add up', () => {
@@ -130,7 +137,7 @@ describe('ruin', () => {
   });
 
   it('three strikes on black metal are a cracked ruin, with the same scrap', () => {
-    let s = at(run(createCraft(3, 'knife', ALLOY), [{ grab: true }, { drop: 'anvil' }]), 300);
+    let s = at(run(fresh(3), [{ grab: true }, { drop: 'anvil' }]), 300);
     for (const t of s.targets.slice(0, 3)) s = at(step(s, { strike: { x: t.x, y: t.y } }), 300);
     expect(grade(s)).toEqual({ ruined: true, ruin: 'cracked', scrapParts: 2 });
   });

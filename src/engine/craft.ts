@@ -1,7 +1,7 @@
 import grading from '../data/grading.json';
 import { bandAt, heatRules } from '../data/heatBands';
 import { itemById, type AlloyMix } from '../data/items';
-import { alloyProps, checkMix, type AlloyProps } from './alloy';
+import { alloyProps, checkMix, ores, type AlloyProps } from './alloy';
 import { heatStep, type Place } from './heat';
 import { isWhiteQuench } from './quench';
 import { mulberry32 } from './rng';
@@ -37,6 +37,8 @@ export interface CraftState {
   bellows: boolean;
   /** Strike targets in close-view game px, moved by the seed, with how many times each has been hit (0 to `passes`). */
   targets: CraftTarget[];
+  /** Slag spots in the bar, in close-view game px; `gap` g lies between targets g and g + 1. A cleared one is gone. */
+  slag: SlagSpot[];
   /** Every strike made on the anvil, in order, with its points lost. */
   strikes: Strike[];
   /** Per-second causes so far (out of band on the anvil, burning), in fractions. */
@@ -52,6 +54,13 @@ export interface CraftState {
 }
 
 export type Ruin = 'cracked' | 'white-quench';
+
+export interface SlagSpot {
+  x: number;
+  y: number;
+  gap: number;
+  cleared: boolean;
+}
 
 export interface CraftTarget {
   x: number;
@@ -83,15 +92,17 @@ export interface Strike {
   heat: Heat;
   offPx: number | null;
   perfect: boolean;
+  /** The index of the slag spot this strike cleared (kind `slag`). */
+  slag?: number;
   lines: Line[];
 }
 
-/** The number of latest strikes in a row whose lines, each rounded, sum to 0 (hits only until slag clears exist). */
+/** The number of latest strikes in a row whose lines, each rounded, sum to 0, counting hits and slag clears. */
 export function cleanStreak(s: Pick<CraftState, 'strikes'>): number {
   let n = 0;
   for (let i = s.strikes.length - 1; i >= 0; i--) {
     const k = s.strikes[i]!;
-    if (k.kind !== 'hit' || k.lines.reduce((t, l) => t + Math.round(l.points), 0) !== 0) break;
+    if ((k.kind !== 'hit' && k.kind !== 'slag') || k.lines.reduce((t, l) => t + Math.round(l.points), 0) !== 0) break;
     n++;
   }
   return n;
@@ -108,10 +119,33 @@ function placeTargets(seed: number, itemId: string): CraftTarget[] {
   });
 }
 
+/**
+ * Slag: count = min(targets − 1, round(Σ parts × slagPerPart)); the gaps are shuffled (Fisher–Yates, own seeded stream)
+ * and the first `count` taken; each spot sits at the midpoint of its two shifted targets (S3).
+ */
+function placeSlag(seed: number, alloy: AlloyMix, targets: readonly CraftTarget[]): SlagSpot[] {
+  let sum = 0;
+  for (const [id, parts] of Object.entries(alloy)) sum += parts * ores.find((o) => o.id === id)!.slagPerPart;
+  const gaps = Array.from({ length: Math.max(0, targets.length - 1) }, (_, g) => g);
+  const count = Math.min(gaps.length, Math.round(sum));
+  const rng = mulberry32(seed ^ 0x51a6);
+  for (let i = gaps.length - 1; i >= 1; i--) {
+    const j = Math.floor(rng.next() * (i + 1));
+    [gaps[i], gaps[j]] = [gaps[j]!, gaps[i]!];
+  }
+  return gaps.slice(0, count).map((g) => ({
+    x: Math.round((targets[g]!.x + targets[g + 1]!.x) / 2),
+    y: Math.round((targets[g]!.y + targets[g + 1]!.y) / 2),
+    gap: g,
+    cleared: false,
+  }));
+}
+
 export function createCraft(seed: number, itemId: string, alloy: AlloyMix): CraftState {
   const check = checkMix(itemById(itemId), alloy);
   if (!check.ok) throw new Error(`This mix can't start a craft: ${check.refusal}`);
   const base = alloyProps(alloy);
+  const targets = placeTargets(seed >>> 0, itemId);
   // The working band moves by a whole number of °C from its own seeded stream, so target placement is unchanged (GAME-01).
   const bandShiftC = Math.round((mulberry32((seed >>> 0) ^ 0xba5d).next() * 2 - 1) * grading.metal.bandShiftC) + 0;
   return {
@@ -126,7 +160,8 @@ export function createCraft(seed: number, itemId: string, alloy: AlloyMix): Craf
     location: 'fire',
     heldFrom: 'fire',
     bellows: false,
-    targets: placeTargets(seed >>> 0, itemId),
+    targets,
+    slag: placeSlag(seed >>> 0, alloy, targets),
     strikes: [],
     lost: {},
     burning: false,
@@ -154,14 +189,19 @@ function applyInput(s: CraftState, input: Input): CraftState {
     const { x, y, force } = input.strike;
     // A target is open while it has fewer hits than the round in progress; once all are worked, none is open.
     const round = currentRound(s);
-    const view: Target[] = s.targets.map((t) => ({ x: t.x, y: t.y, struck: t.hits >= round }));
-    const sc = scoreStrike(view, x, y, s.temp, s.props, force);
+    // A target is blocked while the gap before it or after it holds an uncleared spot.
+    const held = (i: number) => s.slag.some((p) => !p.cleared && (p.gap === i - 1 || p.gap === i));
+    const view: Target[] = s.targets.map((t, i) => ({ x: t.x, y: t.y, struck: t.hits >= round, blocked: held(i) }));
+    const open = s.slag.flatMap((p, i) => (p.cleared ? [] : [i]));
+    const sc = scoreStrike(view, x, y, s.temp, s.props, force, open.map((i) => s.slag[i]!));
+    const spot = sc.slag === undefined ? undefined : open[sc.slag]!;
+    const slag = spot === undefined ? s.slag : s.slag.map((p, i) => (i === spot ? { ...p, cleared: true } : p));
     const targets = sc.target === null ? s.targets : s.targets.map((t, i) => (i === sc.target ? { ...t, hits: t.hits + 1 } : t));
-    const strikes = [...s.strikes, { step: s.step, x, y, ...sc }];
+    const strikes = [...s.strikes, { step: s.step, x, y, ...sc, ...(spot === undefined ? {} : { slag: spot }) }];
     const cracks = strikes.filter((k) => k.crack).length;
     // The 3rd cracking strike is scored, then ends the craft at once.
-    if (cracks >= grading.ruin.cracks) return { ...s, targets, strikes, location: 'done', bellows: false, ruin: 'cracked' };
-    return { ...s, targets, strikes };
+    if (cracks >= grading.ruin.cracks) return { ...s, targets, slag, strikes, location: 'done', bellows: false, ruin: 'cracked' };
+    return { ...s, targets, slag, strikes };
   }
   return s;
 }

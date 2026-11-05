@@ -11,7 +11,8 @@ const knife = itemById('knife');
 const IN_BAND = 950; // the default knife alloy's band is 840–1110 °C
 
 function play(offY: number, quenchC: number): number {
-  let s: CraftState = createCraft(11, 'knife', knife.defaultAlloy);
+  // Slag cleared, so the gap measures aim and heat only (S3).
+  let s: CraftState = { ...createCraft(11, 'knife', knife.defaultAlloy), slag: [] };
   s = step(s, { grab: true });
   s = { ...step(s, { drop: 'anvil' }), temp: IN_BAND };
   for (let r = 0; r < PASSES; r++) {

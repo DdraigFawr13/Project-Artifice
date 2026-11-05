@@ -8,6 +8,7 @@ type Api = {
   setSeed(n: number): void;
   state(): { location: string; temp: number; ruin: string | null; strikes: { kind: string; lines: { cause: string; points: number }[] }[]; targets: Pt[] } | null;
   targets(): Pt[];
+  clearSlag(): void;
   pause(): void;
   advance(ms: number): void;
   send(input: unknown): void;
@@ -34,6 +35,7 @@ async function knifeOnAnvil(page: Page, temp: number) {
   await page.evaluate((t) => {
     const a = (window as unknown as { __artifice: Api }).__artifice;
     a.pause();
+    a.clearSlag(); // these checks strike targets directly (S3)
     a.pinTemp(t);
     a.send({ grab: true });
     a.advance(16);

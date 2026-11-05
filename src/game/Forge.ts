@@ -45,6 +45,9 @@ const STEAM_PER_100C = 3;
 const STEAM = 0xead59c; // --ink: pale steam over the dark tub
 /** Target squares: 11 game px, about the mock-up's 14 CSS px on the Pixel (1.23 CSS px per game px). */
 const TARGET_PX = 11;
+const PIT = 0x0d091b; // --night-0: a slag pit
+const PIT_EDGE = 0x30161c; // --ember-0: its faint ember rim
+const SCALE = 0x8a8494; // grey scale knocked out of a pit
 
 interface Spark { x: number; y: number; vx: number; vy: number; life: number; max: number }
 interface Puff { x: number; y: number; vx: number; vy: number; r: number; life: number; max: number }
@@ -90,6 +93,9 @@ export class Forge extends Phaser.Scene {
   private sparks: Spark[] = [];
   private steam: Puff[] = [];
   private steamGfx!: Phaser.GameObjects.Graphics;
+  /** Grey scale flung out when a slag spot clears (S3); its own list, seeded from the spark generator. */
+  private dust: Puff[] = [];
+  private scaleGfx!: Phaser.GameObjects.Graphics;
   /** True once the piece has gone into the water. */
   private plunged = false;
   private sinkS = 0;
@@ -114,6 +120,7 @@ export class Forge extends Phaser.Scene {
   private hammerHintCounted = false;
   private forceHintShown = false;
   private hammerHintShown = false;
+  private slagHintShown = false;
   /** Engine steps the striking finger has been down, for the force ring and the strike's force (S2). */
   private holdSteps = 0;
   private quenchHintCounted = false;
@@ -142,6 +149,7 @@ export class Forge extends Phaser.Scene {
     this.pinned = null;
     this.sparks = [];
     this.steam = [];
+    this.dust = [];
     this.plunged = false;
     this.sinkS = 0;
     this.dragging = false;
@@ -177,14 +185,18 @@ export class Forge extends Phaser.Scene {
     const seen = this.ctx.load.save.hintsSeen;
     const heatHint = (seen.heat ?? 0) < HINT_TIMES ? hints.heat : null;
     // The hammer hint and the force hint (S2) each show their first 3 times, side by side; each counts when shown.
-    this.forceHintShown = (seen.force ?? 0) < HINT_TIMES;
-    this.hammerHintShown = (seen.hammer ?? 0) < HINT_TIMES;
+    // The close panel shows at most 2 due hints, in the order hammer, force, slag (S3).
+    const due = (['hammer', 'force', 'slag'] as const).filter((k) => (seen[k] ?? 0) < HINT_TIMES).slice(0, 2);
+    this.hammerHintShown = due.includes('hammer');
+    this.forceHintShown = due.includes('force');
+    this.slagHintShown = due.includes('slag');
     const forceHint = this.forceHintShown ? hints.force : null;
     const hammerHint = this.hammerHintShown ? hints.hammer : null;
+    const slagHint = this.slagHintShown ? hints.slag : null;
     const quenchHint = (seen.quench ?? 0) < HINT_TIMES ? hints.quench : null;
     seen.heat = (seen.heat ?? 0) + 1;
 
-    this.panel = showForgePanel(this.item.name, { heat: heatHint, hammer: hammerHint, force: forceHint, quench: quenchHint }, {
+    this.panel = showForgePanel(this.item.name, { heat: heatHint, hammer: hammerHint, force: forceHint, slag: slagHint, quench: quenchHint }, {
       bellows: (down) => this.queue.push({ bellows: down }),
       move: () => {
         if (this.dragging || this.pendingMove()) return;
@@ -233,6 +245,7 @@ export class Forge extends Phaser.Scene {
     this.ringGfx = this.add.graphics();
     this.sparkGfx = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
     this.steamGfx = this.add.graphics();
+    this.scaleGfx = this.add.graphics();
     this.layout();
     this.scale.on('resize', this.layout, this);
     // The panel changes height when the Burning alert replaces the intro; keep the scene between the bars.
@@ -508,7 +521,23 @@ export class Forge extends Phaser.Scene {
       for (const old of this.popups) old.set(1);
       this.popups = [];
       const hard = s.lines.some((l) => l.cause === 'hard-strike');
-      const words = s.kind === 'light' ? 'Too light' : hard ? `Too hard −${pts}` : s.perfect ? 'Perfect' : pts === 0 ? 'Clean' : `−${pts}`;
+      // First match wins (S3 "Settled at S3 start").
+      const words =
+        s.kind === 'light' ? 'Too light'
+        : s.kind === 'blocked' ? `Slag first −${pts}`
+        : s.kind === 'slag' ? (pts === 0 ? 'Slag out' : `Slag out −${pts}`)
+        : hard ? `Too hard −${pts}`
+        : s.perfect ? 'Perfect'
+        : pts === 0 ? 'Clean'
+        : `−${pts}`;
+      if (s.kind === 'slag') {
+        for (let i = 0; i < 7; i++) {
+          const max = 0.3 + this.sparkRng.next() * 0.3;
+          const a = Math.PI * (1 + this.sparkRng.next());
+          const v = 20 + this.sparkRng.next() * 30;
+          this.dust.push({ x: gx, y: gy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 1 + this.sparkRng.next(), life: max, max });
+        }
+      }
       this.popups.push({ set: this.panel.addPoints(words, gx * k, (gy - 6) * k), age: 0 });
     }
   }
@@ -542,6 +571,13 @@ export class Forge extends Phaser.Scene {
       p.life -= dt;
     }
     this.steam = this.steam.filter((p) => p.life > 0);
+    for (const p of this.dust) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 160 * dt;
+      p.life -= dt;
+    }
+    this.dust = this.dust.filter((p) => p.life > 0);
     for (const p of this.popups) {
       p.age += dt;
       p.set(Math.min(1, p.age / POINTS_S));
@@ -655,6 +691,11 @@ export class Forge extends Phaser.Scene {
       this.steamGfx.fillStyle(STEAM, 0.55 * t);
       this.steamGfx.fillCircle(Math.round(p.x), Math.round(p.y), Math.round(p.r));
     }
+    this.scaleGfx.clear();
+    for (const p of this.dust) {
+      this.scaleGfx.fillStyle(SCALE, Math.max(0, p.life / p.max));
+      this.scaleGfx.fillRect(Math.round(p.x), Math.round(p.y), Math.max(1, Math.round(p.r)), Math.max(1, Math.round(p.r)));
+    }
 
     this.panel.update({
       mode: this.mode,
@@ -701,6 +742,7 @@ export class Forge extends Phaser.Scene {
       // Each hint is counted when it is shown: a new player sees where the strike lands and how force works.
       if (this.forceHintShown) seen.force = (seen.force ?? 0) + 1;
       if (this.hammerHintShown) seen.hammer = (seen.hammer ?? 0) + 1;
+      if (this.slagHintShown) seen.slag = (seen.slag ?? 0) + 1;
     }
   }
 
@@ -713,6 +755,14 @@ export class Forge extends Phaser.Scene {
     for (const s of this.craft.strikes) {
       if (s.kind === 'wild' || s.kind === 'light') continue;
       g.fillRect(Math.round(this.closeX + s.x) - 1, Math.round(this.closeY + s.y) - 1, 3, 3);
+    }
+    // Slag pits: dark ovals with a faint ember rim, between the targets (mock-up f-slag).
+    for (const p of this.craft.slag) {
+      if (p.cleared) continue;
+      g.fillStyle(PIT_EDGE, 1);
+      g.fillEllipse(this.closeX + p.x, this.closeY + p.y, 10, 8);
+      g.fillStyle(PIT, 1);
+      g.fillEllipse(this.closeX + p.x, this.closeY + p.y, 8, 6);
     }
     g.fillStyle(INK, 1);
     const h = Math.floor(TARGET_PX / 2);
@@ -824,6 +874,14 @@ export class Forge extends Phaser.Scene {
         const r = this.game.canvas.getBoundingClientRect();
         const k = r.width / this.game.canvas.width;
         return this.craft.targets.map((t) => ({ x: r.left + (this.closeX + t.x) * k, y: r.top + (this.closeY + t.y) * k, hits: t.hits }));
+      },
+      slag: () => {
+        const r = this.game.canvas.getBoundingClientRect();
+        const k = r.width / this.game.canvas.width;
+        return this.craft.slag.map((p) => ({ x: r.left + (this.closeX + p.x) * k, y: r.top + (this.closeY + p.y) * k, cleared: p.cleared }));
+      },
+      clearSlag: () => {
+        this.craft = { ...this.craft, slag: this.craft.slag.map((p) => ({ ...p, cleared: true })) };
       },
       zone: (name): CssBox => {
         const r = this.game.canvas.getBoundingClientRect();

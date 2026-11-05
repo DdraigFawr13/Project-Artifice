@@ -5,6 +5,7 @@
   "missedHit": 5,
   "metal": { "bandShiftC": 20 },
   "force": { "fullHoldS": 0.6, "idealAtHigh": 0.3, "idealAtLow": 0.8, "min": 0.25, "max": 0.8, "window": 0.15, "hard": 2 },
+  "slag": { "reachPx": 6, "blocked": 1, "left": 3 },
   "perfectPx": 1,
   "streakShowAt": 3,
   "quench": { "lowC": 780, "highC": 880, "degreesPerPoint": 25 },
