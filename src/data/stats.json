@@ -1,0 +1,22 @@
+{
+  "edge": { "perPx": 10 },
+  "toughness": { "perOutSecond": 4, "degreesPerPoint": 5, "perCrack": 10, "quenchC": 830 },
+  "balance": { "perMissing": 3, "perSlag": 15, "perSpreadPx": 2 },
+  "words": {
+    "edge": [{ "min": 0, "word": "Dull" }, { "min": 40, "word": "Fair" }, { "min": 60, "word": "Sharp" }, { "min": 75, "word": "Keen" }, { "min": 90, "word": "Razor" }],
+    "toughness": [{ "min": 0, "word": "Brittle" }, { "min": 40, "word": "Fair" }, { "min": 60, "word": "Sound" }, { "min": 75, "word": "Sturdy" }, { "min": 90, "word": "Unyielding" }],
+    "balance": [{ "min": 0, "word": "Clumsy" }, { "min": 40, "word": "Fair" }, { "min": 60, "word": "Steady" }, { "min": 75, "word": "True" }, { "min": 90, "word": "Perfect" }]
+  },
+  "why": {
+    "offCentre": "hurt most by {n} off-centre strike{s}",
+    "noHits": "hurt most by no hits landing",
+    "outOfBand": "hurt most by {n} s out of the working heat",
+    "quench": "hurt most by the quench heat",
+    "crack": "hurt most by {n} cracking strike{s}",
+    "missing": "hurt most by {n} hit{s} missing",
+    "slag": "hurt most by {n} slag spot{s} left",
+    "spread": "hurt most by uneven work",
+    "grind": "hurt most by an uneven grind"
+  },
+  "helped": "helped by the {ore} in the mix"
+}

@@ -84,8 +84,15 @@ export async function strike(page: Page, x: number, y: number) {
   }, { x, y });
 }
 
+/**
+ * Wait two frames, so a panel that changed height has been laid out again (its ResizeObserver runs within a frame)
+ * before a test measures where the scene draws things. Measured too early, the tub could move before the drop.
+ */
+export const settle = (page: Page) => page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
+
 /** Drag the piece from where it is drawn and let go over a drop zone's middle, through the real touch controls. */
 export async function dragTo(page: Page, zone: 'fire' | 'anvil' | 'tub') {
+  await settle(page);
   const b = await api(page, (a) => a.metalBox());
   const z = await page.evaluate((n) => (window as unknown as Win).__artifice.zone(n), zone);
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);

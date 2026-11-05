@@ -11,6 +11,8 @@ export interface Ore {
   cool: number;
   /** Slag spots per part of this ore in a mix (S3). */
   slagPerPart: number;
+  /** What the ore does to each stat's work, as a multiplier (S4). */
+  stats: Record<'edge' | 'toughness' | 'balance', number>;
   /** How the ore works, in words for the alloy screen; never a temperature (S5). */
   note: string;
 }

@@ -9,6 +9,8 @@ export interface ResultData {
   /** The mix the craft used; "Forge another" and "Try again" start with it (S5). */
   alloy: AlloyMix;
   graded: GradeResult;
+  /** Each target's hit count, for the piece image (S5). */
+  hits: number[];
   newBest: boolean;
   previousBest: number | null;
   /** False when the save couldn't be written (or storage is unavailable). */

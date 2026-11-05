@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { api, clearSlag, dragTo, knifeOnAnvil, strike } from './forge';
+import { api, clearSlag, dragTo, knifeOnAnvil, settle, strike } from './forge';
 
 // J4 Quench and grade (forge spec; S4 "Settled at S4 start"). A scripted knife: every hit dead centre in the working
 // heat except one wild strike and one hit left missing, then Quench and a drag to the tub a little hot (905 °C).
@@ -162,6 +162,7 @@ test('letting go with the finger over the water quenches, wherever the piece was
     a.pinTemp(830);
     a.advance(48);
   });
+  await settle(page);
   const b = await api(page, (a) => a.metalBox());
   const tub = await api(page, (a) => a.zone('tub'));
   const k = await page.locator('#game canvas').evaluate((c: HTMLCanvasElement) => c.getBoundingClientRect().width / c.width);
@@ -173,4 +174,61 @@ test('letting go with the finger over the water quenches, wherever the piece was
   await page.mouse.up();
   await api(page, (a) => a.advance(32));
   expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
+});
+
+// A panel that changes height mid-drag must not move the scene under the finger: the tub stays where the player saw
+// it until the drop, then the layout catches up. Laid out at once, the tub moved off the finger and the drop missed.
+test('the scene holds still under a dragging finger while the panel changes height', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => {
+    a.pinTemp(830);
+    a.advance(48);
+  });
+  await settle(page);
+  const b = await api(page, (a) => a.metalBox());
+  const tub = await api(page, (a) => a.zone('tub'));
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(tub.x + tub.width / 2, tub.y + 10, { steps: 8 });
+  // The panel grows by 120 px while the finger is down.
+  await page.evaluate(() => {
+    const extra = document.createElement('div');
+    extra.style.height = '120px';
+    document.querySelector('.panel')!.append(extra);
+  });
+  await settle(page);
+  expect(await api(page, (a) => a.zone('tub'))).toEqual(tub);
+  await page.mouse.up();
+  await api(page, (a) => a.advance(32));
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
+  // After the drop the layout catches up with the taller panel.
+  await settle(page);
+  expect((await api(page, (a) => a.zone('tub'))).y).not.toBe(tub.y);
+});
+
+test('a layout held back by a drag catches up once the piece lands', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  await page.getByRole('button', { name: 'Back to the fire' }).click();
+  await api(page, (a) => a.advance(48));
+  await settle(page);
+  const b = await api(page, (a) => a.metalBox());
+  const fire = await api(page, (a) => a.zone('fire'));
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  // Lifted and let go over the fire again: the panel stays the same, so only the held-back layout can move the scene.
+  await page.mouse.move(fire.x + fire.width / 2, fire.y + fire.height / 2 - 20, { steps: 8 });
+  await page.evaluate(() => {
+    const extra = document.createElement('div');
+    extra.style.height = '120px';
+    document.querySelector('.panel')!.append(extra);
+  });
+  await settle(page);
+  expect(await api(page, (a) => a.zone('fire'))).toEqual(fire);
+  await page.mouse.up();
+  // The queued bellows-off, grab and drop take a step each.
+  await api(page, (a) => a.advance(64));
+  expect((await api(page, (a) => a.state()))!.location).toBe('fire');
+  await settle(page);
+  expect((await api(page, (a) => a.zone('fire'))).y).not.toBe(fire.y);
 });

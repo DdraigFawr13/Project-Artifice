@@ -1,3 +1,4 @@
+import type { StatId } from '../engine/stats';
 import itemsJson from './items.json';
 
 /** Ore parts per ore id. 2 or 3 ores, each at least 1 part, summing to the item's parts (forge spec, Engine). */
@@ -7,6 +8,8 @@ export type AlloyMix = Record<string, number>;
 export interface Item {
   id: string;
   name: string;
+  /** The stats a finished piece gets, in display order (S4). */
+  stats: StatId[];
   /** Ore parts the item takes. */
   parts: number;
   /** About how long a craft takes for a practised player. */

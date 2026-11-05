@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-11-04. A fresh session must be able to continue from this file alone. Keep it to 60 lines; move finished entries to `docs/archive/handoff-YYYY-MM.md`.
+Updated: 2026-11-05. A fresh session must be able to continue from this file alone. Keep it to 60 lines; move finished entries to `docs/archive/handoff-YYYY-MM.md`.
 
 ## Phase
 
@@ -23,7 +23,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Just done
 
-- 2026-11-05 Depth pass on `claude/forge-depth` (draft PR #9), built by fresh implementer agents, each slice re-checked before and fresh-reviewed after (Morgan asked for this): S1 39a0caf (11/11 mutants), S2 6b666b5 + fixes c4aa7d7 (12/12 mutants; both hints show), S3 944cc25 (fresh review running, mutants next). Mock-ups `mockups/depth.html`. Allow-list widened for local test/commit commands (81a318f). Next: S3 review fixes and mutants, re-check, then S4.
+- 2026-11-05 Depth pass on `claude/forge-depth` (draft PR #9), built by fresh implementer agents, each slice re-checked before and fresh-reviewed after (Morgan asked for this): S1 39a0caf, S2 6b666b5 + c4aa7d7, S3 944cc25 (+ review fixes, mutants), S4 blade stats (this commit; why lines pluralise, no-hit Edge line; layout held during a drag, which fixed a flaky drop test and a cause of S5's missed drops). Next: S4 fresh review and mutants, then S5 ore look, S6 grind.
 
 - 2026-11-04 S5 merged by Morgan (PR #7, 25f71a5); PR CI and main CI green; Vercel production 25f71a5, links 302 to the login. Details: git log and the spec's S5 list.
 - Earlier entries (brainstorm to S4): [archive](archive/handoff-2026-11.md).

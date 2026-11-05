@@ -212,3 +212,57 @@ test('the slag hint shows once the hammer and force hints are spent, and is coun
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
   expect(saved.hintsSeen.slag).toBe(1);
 });
+
+// J5 on screen (forge-depth spec, S4): a finished knife shows its stat card, and the item list keeps the best
+// word of each stat across a reload.
+test('a finished knife shows 3 stats with words and reasons, and the list keeps them after a reload', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  await clearSlag(page);
+  const s0 = (await api(page, (a) => a.state()))!;
+  await pin(page, (s0.props.bandLowC + s0.props.bandHighC) / 2);
+  for (let round = 0; round < 2; round++) for (const t of s0.targets) await strike(page, t.x, t.y);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  // Lift the piece while it is still in the band, then cool it to 830 °C in the hand: a step on the anvil below the band would cost Toughness.
+  await api(page, (a) => {
+    a.advance(48);
+    a.send({ grab: true });
+    a.advance(16);
+    a.pinTemp(830);
+    a.advance(16);
+    a.send({ drop: 'tub' });
+    a.advance(1600);
+  });
+
+  // The default mix (Ridge Iron x 4, Bog Iron x 1), every hit dead centre: work 100 x the mix's multipliers.
+  await expect(page.getByTestId('score')).toHaveText('100');
+  await expect(page.getByTestId('stat-card')).toBeVisible();
+  const rows = page.getByTestId('stat-row');
+  await expect(rows).toHaveCount(3);
+  const expected = [
+    ['Edge', 'Keen', 'helped by the Ridge Iron in the mix'],
+    ['Toughness', 'Sturdy', 'helped by the Bog Iron in the mix'],
+    ['Balance', 'Perfect', 'helped by the Ridge Iron in the mix'],
+  ];
+  for (const [i, [name, word, why]] of expected.entries()) {
+    await expect(rows.nth(i).locator('b')).toHaveText(name!);
+    await expect(rows.nth(i).locator('.word')).toHaveText(word!);
+    await expect(rows.nth(i).locator('.why')).toHaveText(why!);
+  }
+  await expect(rows.nth(0).locator('.sbar i')).toHaveCSS('width', /^\d/); // the bar is drawn
+  expect(await rows.nth(0).locator('.sbar i').evaluate((e) => (e as HTMLElement).style.width)).toBe('83%');
+  // The card sits after the score lines and before the best line.
+  const order = await page.locator('.screen.result .panel.fill > *').evaluateAll((els) => els.map((e) => e.getAttribute('data-testid') ?? e.className));
+  expect(order.indexOf('stat-card')).toBeGreaterThan(order.indexOf('material'));
+
+  await page.reload();
+  const knife = page.getByTestId('item-row').filter({ hasText: 'Knife' });
+  await expect(knife).toContainText('Best: 100');
+  await expect(knife.getByTestId('best-stats')).toHaveText('Edge Keen · Toughness Sturdy · Balance Perfect');
+  await expect(page.getByTestId('best-stats')).toHaveCount(1); // the other items have no crafts
+});
+
+test('a fresh save shows no best-stats line', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('item-row').first()).toBeVisible();
+  await expect(page.getByTestId('best-stats')).toHaveCount(0);
+});

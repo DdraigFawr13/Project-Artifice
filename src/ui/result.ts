@@ -1,5 +1,6 @@
 import type { Item } from '../data/items';
-import type { ResultLine } from '../engine/grade';
+import type { Graded, ResultLine } from '../engine/grade';
+import { STAT_IDS } from '../engine/stats';
 import type { CauseId } from '../engine/strike';
 import type { ResultData } from '../game/Result';
 import { el, show } from './dom';
@@ -33,6 +34,19 @@ const row = (label: string, value: string | Node, minus = false) =>
 /** "5 parts": the number in the figures face, the word in the body face. */
 const parts = (n: number) => el('span', { className: 'count' }, el('span', { className: 'pts', text: String(n) }), ` ${n === 1 ? 'part' : 'parts'}`);
 
+const STAT_NAMES = { edge: 'Edge', toughness: 'Toughness', balance: 'Balance' } as const;
+
+/** The stat card (mock-up `f-result-stats`): per stat the name, a bar of value ÷ 100, the word and the reason. */
+function statCard(item: Item, stats: Graded['stats']): HTMLElement {
+  const rows = STAT_IDS.filter((id) => item.stats.includes(id) && stats[id]).map((id) => {
+    const s = stats[id]!;
+    const bar = el('div', { className: 'sbar' }, el('i'));
+    bar.firstElementChild!.setAttribute('style', `width:${s.value}%`);
+    return el('div', { className: 'stat', testId: 'stat-row' }, el('b', { text: STAT_NAMES[id] }), bar, el('span', { className: 'word', text: s.word }), el('span', { className: 'why', text: s.why }));
+  });
+  return el('div', { className: 'stats', testId: 'stat-card' }, ...rows);
+}
+
 /** The result screen (mock-up frame 6) or the ruin screen (frame 7). */
 export function showResult(item: Item, data: ResultData, on: { choose(): void; again(): void }): void {
   const g = data.graded;
@@ -43,6 +57,7 @@ export function showResult(item: Item, data: ResultData, on: { choose(): void; a
       el('div', { className: 'score' }, el('b', { testId: 'score', text: String(g.score) }), el('span', { testId: 'tier', text: g.tier })),
       el('p', { className: 'sub', testId: 'material', text: `Material quality ${g.materialQuality} · not in the score` }),
       el('div', { className: 'lines' }, row('Start', '100'), ...g.lines.map((l) => row(lineText(l), `−${l.points}`, true))),
+      statCard(item, g.stats),
       el('p', { className: 'sub', text: data.newBest ? `New best for ${/^[aeiou]/.test(name) ? 'an' : 'a'} ${name}.` : `Best: ${data.previousBest}` }),
     );
   } else {

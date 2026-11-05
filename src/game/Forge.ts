@@ -296,12 +296,12 @@ export class Forge extends Phaser.Scene {
   /** The craft has ended: grade it, write the save once (bests, scrap, hint counts), and hiss if it went in the tub. */
   private end(): void {
     const g = grade(this.craft);
-    const r = recordCraft(this.ctx.load.save, this.item.id, g.ruined ? { ruined: true, scrapParts: g.scrapParts } : { ruined: false, score: g.score });
+    const r = recordCraft(this.ctx.load.save, this.item.id, g.ruined ? { ruined: true, scrapParts: g.scrapParts } : { ruined: false, score: g.score, stats: Object.fromEntries(Object.entries(g.stats).map(([k, v]) => [k, v.value])) });
     this.ctx.load.save = r.save;
     // Never write over a save that couldn't be read or kept aside (GAME-05); a failed write stops later ones too.
     const saved = this.ctx.load.saving && writeSave(this.ctx.storage, r.save);
     this.ctx.load.saving = saved;
-    this.ended = { itemId: this.item.id, alloy: this.alloy, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
+    this.ended = { itemId: this.item.id, alloy: this.alloy, graded: g, hits: this.craft.targets.map((t) => t.hits), newBest: r.newBest, previousBest: r.previousBest, saved };
     if (this.craft.quenchC !== null) {
       this.sound.play('hiss', { volume: 0.7 });
       this.plunged = true;
@@ -316,8 +316,9 @@ export class Forge extends Phaser.Scene {
 
   /** Centre the fire-to-tub area between the top bar and the panel, as in mock-up frame 3. */
   private layout(): void {
-    // Don't move the scene under a finger that is aiming; lay out again when it lifts.
-    if (this.strikePointer >= 0) {
+    // Don't move the scene under a finger that is aiming or dragging; lay out again when it lifts. A panel that
+    // changed height mid-drag moved the tub away from the finger, and the drop missed it.
+    if (this.strikePointer >= 0 || this.dragging) {
       this.layoutPending = true;
       return;
     }
@@ -469,13 +470,16 @@ export class Forge extends Phaser.Scene {
     }
     if (!this.dragging || p.id !== this.dragPointer) return;
     this.dragging = false;
-    if (this.craft.location === 'done') return;
-    // Where the finger lets go decides; the piece's centre counts only when the finger is over no zone. Judged by the
-    // centre alone, a piece grabbed near one end missed the tub with the finger over the water (Morgan, S5 playtest).
-    const zoneAt = (x: number, y: number) => (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x - this.bgX, y - this.bgY));
-    const zone = zoneAt(p.x, p.y) ?? zoneAt(this.heldPos.x, this.heldPos.y);
-    // Anywhere else, the piece goes back where it came from (forge spec, Engine).
-    this.queue.push({ drop: zone ?? this.craft.heldFrom });
+    if (this.craft.location !== 'done') {
+      // Where the finger lets go decides; the piece's centre counts only when the finger is over no zone. Judged by the
+      // centre alone, a piece grabbed near one end missed the tub with the finger over the water (Morgan, S5 playtest).
+      const zoneAt = (x: number, y: number) => (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x - this.bgX, y - this.bgY));
+      const zone = zoneAt(p.x, p.y) ?? zoneAt(this.heldPos.x, this.heldPos.y);
+      // Anywhere else, the piece goes back where it came from (forge spec, Engine).
+      this.queue.push({ drop: zone ?? this.craft.heldFrom });
+    }
+    // Judged against the scene the player saw; only now does a layout held back by the drag move it.
+    if (this.layoutPending) this.layout();
   }
 
   /** A lift over the panel or off the canvas cancels a strike; a drag still drops. */

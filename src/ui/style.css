@@ -135,3 +135,10 @@ body {
 .stepper button:active { background: var(--fire-2); color: var(--night-0); }
 .stepper button:disabled { color: var(--ink-dim); cursor: default; background: var(--night-1); }
 .panel .reason:empty { display: none; }
+
+/* Stat card on the result and its best-stats line on the list (mock-ups `f-result-stats`, `f-list-stats`; forge-depth S4). */
+.stats { display: grid; gap: 8px; border: 2px solid var(--soot); background: var(--night-2); padding: 10px 12px; }
+.stat { display: grid; grid-template-columns: 96px 1fr auto; gap: 4px 10px; align-items: center; }
+.stat .why { grid-column: 1 / -1; font-size: 14px; color: var(--ink); }
+.sbar { height: 12px; background: var(--night-0); border: 2px solid var(--soot); position: relative; }
+.sbar i { position: absolute; inset: 0 auto 0 0; background: var(--fire-3); }
