@@ -28,7 +28,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Planning the forge **depth pass** with Morgan (write-spec; `docs/specs/forge-depth.md` not written yet). Round 1 answered ([form](https://claude.ai/artifact/K4G53fSfXyj7K3ovUrk2ZQ), collection `depth1`); round 2 out ([form](https://claude.ai/artifact/T9No24JSVbtoPS2rLXhAE3), `depth2`: blade stats, ore traits and look, grind, order). After round 2: write the spec, reconcile, 3 fresh checks, approval. Ideas page: [link](https://claude.ai/artifact/KTpAvi8EfJSm6UBfaerknz).
+1. Forge **depth pass** spec drafted: `docs/specs/forge-depth.md` (6 slices). Rounds 1–2 answered ([1](https://claude.ai/artifact/K4G53fSfXyj7K3ovUrk2ZQ) `depth1`, [2](https://claude.ai/artifact/T9No24JSVbtoPS2rLXhAE3) `depth2`; Morgan: all recommended). Checks: paraphrase, critic, zero-decision, then a critic and zero-decision re-run; 2 fix passes (10d5ab4); a final zero-decision check is running. Next: the approval page (ore names, cracking rule, old bests, 7 additions), then DECISIONS + D-005 update, then S1 in a fresh session.
 2. Then the 10-craft test again. Also from S5: "unsure" about forging another, crafts "way shorter" than the goal.
 
 ## Open questions
