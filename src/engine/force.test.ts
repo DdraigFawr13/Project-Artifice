@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import grading from '../data/grading.json';
 import { itemById } from '../data/items';
-import { createCraft, step, type CraftState, type Input } from './craft';
+import { createCraft, step, type CraftState, type Input, cleanStreak } from './craft';
 import { grade, pointsLost } from './grade';
 import { forceFromHold, idealForce, scoreStrike, type Target } from './strike';
 
@@ -103,10 +103,15 @@ describe('cracks through the craft', () => {
   it('a light strike ends the clean streak and leaves rounds alone', () => {
     let s = onAnvil();
     const t0 = s.targets[0]!;
+    const t1 = s.targets[1]!;
+    s = step(at(s, 950), { strike: { x: t1.x, y: t1.y } });
+    expect(cleanStreak(s)).toBe(1);
     s = step(at(s, 950), { strike: { x: t0.x, y: t0.y, force: 0.05 } });
+    expect(cleanStreak(s)).toBe(0);
     expect(last(s)).toMatchObject({ kind: 'light', force: 0.05, crack: false });
     expect(s.targets[0]!.hits).toBe(0);
     expect(pointsLost(s)).toBe(0);
+    expect(s.targets[1]!.hits).toBe(1);
   });
 
   it('records the force sent, or the ideal when missing', () => {

@@ -176,7 +176,7 @@ export class Forge extends Phaser.Scene {
     // Hint counts stay in memory until the craft ends (S4 writes them). The hammer hint counts when the anvil is reached.
     const seen = this.ctx.load.save.hintsSeen;
     const heatHint = (seen.heat ?? 0) < HINT_TIMES ? hints.heat : null;
-    // The force hint takes the hammer hint's place while it is due; each counts only when shown (S2).
+    // The hammer hint and the force hint (S2) each show their first 3 times, side by side; each counts when shown.
     this.forceHintShown = (seen.force ?? 0) < HINT_TIMES;
     this.hammerHintShown = (seen.hammer ?? 0) < HINT_TIMES;
     const forceHint = this.forceHintShown ? hints.force : null;

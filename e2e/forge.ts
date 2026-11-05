@@ -14,7 +14,7 @@ export type Api = {
     bandShiftC: number;
     props: { bandLowC: number; bandHighC: number };
     targets: { x: number; y: number; hits: number }[];
-    strikes: { kind: string; force: number; crack: boolean; heat: 'cold' | 'in' | 'hot'; offPx: number | null; perfect: boolean }[];
+    strikes: { kind: string; force: number; crack: boolean; lines: { cause: string; points: number }[]; heat: 'cold' | 'in' | 'hot'; offPx: number | null; perfect: boolean }[];
   } | null;
   /** The last strike's first hammer play and whether a second (Perfect) ring played; null before any strike. */
   lastSound(): { key: string; rate: number; perfect: boolean } | null;

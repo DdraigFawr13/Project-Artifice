@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { api, type Api, knifeOnAnvil, strike } from './forge';
+import { api, type Api, holdForIdeal, knifeOnAnvil, strike } from './forge';
 
 /** Hold the temperature at `c` °C (a value passed through, since `api` callbacks can't close over variables). */
 const pin = (page: Page, c: number) => page.evaluate((t) => (window as unknown as { __artifice: Api }).__artifice.pinTemp(t), c);
@@ -93,6 +93,17 @@ test('holding a press for 640 ms of engine time strikes with force 1: Too hard i
   await expect(page.getByTestId('points')).toHaveText(/^Too hard −\d+$/);
 });
 
+test('a press held for the ideal force is a plain hit', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  await press(page);
+  await holdForIdeal(page);
+  await page.mouse.up();
+  await api(page, (a) => a.advance(32));
+  const k = (await api(page, (a) => a.state()))!.strikes.at(-1)!;
+  expect(k).toMatchObject({ kind: 'hit', crack: false });
+  expect(k.lines.map((l) => l.cause)).not.toContain('hard-strike');
+});
+
 test('a quick press is a light strike: nothing counts, "Too light"', async ({ page }) => {
   await knifeOnAnvil(page, 950);
   await press(page);
@@ -122,7 +133,7 @@ test('the force ring fills while a finger is down, and pause() freezes it', asyn
   await page.mouse.up();
 });
 
-test('the hammer hint shows once the force hint has had its 3 turns', async ({ page }) => {
+test('the hammer hint still shows, alone, once the force hint has had its 3 turns', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('artifice.save', JSON.stringify({ version: 1, best: {}, scrap: 0, hintsSeen: { force: 3 } })));
   await knifeOnAnvil(page, 950);
   await expect(page.getByTestId('force-hint')).toHaveCount(0);
