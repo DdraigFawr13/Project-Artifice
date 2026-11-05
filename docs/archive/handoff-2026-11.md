@@ -23,3 +23,4 @@ Finished "Just done" entries moved from HANDOFF.md.
 - 2026-11-04 S3 art (Morgan): the knife is the concept's own knife, and every piece starts as bar stock; each target shapes its own stretch, in two strict rounds: the first hit gives a halfway shape, the second the finished one (section by section). Spec S3 list updated.
 - 2026-11-04 S3: close-up art from a free local edit, no OpenArt spend; strike reach 9 game px with −1 per px beyond 3, up to −6 (Morgan; spec S3 "Settled at S3 start" and Data → grading.json).
 - 2026-11-04 S2 controls: the mock-up's "Hold: bellows" and "To the anvil" buttons plus dragging the bar both work (Morgan; spec S2 "Settled at S2 start").
+- 2026-11-04 S5 start (Morgan): each ore shows quality and a plain line about how it works, no temperatures; the alloy screen remembers the last mix per item (page load only) and "Forge another" / "Try again" skip it; ore names stay Ore 1–3 (spec S5 "Settled at S5 start").
