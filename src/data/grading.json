@@ -4,6 +4,7 @@
   "perSecond": { "outOfBand": 2, "burning": 5 },
   "missedHit": 5,
   "metal": { "bandShiftC": 20 },
+  "force": { "fullHoldS": 0.6, "idealAtHigh": 0.3, "idealAtLow": 0.8, "min": 0.25, "max": 0.8, "window": 0.15, "hard": 2 },
   "perfectPx": 1,
   "streakShowAt": 3,
   "quench": { "lowC": 780, "highC": 880, "degreesPerPoint": 25 },
@@ -14,5 +15,5 @@
     { "name": "Superior", "min": 75 },
     { "name": "Masterwork", "min": 90 }
   ],
-  "ruin": { "blackStrikes": 3, "whiteQuenchC": 1200, "scrapShare": 0.5 }
+  "ruin": { "cracks": 3, "whiteQuenchC": 1200, "scrapShare": 0.5 }
 }

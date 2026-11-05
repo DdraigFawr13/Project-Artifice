@@ -77,13 +77,13 @@ describe('grade', () => {
   it('rounds each line, then takes the sum from 100, so the shown lines add up', () => {
     // A quench 10 °C over: 0.4 points, shown as nothing. Two strikes 3.4 px off: 0.4 each, 0.8 in all, shown as 1.
     let s = worked();
-    s = { ...s, strikes: [...s.strikes, ...[0, 1].map((i) => ({ step: 1, x: 0, y: 0, target: i, kind: 'repeat' as const, black: false, heat: 'in' as const, offPx: null, perfect: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }))] };
+    s = { ...s, strikes: [...s.strikes, ...[0, 1].map((i) => ({ step: 1, x: 0, y: 0, target: i, kind: 'repeat' as const, crack: false, force: 0.5, heat: 'in' as const, offPx: null, perfect: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }))] };
     const g = graded(quench(s, 890));
     expect(g.lines).toEqual([{ cause: 'off-centre', points: 1, count: 2 }]);
     expect(g.score).toBe(99);
     // Two causes of 0.4 each: both lines round to 0, so nothing is charged (rounding the 0.8 sum would charge 1).
     let t = worked();
-    t = { ...t, strikes: [...t.strikes, { step: 1, x: 0, y: 0, target: 0, kind: 'repeat' as const, black: false, heat: 'in' as const, offPx: null, perfect: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }] };
+    t = { ...t, strikes: [...t.strikes, { step: 1, x: 0, y: 0, target: 0, kind: 'repeat' as const, crack: false, force: 0.5, heat: 'in' as const, offPx: null, perfect: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }] };
     const h = graded(quench(t, 890));
     expect(h.lines).toEqual([]);
     expect(h.score).toBe(100);
@@ -129,10 +129,10 @@ describe('ruin', () => {
     expect(grade(s)).toEqual({ ruined: true, ruin: 'white-quench', scrapParts: 2 });
   });
 
-  it('three strikes on black metal are a black-strikes ruin, with the same scrap', () => {
+  it('three strikes on black metal are a cracked ruin, with the same scrap', () => {
     let s = at(run(createCraft(3, 'knife', ALLOY), [{ grab: true }, { drop: 'anvil' }]), 300);
     for (const t of s.targets.slice(0, 3)) s = at(step(s, { strike: { x: t.x, y: t.y } }), 300);
-    expect(grade(s)).toEqual({ ruined: true, ruin: 'black-strikes', scrapParts: 2 });
+    expect(grade(s)).toEqual({ ruined: true, ruin: 'cracked', scrapParts: 2 });
   });
 
   it('returns floor(parts ÷ 2) for every item', () => {

@@ -80,7 +80,7 @@ describe('craft with strikes', () => {
     expect(s.temp).toBeLessThan(edge);
   });
 
-  it('ends the craft as black-strikes on the 3rd hit in the black band, after scoring it', () => {
+  it('ends the craft as cracked on the 3rd hit in the black band, after scoring it', () => {
     let s = run(createCraft(1, 'knife', ALLOY), toAnvil);
     for (let i = 0; i < 2; i++) {
       const t = s.targets[i]!;
@@ -92,7 +92,7 @@ describe('craft with strikes', () => {
     const t = s.targets[2]!;
     s = step(at(s, 300), { strike: { x: t.x, y: t.y } });
     expect(s.strikes).toHaveLength(4);
-    expect(s).toMatchObject({ location: 'done', ruin: 'black-strikes' });
+    expect(s).toMatchObject({ location: 'done', ruin: 'cracked' });
     expect(step(s, { strike: { x: t.x, y: t.y } })).toBe(s);
   });
 

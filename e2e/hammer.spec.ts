@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { holdForIdeal } from './forge';
 
 // J3 Hammer (docs/specs/forge-prototype.md; S3 "Settled at S3 start"). Reads a target from the debug API, touches
 // 40 game px below it and lifts; that target takes a hit and the strike count rises. Each target takes two hits, in rounds.
@@ -48,6 +49,7 @@ async function strikeAt(page: Page, p: { x: number; y: number }, below = 40) {
   const k = await cssPerGame(page);
   await page.mouse.move(p.x, p.y + below * k);
   await page.mouse.down();
+  await holdForIdeal(page); // a plain tap is a light strike
   await page.mouse.up();
   await api(page, (a) => a.advance(32));
   await frames(page);
@@ -56,6 +58,8 @@ async function strikeAt(page: Page, p: { x: number; y: number }, below = 40) {
 test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) => {
   await knifeOnAnvil(page, 950);
   await expect(page.locator('.top .steps .on')).toHaveText('Hammer');
+  // The force hint takes the hammer hint's place for the first 3 anvils (S2; e2e/depth.spec.ts checks the hammer hint after).
+  await expect(page.getByTestId('force-hint')).toHaveText('Hold longer to strike harder. Hot metal wants a light touch.');
   await expect(page.getByTestId('hammer-hint')).toHaveText('Strike the marked spots. Your strike lands at the ring above your thumb when you lift it.');
   const targets = await api(page, (a) => a.targets());
   expect(targets).toHaveLength(9);
@@ -175,7 +179,7 @@ test('three strikes on black metal ruin the craft', async ({ page }) => {
   const targets = await api(page, (a) => a.targets());
   for (const t of targets.slice(0, 3)) await strikeAt(page, t);
   const s = (await api(page, (a) => a.state()))!;
-  expect(s).toMatchObject({ location: 'done', ruin: 'black-strikes' });
+  expect(s).toMatchObject({ location: 'done', ruin: 'cracked' });
   // The ruin screen follows once the last strike's points have shown (S4; e2e/ruin.spec.ts checks its content).
   await api(page, (a) => a.advance(800));
   await expect(page.getByText('Knife ruined')).toBeVisible();

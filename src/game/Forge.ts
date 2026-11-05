@@ -6,6 +6,7 @@ import { itemById, type AlloyMix, type Item } from '../data/items';
 import grading from '../data/grading.json';
 import { cleanStreak, createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
 import { grade, pointsLost } from '../engine/grade';
+import { forceFromHold, idealForce } from '../engine/strike';
 import { recordCraft, writeSave } from '../save/save';
 import type { ResultData } from './Result';
 import { mulberry32, type Rng } from '../engine/rng';
@@ -111,6 +112,10 @@ export class Forge extends Phaser.Scene {
   /** The last strike's first hammer play, for the debug API. */
   private lastSound: { key: string; rate: number; perfect: boolean } | null = null;
   private hammerHintCounted = false;
+  private forceHintShown = false;
+  private hammerHintShown = false;
+  /** Engine steps the striking finger has been down, for the force ring and the strike's force (S2). */
+  private holdSteps = 0;
   private quenchHintCounted = false;
   private layoutPending = false;
   /** True from a Quench press until the piece is dropped on the fire or anvil: the held piece is shown for the quench. */
@@ -145,6 +150,7 @@ export class Forge extends Phaser.Scene {
     this.mode = 'wide';
     this.strikePointer = -1;
     this.ring = null;
+    this.holdSteps = 0;
     this.seenStrikes = 0;
     this.popups = [];
     this.lastSound = null;
@@ -170,11 +176,15 @@ export class Forge extends Phaser.Scene {
     // Hint counts stay in memory until the craft ends (S4 writes them). The hammer hint counts when the anvil is reached.
     const seen = this.ctx.load.save.hintsSeen;
     const heatHint = (seen.heat ?? 0) < HINT_TIMES ? hints.heat : null;
-    const hammerHint = (seen.hammer ?? 0) < HINT_TIMES ? hints.hammer : null;
+    // The force hint takes the hammer hint's place while it is due; each counts only when shown (S2).
+    this.forceHintShown = (seen.force ?? 0) < HINT_TIMES;
+    this.hammerHintShown = (seen.hammer ?? 0) < HINT_TIMES;
+    const forceHint = this.forceHintShown ? hints.force : null;
+    const hammerHint = this.hammerHintShown ? hints.hammer : null;
     const quenchHint = (seen.quench ?? 0) < HINT_TIMES ? hints.quench : null;
     seen.heat = (seen.heat ?? 0) + 1;
 
-    this.panel = showForgePanel(this.item.name, { heat: heatHint, hammer: hammerHint, quench: quenchHint }, {
+    this.panel = showForgePanel(this.item.name, { heat: heatHint, hammer: hammerHint, force: forceHint, quench: quenchHint }, {
       bellows: (down) => this.queue.push({ bellows: down }),
       move: () => {
         if (this.dragging || this.pendingMove()) return;
@@ -254,6 +264,8 @@ export class Forge extends Phaser.Scene {
       if (this.pinned !== null) this.craft = { ...this.craft, temp: this.pinned };
       this.craft = step(this.craft, this.queue.shift() ?? { none: true });
       if (this.pinned !== null) this.craft = { ...this.craft, temp: this.pinned };
+      // Force counts engine steps while the finger is down, so pause() and advance() control it (GAME-02).
+      if (this.strikePointer >= 0) this.holdSteps++;
       this.answerStrikes();
       this.tickEffects();
       if (this.craft.location === 'done') {
@@ -399,6 +411,7 @@ export class Forge extends Phaser.Scene {
       // Only the first finger strikes; its ring shows above it and follows it (forge spec, Engine; S3).
       if (this.strikePointer >= 0 || this.pendingMove()) return;
       this.strikePointer = p.id;
+      this.holdSteps = 0;
       this.ring = { x: Math.round(p.x), y: Math.round(p.y - grading.strike.offsetPx) };
       return;
     }
@@ -436,8 +449,9 @@ export class Forge extends Phaser.Scene {
     if (p.id === this.strikePointer) {
       // The strike lands at the ring at the moment of lift, in close-view game px.
       const r = this.ring;
+      const force = forceFromHold(this.holdSteps);
       this.cancelStrike();
-      if (r && this.mode === 'close') this.queue.push({ strike: { x: r.x - this.closeX, y: r.y - this.closeY } });
+      if (r && this.mode === 'close') this.queue.push({ strike: { x: r.x - this.closeX, y: r.y - this.closeY, force } });
       return;
     }
     if (!this.dragging || p.id !== this.dragPointer) return;
@@ -460,6 +474,7 @@ export class Forge extends Phaser.Scene {
   private cancelStrike(): void {
     this.strikePointer = -1;
     this.ring = null;
+    this.holdSteps = 0;
     if (this.layoutPending) this.layout();
   }
 
@@ -479,7 +494,7 @@ export class Forge extends Phaser.Scene {
       }
       // The hammer's rate says where the strike landed against the working heat; a wild one rings the anvil (rate 1).
       const rate = s.kind === 'wild' ? 1 : feel.hammerRate[s.heat];
-      this.sound.play('hammer', { volume: 0.6, rate });
+      this.sound.play('hammer', { volume: s.kind === 'light' ? feel.lightVolume : 0.6, rate });
       let ring = false;
       if (s.perfect) {
         this.sound.play('hammer', { volume: feel.perfectVolume, rate: feel.perfectRate });
@@ -492,7 +507,8 @@ export class Forge extends Phaser.Scene {
       // Only the newest strike's points show, so quick strikes don't pile their numbers on each other.
       for (const old of this.popups) old.set(1);
       this.popups = [];
-      const words = s.perfect ? 'Perfect' : pts === 0 ? 'Clean' : `−${pts}`;
+      const hard = s.lines.some((l) => l.cause === 'hard-strike');
+      const words = s.kind === 'light' ? 'Too light' : hard ? `Too hard −${pts}` : s.perfect ? 'Perfect' : pts === 0 ? 'Clean' : `−${pts}`;
       this.popups.push({ set: this.panel.addPoints(words, gx * k, (gy - 6) * k), age: 0 });
     }
   }
@@ -682,7 +698,9 @@ export class Forge extends Phaser.Scene {
     if (mode === 'close' && !this.hammerHintCounted) {
       this.hammerHintCounted = true;
       const seen = this.ctx.load.save.hintsSeen;
-      seen.hammer = (seen.hammer ?? 0) + 1;
+      // Each hint is counted when it is shown: a new player sees where the strike lands and how force works.
+      if (this.forceHintShown) seen.force = (seen.force ?? 0) + 1;
+      if (this.hammerHintShown) seen.hammer = (seen.hammer ?? 0) + 1;
     }
   }
 
@@ -693,7 +711,7 @@ export class Forge extends Phaser.Scene {
     const dent = Phaser.Display.Color.IntegerToColor(metalColor).darken(35).color;
     g.fillStyle(dent, 1);
     for (const s of this.craft.strikes) {
-      if (s.kind === 'wild') continue;
+      if (s.kind === 'wild' || s.kind === 'light') continue;
       g.fillRect(Math.round(this.closeX + s.x) - 1, Math.round(this.closeY + s.y) - 1, 3, 3);
     }
     g.fillStyle(INK, 1);
@@ -716,6 +734,17 @@ export class Forge extends Phaser.Scene {
     if (this.ring && this.mode === 'close') {
       this.ringGfx.lineStyle(2, RING, 1);
       this.ringGfx.strokeCircle(this.ring.x, this.ring.y, grading.strike.reachPx);
+      // The force ring: a faint full circle, and an arc filling clockwise from the top as the finger holds (S2).
+      const fr = grading.strike.reachPx + 4;
+      this.ringGfx.lineStyle(1, RING, 0.3);
+      this.ringGfx.strokeCircle(this.ring.x, this.ring.y, fr);
+      const f = forceFromHold(this.holdSteps);
+      if (f > 0) {
+        this.ringGfx.lineStyle(2, RING, 1);
+        this.ringGfx.beginPath();
+        this.ringGfx.arc(this.ring.x, this.ring.y, fr, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2, false);
+        this.ringGfx.strokePath();
+      }
     }
   }
 
@@ -776,6 +805,8 @@ export class Forge extends Phaser.Scene {
     setForgeDebug({
       state: () => this.craft,
       lastSound: () => this.lastSound,
+      idealHold: () => Math.ceil((idealForce(this.craft.temp, this.craft.props) * grading.force.fullHoldS * 1000) / STEP_MS),
+      hold: () => ({ steps: this.holdSteps, force: forceFromHold(this.holdSteps) }),
       pause: () => {
         this.paused = true;
       },

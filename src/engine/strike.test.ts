@@ -54,11 +54,11 @@ describe('scoreStrike', () => {
     expect(pts(scoreStrike([t(100, 100, true)], 100, 100, 700, band).lines, 'cold-strike')).toBe(4); // repeats hit metal too
   });
 
-  it('charges no heat points on a wild strike, and flags black-band hits only', () => {
+  it('charges no heat points on a wild strike, and flags cracking hits (black band) only', () => {
     const wild = scoreStrike([t(100, 100)], 150, 100, 300, band);
     expect(wild.lines).toEqual([{ cause: 'wild-strike', points: 2 }]);
-    expect(wild.black).toBe(false);
-    expect(scoreStrike([t(100, 100)], 100, 100, 549, band).black).toBe(true);
-    expect(scoreStrike([t(100, 100)], 100, 100, 550, band).black).toBe(false);
+    expect(wild.crack).toBe(false);
+    expect(scoreStrike([t(100, 100)], 100, 100, 549, band).crack).toBe(true);
+    expect(scoreStrike([t(100, 100)], 100, 100, 550, band).crack).toBe(false);
   });
 });

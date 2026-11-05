@@ -5,17 +5,16 @@ import { alloyProps, checkMix, type AlloyProps } from './alloy';
 import { heatStep, type Place } from './heat';
 import { isWhiteQuench } from './quench';
 import { mulberry32 } from './rng';
-import { scoreStrike, type CauseId, type Heat, type Line, type StrikeKind, type Target } from './strike';
+import { scoreStrike, STEP_MS, type CauseId, type Heat, type Line, type StrikeKind, type Target } from './strike';
 
-/** One fixed step, in ms (forge spec, Engine). */
-export const STEP_MS = 16;
+export { STEP_MS };
 
 export type DropTarget = 'fire' | 'anvil' | 'tub';
 export type Input =
   | { bellows: boolean }
   | { grab: true }
   | { drop: DropTarget }
-  | { strike: { x: number; y: number } }
+  | { strike: { x: number; y: number; force?: number } }
   | { none: true };
 
 export interface CraftState {
@@ -52,7 +51,7 @@ export interface CraftState {
   log: { step: number; input: Input }[];
 }
 
-export type Ruin = 'black-strikes' | 'white-quench';
+export type Ruin = 'cracked' | 'white-quench';
 
 export interface CraftTarget {
   x: number;
@@ -79,7 +78,8 @@ export interface Strike {
   y: number;
   target: number | null;
   kind: StrikeKind;
-  black: boolean;
+  crack: boolean;
+  force: number;
   heat: Heat;
   offPx: number | null;
   perfect: boolean;
@@ -151,16 +151,16 @@ function applyInput(s: CraftState, input: Input): CraftState {
   if ('strike' in input) {
     // Strikes count only on the anvil; elsewhere they are logged and ignored.
     if (s.location !== 'anvil') return s;
-    const { x, y } = input.strike;
+    const { x, y, force } = input.strike;
     // A target is open while it has fewer hits than the round in progress; once all are worked, none is open.
     const round = currentRound(s);
     const view: Target[] = s.targets.map((t) => ({ x: t.x, y: t.y, struck: t.hits >= round }));
-    const sc = scoreStrike(view, x, y, s.temp, s.props);
+    const sc = scoreStrike(view, x, y, s.temp, s.props, force);
     const targets = sc.target === null ? s.targets : s.targets.map((t, i) => (i === sc.target ? { ...t, hits: t.hits + 1 } : t));
     const strikes = [...s.strikes, { step: s.step, x, y, ...sc }];
-    const blacks = strikes.filter((k) => k.black).length;
-    // The 3rd black-band strike is scored, then ends the craft at once.
-    if (blacks >= grading.ruin.blackStrikes) return { ...s, targets, strikes, location: 'done', bellows: false, ruin: 'black-strikes' };
+    const cracks = strikes.filter((k) => k.crack).length;
+    // The 3rd cracking strike is scored, then ends the craft at once.
+    if (cracks >= grading.ruin.cracks) return { ...s, targets, strikes, location: 'done', bellows: false, ruin: 'cracked' };
     return { ...s, targets, strikes };
   }
   return s;

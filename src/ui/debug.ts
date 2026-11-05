@@ -21,6 +21,10 @@ export interface ForgeDebug {
   state(): CraftState;
   /** The last strike's first hammer play (`rate`) and whether a second, Perfect ring played; null before any strike. */
   lastSound(): { key: string; rate: number; perfect: boolean } | null;
+  /** The striking finger's hold so far: engine steps while it is down, and the force that gives; 0 with no finger down. */
+  hold(): { steps: number; force: number };
+  /** Engine steps of holding that give the ideal force at the temperature now. */
+  idealHold(): number;
   /** Stop real time driving the fixed step. */
   pause(): void;
   /** Run the fixed step for `ms`; a part step is carried to the next call. */
@@ -88,6 +92,8 @@ export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: 
     targets: () => (forge ?? noForge()).targets(),
     state: () => forge?.state() ?? null,
     lastSound: () => (forge ?? noForge()).lastSound(),
+    hold: () => (forge ?? noForge()).hold(),
+    idealHold: () => (forge ?? noForge()).idealHold(),
     pause: () => (forge ?? noForge()).pause(),
     advance: (ms) => (forge ?? noForge()).advance(ms),
     send: (input) => (forge ?? noForge()).send(input),

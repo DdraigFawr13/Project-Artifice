@@ -12,6 +12,7 @@ const WORDS: Record<CauseId, (n: number) => string> = {
   'wild-strike': (n) => `${plural(n, 'strike')} missed the metal`,
   'cold-strike': (n) => `${plural(n, 'strike')} on metal too cold`,
   'hot-strike': (n) => `${plural(n, 'strike')} on metal too hot`,
+  'hard-strike': (n) => `${plural(n, 'strike')} too hard`,
   'repeat-strike': (n) => `${plural(n, 'strike')} on finished spots`,
   'missed-target': (n) => `${plural(n, 'hit')} missing`,
   'out-of-band': (n) => `Out of the working heat for ${n} s`,
@@ -46,7 +47,7 @@ export function showResult(item: Item, data: ResultData, on: { choose(): void; a
     const cause =
       g.ruin === 'white-quench'
         ? { title: `The ${name} cracked in the quench.`, why: 'It went into the water far too hot.' }
-        : { title: `The ${name} cracked on the anvil.`, why: '3 strikes on black, cold metal.' };
+        : { title: `The ${name} cracked on the anvil.`, why: '3 cracking strikes: on black metal, or too hard below the working heat.' };
     body.push(
       el('div', { className: 'alert', attrs: { role: 'alert' } }, el('b', { text: cause.title }), el('p', { text: cause.why })),
       el('p', { text: 'Half the metal, rounded down, comes back as scrap.' }),

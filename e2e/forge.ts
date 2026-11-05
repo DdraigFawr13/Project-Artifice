@@ -14,10 +14,16 @@ export type Api = {
     bandShiftC: number;
     props: { bandLowC: number; bandHighC: number };
     targets: { x: number; y: number; hits: number }[];
-    strikes: { kind: string; heat: 'cold' | 'in' | 'hot'; offPx: number | null; perfect: boolean }[];
+    strikes: { kind: string; force: number; crack: boolean; heat: 'cold' | 'in' | 'hot'; offPx: number | null; perfect: boolean }[];
   } | null;
   /** The last strike's first hammer play and whether a second (Perfect) ring played; null before any strike. */
   lastSound(): { key: string; rate: number; perfect: boolean } | null;
+  /** The striking finger's hold so far: engine steps and the force they give. */
+  hold(): { steps: number; force: number };
+  /** Engine steps of holding that give the ideal force at the temperature now. */
+  idealHold(): number;
+  /** The strike targets' centres in CSS px, relative to the page. */
+  targets(): { x: number; y: number; hits: number }[];
   pause(): void;
   advance(ms: number): void;
   send(input: unknown): void;
@@ -48,6 +54,17 @@ export async function knifeOnAnvil(page: Page, temp: number, url = '/?debug') {
     a.advance(32);
   }, temp);
   await expect(page.getByRole('button', { name: 'Back to the fire' })).toBeVisible();
+}
+
+/**
+ * With a finger down, advance the engine by the steps that give the ideal force at the temperature now (a plain tap is
+ * light since S2), so the lift that follows strikes with the right force.
+ */
+export async function holdForIdeal(page: Page) {
+  await page.evaluate(() => {
+    const a = (window as unknown as Win).__artifice;
+    a.advance(a.idealHold() * 16);
+  });
 }
 
 /** Strike close-view game px (x, y) through the engine and let the step run. */

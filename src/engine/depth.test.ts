@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import grading from '../data/grading.json';
+import { bandAt } from '../data/heatBands';
 import { itemById } from '../data/items';
 import { alloyProps, ores } from './alloy';
 import { cleanStreak, createCraft, step, type CraftState, type Input } from './craft';
@@ -41,6 +42,9 @@ describe('J1 missed hits and the shifted band', () => {
       seen.add(a.bandShiftC);
     }
     expect(seen.size).toBeGreaterThan(10);
+    // Both directions, near the full ±20 (a shift scaled down to ±11 would fail here).
+    expect(Math.min(...seen)).toBeLessThan(-15);
+    expect(Math.max(...seen)).toBeGreaterThan(15);
   });
 
   it('moves only the working band by the shift', () => {
@@ -50,6 +54,9 @@ describe('J1 missed hits and the shifted band', () => {
     expect(s.props.bandHighC).toBe(base.bandHighC + s.bandShiftC);
     expect(s.props.cool).toBe(base.cool);
     expect(s.props.quality).toBe(base.quality);
+    // The heat bands (black, burning, colours) don't move with the working band.
+    expect(bandAt(base.bandLowC - 300)).toBe('black');
+    expect(bandAt(1275)).toBe('white');
   });
 
   it('keeps the target positions for seed 42 (guard)', () => {
@@ -82,12 +89,10 @@ describe('J2 heat, perfect and the streak', () => {
     expect(last(hit(s0, 0, 0, lo - 1))).toMatchObject({ kind: 'wild', heat: 'cold', offPx: null, perfect: false });
     expect(last(hit(s0, 0, 0, hi + 1)).heat).toBe('hot');
     // The shift matters: the unshifted low edge is cold for a craft shifted up.
-    const up = onAnvil(1);
     const shifted = [...Array(200).keys()].map((n) => createCraft(n, 'knife', ALLOY)).find((c) => c.bandShiftC > 0)!;
     const ts = run(shifted, [{ grab: true }, { drop: 'anvil' }]);
     const tt = ts.targets[0]!;
     expect(last(hit(ts, tt.x, tt.y, alloyProps(ALLOY).bandLowC)).heat).toBe('cold');
-    expect(up.props.bandLowC).toBe(alloyProps(ALLOY).bandLowC + up.bandShiftC);
   });
 
   it('records offPx for hits only', () => {

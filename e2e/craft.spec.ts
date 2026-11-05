@@ -47,7 +47,7 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 92');
   // The hint counts were written with the craft: each step's hint shown once.
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
-  expect(saved.hintsSeen).toEqual({ alloy: 1, heat: 1, hammer: 1, quench: 1 });
+  expect(saved.hintsSeen).toEqual({ alloy: 1, heat: 1, hammer: 1, force: 1, quench: 1 });
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
   await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();

@@ -33,7 +33,7 @@ test('three strikes on black metal show the ruin screen; Try again starts the sa
   for (const t of targets.slice(0, 3)) await strike(page, t.x, t.y);
   await api(page, (a) => a.advance(800));
   await expect(page.getByRole('alert')).toContainText('The knife cracked on the anvil.');
-  await expect(page.getByRole('alert')).toContainText('3 strikes on black, cold metal.');
+  await expect(page.getByRole('alert')).toContainText('3 cracking strikes: on black metal, or too hard below the working heat.');
   await expect(page.getByTestId('line')).toHaveText([/^Metal used\s*5 parts$/, /^Scrap returned\s*2 parts$/]);
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
