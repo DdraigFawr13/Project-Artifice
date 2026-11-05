@@ -1,10 +1,14 @@
 import * as Phaser from 'phaser';
 import { look } from '../data/heatBands';
+import feel from '../data/feel.json';
 import hints from '../data/hints.json';
 import { itemById, type AlloyMix, type Item } from '../data/items';
+import { sheenOf } from '../data/sheen';
+import stats from '../data/stats.json';
 import grading from '../data/grading.json';
-import { createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
+import { cleanStreak, createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
 import { grade, pointsLost } from '../engine/grade';
+import { forceFromHold, idealForce } from '../engine/strike';
 import { recordCraft, writeSave } from '../save/save';
 import type { ResultData } from './Result';
 import { mulberry32, type Rng } from '../engine/rng';
@@ -12,7 +16,7 @@ import { debugEnabled, setForgeDebug, takeDebugSeed, type CssBox } from '../ui/d
 import { showForgePanel, type ForgeMode, type ForgePanel } from '../ui/forge';
 import { CLOSE_LINE_Y } from './closeLayout';
 import type { GameContext } from './context';
-import { outline, scaled, shapesFor, worked, WIDE_SCALE, type PieceShapes, type Raster } from './shapes';
+import { OUTLINE_RGB, outline, scaled, shapesFor, worked, WIDE_SCALE, type PieceShapes, type Raster } from './shapes';
 import { CONTENT_BOTTOM_Y, CONTENT_MID_Y, FIRE_GLOW, inside, REST, WATER, ZONES } from './wideLayout';
 
 const BG_W = 400;
@@ -22,8 +26,6 @@ const HINT_TIMES = 3;
 const MAX_FRAME_MS = 250;
 /** Smallest hit area around the piece: 44 CSS px at the Pixel's ×3 on 2.4375 dpr is about 36 game px. */
 const MIN_HIT = 36;
-/** The piece's outline: a dark plum near --night-0, never tinted, so a cold piece still reads on the anvil. */
-const EDGE_RGB = [0x12, 0x08, 0x14] as const;
 const SPARK = 0xfdd479; // --fire-5
 const FORGE_GLOW = 0xf87f33; // --fire-3
 const INK = 0xead59c; // --ink: targets still open this round
@@ -43,8 +45,17 @@ const STEAM_PER_100C = 3;
 const STEAM = 0xead59c; // --ink: pale steam over the dark tub
 /** Target squares: 11 game px, about the mock-up's 14 CSS px on the Pixel (1.23 CSS px per game px). */
 const TARGET_PX = 11;
+const PIT = 0x0d091b; // --night-0: a slag pit
+const PIT_EDGE = 0x30161c; // --ember-0: its faint ember rim
+const SCALE = 0x8a8494; // grey scale knocked out of a pit
+const STONE = 0x372c45; // --soot: the whetstone
+const STONE_EDGE = 0x735b44; // --ink-dim: its border
+/** Whetstone size and border in CSS px (mock-up f-grind), tilted 4 degrees. */
+const STONE_W = 64;
+const STONE_H = 16;
+const STONE_BORDER = 2;
 
-interface Spark { x: number; y: number; vx: number; vy: number; life: number; max: number }
+interface Spark { x: number; y: number; vx: number; vy: number; life: number; max: number; size?: number }
 interface Puff { x: number; y: number; vx: number; vy: number; r: number; life: number; max: number }
 interface Popup { set(progress: number): void; age: number }
 
@@ -84,10 +95,23 @@ export class Forge extends Phaser.Scene {
   private bgClose!: Phaser.GameObjects.Image;
   private targetGfx!: Phaser.GameObjects.Graphics;
   private ringGfx!: Phaser.GameObjects.Graphics;
+  private stoneGfx!: Phaser.GameObjects.Graphics;
+  /** The metal's colour once cooled: the mix's sheen (S5), as a tint. */
+  private sheen = 0;
+  /** Where the grinding finger is, in game px, and the close-view px sampled per engine step while it is down (S6). */
+  private finger: { x: number; y: number } | null = null;
+  private strokePts: { x: number; y: number }[] = [];
+  /** The finger has moved (or come down) since the last stroke point: a step that sees no new position adds none. */
+  private fingerFresh = false;
+  private grindHintShown = false;
+  private grindHintCounted = false;
 
   private sparks: Spark[] = [];
   private steam: Puff[] = [];
   private steamGfx!: Phaser.GameObjects.Graphics;
+  /** Grey scale flung out when a slag spot clears (S3); its own list, seeded from the spark generator. */
+  private dust: Puff[] = [];
+  private scaleGfx!: Phaser.GameObjects.Graphics;
   /** True once the piece has gone into the water. */
   private plunged = false;
   private sinkS = 0;
@@ -107,7 +131,14 @@ export class Forge extends Phaser.Scene {
   private ring: { x: number; y: number } | null = null;
   private seenStrikes = 0;
   private popups: Popup[] = [];
+  /** The last strike's first hammer play, for the debug API. */
+  private lastSound: { key: string; rate: number; perfect: boolean } | null = null;
   private hammerHintCounted = false;
+  private forceHintShown = false;
+  private hammerHintShown = false;
+  private slagHintShown = false;
+  /** Engine steps the striking finger has been down, for the force ring and the strike's force (S2). */
+  private holdSteps = 0;
   private quenchHintCounted = false;
   private layoutPending = false;
   /** True from a Quench press until the piece is dropped on the fire or anvil: the held piece is shown for the quench. */
@@ -134,6 +165,7 @@ export class Forge extends Phaser.Scene {
     this.pinned = null;
     this.sparks = [];
     this.steam = [];
+    this.dust = [];
     this.plunged = false;
     this.sinkS = 0;
     this.dragging = false;
@@ -142,8 +174,13 @@ export class Forge extends Phaser.Scene {
     this.mode = 'wide';
     this.strikePointer = -1;
     this.ring = null;
+    this.holdSteps = 0;
+    this.finger = null;
+    this.strokePts = [];
+    this.grindHintCounted = false;
     this.seenStrikes = 0;
     this.popups = [];
+    this.lastSound = null;
     this.hammerHintCounted = false;
     this.quenchHintCounted = false;
     this.layoutPending = false;
@@ -162,15 +199,28 @@ export class Forge extends Phaser.Scene {
     this.flickerRng = mulberry32(seed ^ 0xf1c4);
     this.shapes = shapesFor(this.item.id);
     this.shapeKey = '';
+    const [sr, sg, sb] = sheenOf(this.alloy);
+    this.sheen = (sr << 16) | (sg << 8) | sb;
 
     // Hint counts stay in memory until the craft ends (S4 writes them). The hammer hint counts when the anvil is reached.
     const seen = this.ctx.load.save.hintsSeen;
     const heatHint = (seen.heat ?? 0) < HINT_TIMES ? hints.heat : null;
-    const hammerHint = (seen.hammer ?? 0) < HINT_TIMES ? hints.hammer : null;
+    // The hammer hint and the force hint (S2) each show their first 3 times, side by side; each counts when shown.
+    // The close panel shows at most 2 due hints, in the order hammer, force, slag (S3).
+    const due = (['hammer', 'force', 'slag'] as const).filter((k) => (seen[k] ?? 0) < HINT_TIMES).slice(0, 2);
+    this.hammerHintShown = due.includes('hammer');
+    this.forceHintShown = due.includes('force');
+    this.slagHintShown = due.includes('slag');
+    const forceHint = this.forceHintShown ? hints.force : null;
+    const hammerHint = this.hammerHintShown ? hints.hammer : null;
+    const slagHint = this.slagHintShown ? hints.slag : null;
     const quenchHint = (seen.quench ?? 0) < HINT_TIMES ? hints.quench : null;
+    // The grind hint shows the first 3 times the grind is reached, counted when its mode is first entered (S6).
+    this.grindHintShown = this.item.grind === true && (seen.grind ?? 0) < HINT_TIMES;
+    const grindHint = this.grindHintShown ? hints.grind : null;
     seen.heat = (seen.heat ?? 0) + 1;
 
-    this.panel = showForgePanel(this.item.name, { heat: heatHint, hammer: hammerHint, quench: quenchHint }, {
+    this.panel = showForgePanel(this.item, { heat: heatHint, hammer: hammerHint, force: forceHint, slag: slagHint, grind: grindHint, quench: quenchHint }, {
       bellows: (down) => this.queue.push({ bellows: down }),
       move: () => {
         if (this.dragging || this.pendingMove()) return;
@@ -217,8 +267,10 @@ export class Forge extends Phaser.Scene {
     this.paintPiece();
     this.targetGfx = this.add.graphics();
     this.ringGfx = this.add.graphics();
+    this.stoneGfx = this.add.graphics();
     this.sparkGfx = this.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
     this.steamGfx = this.add.graphics();
+    this.scaleGfx = this.add.graphics();
     this.layout();
     this.scale.on('resize', this.layout, this);
     // The panel changes height when the Burning alert replaces the intro; keep the scene between the bars.
@@ -250,12 +302,19 @@ export class Forge extends Phaser.Scene {
       if (this.pinned !== null) this.craft = { ...this.craft, temp: this.pinned };
       this.craft = step(this.craft, this.queue.shift() ?? { none: true });
       if (this.pinned !== null) this.craft = { ...this.craft, temp: this.pinned };
+      // Force counts engine steps while the finger is down, so pause() and advance() control it (GAME-02).
+      if (this.strikePointer >= 0) this.holdSteps++;
+      if (this.strikePointer >= 0 && this.mode === 'grind') this.sampleStroke();
       this.answerStrikes();
       this.tickEffects();
+      // The hiss, steam and sinking start the step the piece goes in the tub, not when the craft ends (S6).
+      if (this.craft.quenchC !== null && !this.plunged) this.quenchEffects();
       if (this.craft.location === 'done') {
         if (!this.ended) this.end();
         this.endedS += STEP_MS / 1000;
-        if (this.endedS >= (this.craft.quenchC !== null ? QUENCH_S : END_S) && !this.leaving) {
+        // After a grind the result follows `grindEndS`; the quench's own hold was played before the grind.
+        const hold = this.craft.grindScore !== null ? feel.grindEndS : this.craft.quenchC !== null ? QUENCH_S : END_S;
+        if (this.endedS >= hold && !this.leaving) {
           this.leaving = true;
           this.scene.start('Result', this.ended!);
           return;
@@ -264,31 +323,34 @@ export class Forge extends Phaser.Scene {
     }
   }
 
-  /** The craft has ended: grade it, write the save once (bests, scrap, hint counts), and hiss if it went in the tub. */
+  /** The craft has ended: grade it and write the save once (bests, scrap, hint counts). */
   private end(): void {
     const g = grade(this.craft);
-    const r = recordCraft(this.ctx.load.save, this.item.id, g.ruined ? { ruined: true, scrapParts: g.scrapParts } : { ruined: false, score: g.score });
+    const r = recordCraft(this.ctx.load.save, this.item.id, g.ruined ? { ruined: true, scrapParts: g.scrapParts } : { ruined: false, score: g.score, stats: Object.fromEntries(Object.entries(g.stats).map(([k, v]) => [k, v.value])) });
     this.ctx.load.save = r.save;
     // Never write over a save that couldn't be read or kept aside (GAME-05); a failed write stops later ones too.
     const saved = this.ctx.load.saving && writeSave(this.ctx.storage, r.save);
     this.ctx.load.saving = saved;
-    this.ended = { itemId: this.item.id, alloy: this.alloy, graded: g, newBest: r.newBest, previousBest: r.previousBest, saved };
-    if (this.craft.quenchC !== null) {
-      this.sound.play('hiss', { volume: 0.7 });
-      this.plunged = true;
-      const n = Math.round((this.craft.quenchC / 100) * STEAM_PER_100C);
-      for (let i = 0; i < n; i++) this.puff(1);
-    }
+    this.ended = { itemId: this.item.id, alloy: this.alloy, graded: g, hits: this.craft.targets.map((t) => t.hits), newBest: r.newBest, previousBest: r.previousBest, saved };
     this.dragging = false;
     this.cancelStrike();
+  }
+
+  /** The piece has gone into the tub: it hisses, the steam bursts (hotter boils harder) and the piece starts to sink. */
+  private quenchEffects(): void {
+    this.sound.play('hiss', { volume: 0.7 });
+    this.plunged = true;
+    const n = Math.round((this.craft.quenchC! / 100) * STEAM_PER_100C);
+    for (let i = 0; i < n; i++) this.puff(1);
   }
 
   // ── Layout ────────────────────────────────────────────────────────────────
 
   /** Centre the fire-to-tub area between the top bar and the panel, as in mock-up frame 3. */
   private layout(): void {
-    // Don't move the scene under a finger that is aiming; lay out again when it lifts.
-    if (this.strikePointer >= 0) {
+    // Don't move the scene under a finger that is aiming or dragging; lay out again when it lifts. A panel that
+    // changed height mid-drag moved the tub away from the finger, and the drop missed it.
+    if (this.strikePointer >= 0 || this.dragging) {
       this.layoutPending = true;
       return;
     }
@@ -369,7 +431,7 @@ export class Forge extends Phaser.Scene {
         for (let i = 0; i < r.w * r.h; i++) {
           const v = r.shade[i]!;
           if (layer === 'fill' && v > 0) img.data.set([v * 255, v * 255, v * 255, 255], i * 4);
-          if (layer === 'edge' && edge[i]) img.data.set([...EDGE_RGB, 255], i * 4);
+          if (layer === 'edge' && edge[i]) img.data.set([...OUTLINE_RGB, 255], i * 4);
         }
         tex.context.putImageData(img, 0, 0);
         tex.refresh();
@@ -382,6 +444,8 @@ export class Forge extends Phaser.Scene {
   private viewMode(): ForgeMode {
     const loc = this.craft.location;
     if (loc === 'done') return 'done';
+    // A grinding piece sinks in the wide view for QUENCH_S after the drop (nothing to press), then the grind view opens.
+    if (loc === 'grind') return this.sinkS >= QUENCH_S ? 'grind' : 'done';
     // The quench ends once the piece lands on the fire or the anvil and no pick-up is still queued.
     if (this.quenching && (loc === 'fire' || loc === 'anvil') && !this.dragging && !this.pendingMove()) this.quenching = false;
     if (this.quenching && loc === 'held') return 'quench';
@@ -391,10 +455,20 @@ export class Forge extends Phaser.Scene {
   // ── Input: dragging the piece ─────────────────────────────────────────────
 
   private onDown(p: Phaser.Input.Pointer): void {
+    if (this.mode === 'grind') {
+      // Only the first finger grinds; the stone follows it and its path is sampled per engine step (S6).
+      if (this.strikePointer >= 0) return;
+      this.strikePointer = p.id;
+      this.strokePts = [];
+      this.finger = { x: Math.round(p.x), y: Math.round(p.y) };
+      this.fingerFresh = true;
+      return;
+    }
     if (this.mode === 'close') {
       // Only the first finger strikes; its ring shows above it and follows it (forge spec, Engine; S3).
       if (this.strikePointer >= 0 || this.pendingMove()) return;
       this.strikePointer = p.id;
+      this.holdSteps = 0;
       this.ring = { x: Math.round(p.x), y: Math.round(p.y - grading.strike.offsetPx) };
       return;
     }
@@ -420,6 +494,11 @@ export class Forge extends Phaser.Scene {
   }
 
   private onMove(p: Phaser.Input.Pointer): void {
+    if (p.id === this.strikePointer && this.finger) {
+      this.finger = { x: Math.round(p.x), y: Math.round(p.y) };
+      this.fingerFresh = true;
+      return;
+    }
     if (p.id === this.strikePointer && this.ring) {
       this.ring = { x: Math.round(p.x), y: Math.round(p.y - grading.strike.offsetPx) };
       return;
@@ -429,34 +508,76 @@ export class Forge extends Phaser.Scene {
   }
 
   private onUp(p: Phaser.Input.Pointer): void {
+    if (p.id === this.strikePointer && this.mode === 'grind') {
+      // The stroke is sent at lift; too few points make no stroke (S6).
+      const pts = this.strokePts;
+      const at = this.finger ?? { x: p.x, y: p.y };
+      this.cancelStrike();
+      if (pts.length >= stats.grind.minPoints) this.queue.push({ stroke: pts });
+      else this.popup('Too short', at.x, at.y - 24);
+      return;
+    }
     if (p.id === this.strikePointer) {
       // The strike lands at the ring at the moment of lift, in close-view game px.
       const r = this.ring;
+      const force = forceFromHold(this.holdSteps);
       this.cancelStrike();
-      if (r && this.mode === 'close') this.queue.push({ strike: { x: r.x - this.closeX, y: r.y - this.closeY } });
+      if (r && this.mode === 'close') this.queue.push({ strike: { x: r.x - this.closeX, y: r.y - this.closeY, force } });
       return;
     }
     if (!this.dragging || p.id !== this.dragPointer) return;
     this.dragging = false;
-    if (this.craft.location === 'done') return;
-    // Where the finger lets go decides; the piece's centre counts only when the finger is over no zone. Judged by the
-    // centre alone, a piece grabbed near one end missed the tub with the finger over the water (Morgan, S5 playtest).
-    const zoneAt = (x: number, y: number) => (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x - this.bgX, y - this.bgY));
-    const zone = zoneAt(p.x, p.y) ?? zoneAt(this.heldPos.x, this.heldPos.y);
-    // Anywhere else, the piece goes back where it came from (forge spec, Engine).
-    this.queue.push({ drop: zone ?? this.craft.heldFrom });
+    if (this.craft.location !== 'done') {
+      // Where the finger lets go decides; the piece's centre counts only when the finger is over no zone. Judged by the
+      // centre alone, a piece grabbed near one end missed the tub with the finger over the water (Morgan, S5 playtest).
+      const zoneAt = (x: number, y: number) => (['fire', 'anvil', 'tub'] as const).find((z) => inside(ZONES[z], x - this.bgX, y - this.bgY));
+      const zone = zoneAt(p.x, p.y) ?? zoneAt(this.heldPos.x, this.heldPos.y);
+      // Anywhere else, the piece goes back where it came from (forge spec, Engine).
+      this.queue.push({ drop: zone ?? this.craft.heldFrom });
+    }
+    // Judged against the scene the player saw; only now does a layout held back by the drag move it.
+    if (this.layoutPending) this.layout();
   }
 
-  /** A lift over the panel or off the canvas cancels a strike; a drag still drops. */
+  /**
+   * A lift over the panel or off the canvas cancels a strike; a drag still drops, and a grind stroke still counts
+   * (its points were taken over the piece; dropping it silently answered nothing).
+   */
   private onUpOutside(p: Phaser.Input.Pointer): void {
-    if (p.id === this.strikePointer) this.cancelStrike();
+    if (p.id === this.strikePointer && this.mode !== 'grind') this.cancelStrike();
     else this.onUp(p);
   }
 
   private cancelStrike(): void {
     this.strikePointer = -1;
     this.ring = null;
+    this.finger = null;
+    this.holdSteps = 0;
     if (this.layoutPending) this.layout();
+  }
+
+  /** One point per engine step of the drag: the finger in close-view px, rounded, and 1 or 2 sparks off the stone. */
+  private sampleStroke(): void {
+    const f = this.finger;
+    if (!f) return;
+    // Two engine steps can run in one frame (16 ms steps, 16.7 ms frames at 60 Hz) before the next pointer event:
+    // repeating the point would read as a stop, and a steady stroke would score as uneven (S6 review).
+    if (this.fingerFresh) this.strokePts.push({ x: f.x - this.closeX, y: f.y - this.closeY });
+    this.fingerFresh = false;
+    const n = 1 + Math.floor(this.sparkRng.next() * 2);
+    for (let i = 0; i < n; i++) {
+      const max = 0.15 + this.sparkRng.next() * 0.25;
+      const a = Math.PI * (1 + this.sparkRng.next());
+      const v = 30 + this.sparkRng.next() * 50;
+      this.sparks.push({ x: f.x + (this.sparkRng.next() - 0.5) * STONE_W * this.gamePerCss(), y: f.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: max, max, size: 2 });
+    }
+  }
+
+  /** A short word rising from game px (x, y), like a strike's points; only the newest shows. */
+  private popup(words: string, x: number, y: number): void {
+    const k = 1 / this.gamePerCss();
+    for (const old of this.popups) old.set(1);
+    this.popups = [{ set: this.panel.addPoints(words, x * k, y * k), age: 0 }];
   }
 
   /** Every new strike answers at once: sparks, the hammer sound, and its points rising from it (UI_STYLE Controls). */
@@ -473,13 +594,40 @@ export class Forge extends Phaser.Scene {
         const v = 40 + this.sparkRng.next() * 60;
         this.sparks.push({ x: gx, y: gy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: max, max });
       }
-      this.sound.play('hammer', { volume: 0.6 });
+      // The hammer's rate says where the strike landed against the working heat; a wild one rings the anvil (rate 1).
+      const rate = s.kind === 'wild' ? 1 : feel.hammerRate[s.heat];
+      this.sound.play('hammer', { volume: s.kind === 'light' ? feel.lightVolume : 0.6, rate });
+      let ring = false;
+      if (s.perfect) {
+        this.sound.play('hammer', { volume: feel.perfectVolume, rate: feel.perfectRate });
+        ring = true;
+      }
+      // `perfect` records that the second ring played, so a check can tell it was heard.
+      this.lastSound = { key: 'hammer', rate, perfect: ring };
       const pts = Math.round(s.lines.reduce((t, l) => t + l.points, 0));
       const k = 1 / this.gamePerCss();
       // Only the newest strike's points show, so quick strikes don't pile their numbers on each other.
       for (const old of this.popups) old.set(1);
       this.popups = [];
-      this.popups.push({ set: this.panel.addPoints(pts === 0 ? 'Clean' : `−${pts}`, gx * k, (gy - 6) * k), age: 0 });
+      const hard = s.lines.some((l) => l.cause === 'hard-strike');
+      // First match wins (S3 "Settled at S3 start").
+      const words =
+        s.kind === 'light' ? 'Too light'
+        : s.kind === 'blocked' ? `Slag first −${pts}`
+        : s.kind === 'slag' ? (pts === 0 ? 'Slag out' : `Slag out −${pts}`)
+        : hard ? `Too hard −${pts}`
+        : s.perfect ? 'Perfect'
+        : pts === 0 ? 'Clean'
+        : `−${pts}`;
+      if (s.kind === 'slag') {
+        for (let i = 0; i < 7; i++) {
+          const max = 0.3 + this.sparkRng.next() * 0.3;
+          const a = Math.PI * (1 + this.sparkRng.next());
+          const v = 20 + this.sparkRng.next() * 30;
+          this.dust.push({ x: gx, y: gy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 1 + this.sparkRng.next(), life: max, max });
+        }
+      }
+      this.popups.push({ set: this.panel.addPoints(words, gx * k, (gy - 6) * k), age: 0 });
     }
   }
 
@@ -512,13 +660,21 @@ export class Forge extends Phaser.Scene {
       p.life -= dt;
     }
     this.steam = this.steam.filter((p) => p.life > 0);
+    for (const p of this.dust) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 160 * dt;
+      p.life -= dt;
+    }
+    this.dust = this.dust.filter((p) => p.life > 0);
     for (const p of this.popups) {
       p.age += dt;
       p.set(Math.min(1, p.age / POINTS_S));
     }
     this.popups = this.popups.filter((p) => p.age < POINTS_S);
 
-    const rate = look(this.craft.temp).sparksPerSecond;
+    // A cooled piece in the grind view throws no heat sparks.
+    const rate = this.craft.quenchC !== null && this.bgClose.visible ? 0 : look(this.craft.temp).sparksPerSecond;
     if (rate > 0 && this.sparkRng.next() < rate * dt) {
       const b = this.pieceBox();
       const max = 0.35 + this.sparkRng.next() * 0.45;
@@ -569,8 +725,9 @@ export class Forge extends Phaser.Scene {
 
     // The piece as worked so far (bar, halfway or finished by stretch), its shading tinted with the heat colour; the outline stays dark.
     this.paintPiece();
-    this.closeFill.setVisible(!wide && !inTub).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y).setTint(color);
-    this.closeEdge.setVisible(!wide && !inTub).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y);
+    // A quenched piece in the close view is cooled: the mix's sheen, not the heat colour (S6).
+    this.closeFill.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y).setTint(inTub ? this.sheen : color);
+    this.closeEdge.setVisible(!wide).setPosition(this.closeX + this.closeR.x, this.closeY + this.closeR.y);
     const pb = this.pieceBox();
     const flip = this.piecePos().dir < 0;
     const showWide = wide && (!inTub || sinking);
@@ -588,7 +745,7 @@ export class Forge extends Phaser.Scene {
     }
     this.wideFill.setVisible(showWide);
     this.wideEdge.setVisible(showWide);
-    if (!wide) this.drawClose(color);
+    if (!wide) this.drawClose(inTub ? this.sheen : color);
     else {
       this.targetGfx.clear();
       this.ringGfx.clear();
@@ -612,7 +769,7 @@ export class Forge extends Phaser.Scene {
     this.sparkGfx.clear();
     for (const s of this.sparks) {
       this.sparkGfx.fillStyle(SPARK, Math.max(0, s.life / s.max));
-      this.sparkGfx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
+      this.sparkGfx.fillRect(Math.round(s.x), Math.round(s.y), s.size ?? 1, s.size ?? 1);
     }
     this.steamGfx.clear();
     if (this.plunged && this.sinkS < RIPPLE_S && wide) {
@@ -620,10 +777,16 @@ export class Forge extends Phaser.Scene {
       this.steamGfx.lineStyle(1, STEAM, 0.6 * (1 - t));
       this.steamGfx.strokeEllipse(this.bgX + WATER.x, this.bgY + WATER.y, 8 + t * WATER.halfW * 2, 3 + t * 8);
     }
-    for (const p of this.steam) {
+    for (const p of wide ? this.steam : []) {
       const t = p.life / p.max;
       this.steamGfx.fillStyle(STEAM, 0.55 * t);
       this.steamGfx.fillCircle(Math.round(p.x), Math.round(p.y), Math.round(p.r));
+    }
+    this.drawStone();
+    this.scaleGfx.clear();
+    for (const p of this.dust) {
+      this.scaleGfx.fillStyle(SCALE, Math.max(0, p.life / p.max));
+      this.scaleGfx.fillRect(Math.round(p.x), Math.round(p.y), Math.max(1, Math.round(p.r)), Math.max(1, Math.round(p.r)));
     }
 
     this.panel.update({
@@ -632,13 +795,30 @@ export class Forge extends Phaser.Scene {
       held: this.craft.location === 'held' || this.dragging,
       burning: this.craft.burning,
       round: currentRound(this.craft),
+      streak: cleanStreak(this.craft),
       struck: this.craft.targets.filter((t) => t.hits >= currentRound(this.craft)).length,
       targets: this.craft.targets.length,
       lost: pointsLost(this.craft),
+      stroke: Math.min(this.craft.strokes.length + 1, stats.grind.strokes),
       tub: this.mode === 'quench' ? this.tubLabelPos() : null,
       heldFrom: this.craft.heldFrom,
     });
     this.updateSound(l.humHz);
+  }
+
+  /** The whetstone under the finger while it is down in the grind: a soot slab with an ink-dim border, tilted 4 degrees. */
+  private drawStone(): void {
+    const g = this.stoneGfx;
+    g.clear();
+    if (!this.finger || this.mode !== 'grind') return;
+    const k = this.gamePerCss();
+    const w = STONE_W * k;
+    const h = STONE_H * k;
+    g.setPosition(this.finger.x, this.finger.y).setRotation((-4 * Math.PI) / 180);
+    g.fillStyle(STONE, 1);
+    g.fillRoundedRect(-w / 2, -h / 2, w, h, 3 * k);
+    g.lineStyle(STONE_BORDER * k, STONE_EDGE, 1);
+    g.strokeRoundedRect(-w / 2, -h / 2, w, h, 3 * k);
   }
 
   /** Above the tub's drop zone, in CSS px over the canvas. */
@@ -653,11 +833,18 @@ export class Forge extends Phaser.Scene {
     if (mode === this.mode) return;
     this.mode = mode;
     if (mode !== 'done') {
-      const wide = mode !== 'close';
+      const wide = mode !== 'close' && mode !== 'grind';
       this.bg.setVisible(wide);
       this.bgClose.setVisible(!wide);
     }
-    if (mode !== 'close') this.cancelStrike();
+    if (mode !== 'close' && mode !== 'grind') this.cancelStrike();
+    if (mode === 'grind' && !this.grindHintCounted) {
+      this.grindHintCounted = true;
+      if (this.grindHintShown) {
+        const seen = this.ctx.load.save.hintsSeen;
+        seen.grind = (seen.grind ?? 0) + 1;
+      }
+    }
     // The quench hint counts once the piece is in hand for the quench (a craft can end before the pick-up lands).
     if (mode === 'quench' && !this.quenchHintCounted) {
       this.quenchHintCounted = true;
@@ -667,7 +854,10 @@ export class Forge extends Phaser.Scene {
     if (mode === 'close' && !this.hammerHintCounted) {
       this.hammerHintCounted = true;
       const seen = this.ctx.load.save.hintsSeen;
-      seen.hammer = (seen.hammer ?? 0) + 1;
+      // Each hint is counted when it is shown: a new player sees where the strike lands and how force works.
+      if (this.forceHintShown) seen.force = (seen.force ?? 0) + 1;
+      if (this.hammerHintShown) seen.hammer = (seen.hammer ?? 0) + 1;
+      if (this.slagHintShown) seen.slag = (seen.slag ?? 0) + 1;
     }
   }
 
@@ -678,13 +868,22 @@ export class Forge extends Phaser.Scene {
     const dent = Phaser.Display.Color.IntegerToColor(metalColor).darken(35).color;
     g.fillStyle(dent, 1);
     for (const s of this.craft.strikes) {
-      if (s.kind === 'wild') continue;
+      if (s.kind === 'wild' || s.kind === 'light') continue;
       g.fillRect(Math.round(this.closeX + s.x) - 1, Math.round(this.closeY + s.y) - 1, 3, 3);
+    }
+    // Slag pits: dark ovals with a faint ember rim, between the targets (mock-up f-slag).
+    for (const p of this.craft.slag) {
+      if (p.cleared) continue;
+      g.fillStyle(PIT_EDGE, 1);
+      g.fillEllipse(this.closeX + p.x, this.closeY + p.y, 10, 8);
+      g.fillStyle(PIT, 1);
+      g.fillEllipse(this.closeX + p.x, this.closeY + p.y, 8, 6);
     }
     g.fillStyle(INK, 1);
     const h = Math.floor(TARGET_PX / 2);
     const round = currentRound(this.craft);
-    for (const t of this.craft.targets) {
+    // Once quenched the targets are done with.
+    for (const t of this.craft.quenchC !== null ? [] : this.craft.targets) {
       if (t.hits >= round) continue;
       const x0 = this.closeX + t.x - h;
       const y0 = this.closeY + t.y - h;
@@ -701,6 +900,17 @@ export class Forge extends Phaser.Scene {
     if (this.ring && this.mode === 'close') {
       this.ringGfx.lineStyle(2, RING, 1);
       this.ringGfx.strokeCircle(this.ring.x, this.ring.y, grading.strike.reachPx);
+      // The force ring: a faint full circle, and an arc filling clockwise from the top as the finger holds (S2).
+      const fr = grading.strike.reachPx + 4;
+      this.ringGfx.lineStyle(1, RING, 0.3);
+      this.ringGfx.strokeCircle(this.ring.x, this.ring.y, fr);
+      const f = forceFromHold(this.holdSteps);
+      if (f > 0) {
+        this.ringGfx.lineStyle(2, RING, 1);
+        this.ringGfx.beginPath();
+        this.ringGfx.arc(this.ring.x, this.ring.y, fr, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2, false);
+        this.ringGfx.strokePath();
+      }
     }
   }
 
@@ -760,6 +970,9 @@ export class Forge extends Phaser.Scene {
   private registerDebug(): void {
     setForgeDebug({
       state: () => this.craft,
+      lastSound: () => this.lastSound,
+      idealHold: () => Math.ceil((idealForce(this.craft.temp, this.craft.props) * grading.force.fullHoldS * 1000) / STEP_MS),
+      hold: () => ({ steps: this.holdSteps, force: forceFromHold(this.holdSteps) }),
       pause: () => {
         this.paused = true;
       },
@@ -777,6 +990,20 @@ export class Forge extends Phaser.Scene {
         const r = this.game.canvas.getBoundingClientRect();
         const k = r.width / this.game.canvas.width;
         return this.craft.targets.map((t) => ({ x: r.left + (this.closeX + t.x) * k, y: r.top + (this.closeY + t.y) * k, hits: t.hits }));
+      },
+      edgeLine: () => {
+        const r = this.game.canvas.getBoundingClientRect();
+        const k = r.width / this.game.canvas.width;
+        const e = this.item.edgeLine!;
+        return { x0: r.left + (this.closeX + e.x0) * k, y0: r.top + (this.closeY + e.y0) * k, x1: r.left + (this.closeX + e.x1) * k, y1: r.top + (this.closeY + e.y1) * k };
+      },
+      slag: () => {
+        const r = this.game.canvas.getBoundingClientRect();
+        const k = r.width / this.game.canvas.width;
+        return this.craft.slag.map((p) => ({ x: r.left + (this.closeX + p.x) * k, y: r.top + (this.closeY + p.y) * k, cleared: p.cleared }));
+      },
+      clearSlag: () => {
+        this.craft = { ...this.craft, slag: this.craft.slag.map((p) => ({ ...p, cleared: true })) };
       },
       zone: (name): CssBox => {
         const r = this.game.canvas.getBoundingClientRect();

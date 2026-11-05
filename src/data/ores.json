@@ -1,5 +1,5 @@
 [
-  { "id": "ore1", "name": "Ore 1", "quality": 40, "bandLowC": 800, "bandHighC": 1150, "cool": 45, "note": "Easy to work: a wide working heat, and it cools slowly." },
-  { "id": "ore2", "name": "Ore 2", "quality": 60, "bandLowC": 850, "bandHighC": 1100, "cool": 60, "note": "Middling: a fair working heat and cooling." },
-  { "id": "ore3", "name": "Ore 3", "quality": 85, "bandLowC": 900, "bandHighC": 1050, "cool": 80, "note": "Hard to work: a narrow working heat, and it cools fast." }
+  { "id": "ore1", "name": "Bog Iron", "quality": 40, "bandLowC": 800, "bandHighC": 1150, "cool": 58.5, "slagPerPart": 0.8, "stats": { "edge": 0.75, "toughness": 1, "balance": 0.85 }, "sheen": "#8a6248", "note": "Easy to work: a wide working heat, and it cools slowly." },
+  { "id": "ore2", "name": "Ridge Iron", "quality": 60, "bandLowC": 850, "bandHighC": 1100, "cool": 78, "slagPerPart": 0.5, "stats": { "edge": 0.85, "toughness": 0.85, "balance": 1 }, "sheen": "#c8c2b4", "note": "Middling: a fair working heat and cooling." },
+  { "id": "ore3", "name": "Starmetal", "quality": 85, "bandLowC": 900, "bandHighC": 1050, "cool": 104, "slagPerPart": 0.2, "stats": { "edge": 1, "toughness": 0.75, "balance": 0.85 }, "sheen": "#4a7ae0", "note": "Hard to work: a narrow working heat, and it cools fast." }
 ]

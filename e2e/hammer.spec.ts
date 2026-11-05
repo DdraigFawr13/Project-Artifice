@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { holdForIdeal } from './forge';
 
 // J3 Hammer (docs/specs/forge-prototype.md; S3 "Settled at S3 start"). Reads a target from the debug API, touches
 // 40 game px below it and lifts; that target takes a hit and the strike count rises. Each target takes two hits, in rounds.
@@ -7,6 +8,7 @@ type Api = {
   setSeed(n: number): void;
   state(): { location: string; temp: number; ruin: string | null; strikes: { kind: string; lines: { cause: string; points: number }[] }[]; targets: Pt[] } | null;
   targets(): Pt[];
+  clearSlag(): void;
   pause(): void;
   advance(ms: number): void;
   send(input: unknown): void;
@@ -33,6 +35,7 @@ async function knifeOnAnvil(page: Page, temp: number) {
   await page.evaluate((t) => {
     const a = (window as unknown as { __artifice: Api }).__artifice;
     a.pause();
+    a.clearSlag(); // these checks strike targets directly (S3)
     a.pinTemp(t);
     a.send({ grab: true });
     a.advance(16);
@@ -48,6 +51,7 @@ async function strikeAt(page: Page, p: { x: number; y: number }, below = 40) {
   const k = await cssPerGame(page);
   await page.mouse.move(p.x, p.y + below * k);
   await page.mouse.down();
+  await holdForIdeal(page); // a plain tap is a light strike
   await page.mouse.up();
   await api(page, (a) => a.advance(32));
   await frames(page);
@@ -56,6 +60,8 @@ async function strikeAt(page: Page, p: { x: number; y: number }, below = 40) {
 test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) => {
   await knifeOnAnvil(page, 950);
   await expect(page.locator('.top .steps .on')).toHaveText('Hammer');
+  // The force hint takes the hammer hint's place for the first 3 anvils (S2; e2e/depth.spec.ts checks the hammer hint after).
+  await expect(page.getByTestId('force-hint')).toHaveText('Hold longer to strike harder. Hot metal wants a light touch.');
   await expect(page.getByTestId('hammer-hint')).toHaveText('Strike the marked spots. Your strike lands at the ring above your thumb when you lift it.');
   const targets = await api(page, (a) => a.targets());
   expect(targets).toHaveLength(9);
@@ -72,7 +78,7 @@ test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) =
   expect((await api(page, (a) => a.targets()))[4]!.hits).toBe(1);
   expect(s.targets.filter((t) => t.hits > 0)).toHaveLength(1);
   await expect(page.getByTestId('strikes')).toHaveText('Round 1 · 1 of 9 · −0');
-  await expect(page.getByTestId('points')).toHaveText('Clean');
+  await expect(page.getByTestId('points')).toHaveText('Perfect'); // a centre hit in the band is Perfect now (S1)
 
   // About 6 game px off-centre: the strike costs points, and the screen shows what the engine scored for it.
   // (Touch positions are rounded by the browser, so the exact distance comes from the engine, not from here.)
@@ -106,7 +112,7 @@ test('round 2 opens once every target has its first hit', async ({ page }) => {
   await knifeOnAnvil(page, 950);
   const targets = await api(page, (a) => a.targets());
   for (const t of targets) await strikeAt(page, t);
-  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 0 of 9 · −\d+$/);
+  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 0 of 9 · −\d+( · Clean ×\d+)?$/);
   expect((await api(page, (a) => a.targets())).every((t) => t.hits === 1)).toBe(true);
   // The second hit finishes the stretch: 11–13 game px below a belly target only the finished blade reaches.
   const k = await cssPerGame(page);
@@ -116,7 +122,7 @@ test('round 2 opens once every target has its first hit', async ({ page }) => {
   const before = await meanRgb(page, deep(targets[5]!));
   await strikeAt(page, targets[5]!);
   expect((await api(page, (a) => a.targets()))[5]!.hits).toBe(2);
-  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 1 of 9 · −\d+$/);
+  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 1 of 9 · −\d+( · Clean ×\d+)?$/);
   await api(page, (a) => a.advance(800));
   await frames(page);
   const after = await meanRgb(page, deep(targets[5]!));
@@ -175,7 +181,7 @@ test('three strikes on black metal ruin the craft', async ({ page }) => {
   const targets = await api(page, (a) => a.targets());
   for (const t of targets.slice(0, 3)) await strikeAt(page, t);
   const s = (await api(page, (a) => a.state()))!;
-  expect(s).toMatchObject({ location: 'done', ruin: 'black-strikes' });
+  expect(s).toMatchObject({ location: 'done', ruin: 'cracked' });
   // The ruin screen follows once the last strike's points have shown (S4; e2e/ruin.spec.ts checks its content).
   await api(page, (a) => a.advance(800));
   await expect(page.getByText('Knife ruined')).toBeVisible();

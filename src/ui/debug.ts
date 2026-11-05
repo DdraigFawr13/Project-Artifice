@@ -19,6 +19,12 @@ export interface CssBox {
 /** What the forge screen offers tests while it is open (forge spec, Debug API). */
 export interface ForgeDebug {
   state(): CraftState;
+  /** The last strike's first hammer play (`rate`) and whether a second, Perfect ring played; null before any strike. */
+  lastSound(): { key: string; rate: number; perfect: boolean } | null;
+  /** The striking finger's hold so far: engine steps while it is down, and the force that gives; 0 with no finger down. */
+  hold(): { steps: number; force: number };
+  /** Engine steps of holding that give the ideal force at the temperature now. */
+  idealHold(): number;
   /** Stop real time driving the fixed step. */
   pause(): void;
   /** Run the fixed step for `ms`; a part step is carried to the next call. */
@@ -33,6 +39,12 @@ export interface ForgeDebug {
   zone(name: 'fire' | 'anvil' | 'tub'): CssBox;
   /** The strike targets' centres in CSS px, relative to the page, with how many hits each has had. */
   targets(): { x: number; y: number; hits: number }[];
+  /** The slag spots' centres in CSS px, relative to the page, like `targets()`. */
+  slag(): { x: number; y: number; cleared: boolean }[];
+  /** The cutting edge's ends in CSS px, relative to the page, like `targets()`; for items that grind (S6). */
+  edgeLine(): { x0: number; y0: number; x1: number; y1: number };
+  /** Mark every slag spot cleared, so checks that strike targets directly don't depend on the seed's slag. */
+  clearSlag(): void;
 }
 
 export interface DebugApi extends Omit<ForgeDebug, 'state'> {
@@ -84,7 +96,13 @@ export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: 
       nextSeed = n >>> 0;
     },
     targets: () => (forge ?? noForge()).targets(),
+    slag: () => (forge ?? noForge()).slag(),
+    edgeLine: () => (forge ?? noForge()).edgeLine(),
+    clearSlag: () => (forge ?? noForge()).clearSlag(),
     state: () => forge?.state() ?? null,
+    lastSound: () => (forge ?? noForge()).lastSound(),
+    hold: () => (forge ?? noForge()).hold(),
+    idealHold: () => (forge ?? noForge()).idealHold(),
     pause: () => (forge ?? noForge()).pause(),
     advance: (ms) => (forge ?? noForge()).advance(ms),
     send: (input) => (forge ?? noForge()).send(input),

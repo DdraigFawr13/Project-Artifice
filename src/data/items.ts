@@ -1,3 +1,4 @@
+import type { StatId } from '../engine/stats';
 import itemsJson from './items.json';
 
 /** Ore parts per ore id. 2 or 3 ores, each at least 1 part, summing to the item's parts (forge spec, Engine). */
@@ -7,12 +8,18 @@ export type AlloyMix = Record<string, number>;
 export interface Item {
   id: string;
   name: string;
+  /** The stats a finished piece gets, in display order (S4). */
+  stats: StatId[];
   /** Ore parts the item takes. */
   parts: number;
   /** About how long a craft takes for a practised player. */
   minutes: number;
   /** The starting mix on the alloy screen, until a mix has been used for the item (S5). */
   defaultAlloy: AlloyMix;
+  /** True when the piece is ground on a whetstone after the quench (S6). */
+  grind?: boolean;
+  /** The cutting edge in close-view game px, measured on the finished raster (S6); present for items with `grind`. */
+  edgeLine?: { x0: number; y0: number; x1: number; y1: number };
   /** Strike targets in close-view game px (assets/close.png), before the seed moves them (forge spec S3). */
   targets: { x: number; y: number }[];
 }

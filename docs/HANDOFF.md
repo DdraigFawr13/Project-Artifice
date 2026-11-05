@@ -1,6 +1,6 @@
 # Handoff
 
-Updated: 2026-11-04. A fresh session must be able to continue from this file alone. Keep it to 60 lines; move finished entries to `docs/archive/handoff-YYYY-MM.md`.
+Updated: 2026-11-05. A fresh session must be able to continue from this file alone. Keep it to 60 lines; move finished entries to `docs/archive/handoff-YYYY-MM.md`.
 
 ## Phase
 
@@ -23,7 +23,9 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Just done
 
-- 2026-11-04 S5 merged by Morgan (PR #7, 25f71a5); PR CI green (23 e2e); Vercel production is 25f71a5, both production links 302 to the login. S5 built (17333e3, b0b7bff): zero-decision re-check (reviewer) found 12 consequential gaps; 3 went to Morgan (ore info: quality + a plain line; last mix remembered, "Forge another" skips the alloy screen; names stay Ore 1–3), the rest are defaults in the spec's S5 list. J5 checks failed first, then passed (101 unit, 20 e2e); 15 mutants, all killed after 1 check was sharpened. Alloy screen screenshotted at the Pixel size beside frames 2 and 2b. Spec review: 7 findings, all fixed (9c5d2f0); 4 more mutants killed (103 unit, 21 e2e).
+- 2026-11-05 Depth pass on `claude/forge-depth` (draft PR #9): each slice built by a fresh implementer, re-checked before and fresh-reviewed and mutation-tested after (Morgan asked for this). S1 39a0caf, S2 6b666b5, S3 944cc25, S4 f75e15f (+ drag-layout fix), S5 1862277, S6 3fa6968 grind + review fixes (0 bugs; stroke points only on new pointer events; every S6 mutant now caught). Whole-pass review: 0 bugs; wording, a grind lift over the panel, stale spec lines fixed. Next: Morgan plays 10 crafts with the depth playtest form, then approves PR #8 and #9 or asks for changes.
+
+- 2026-11-04 S5 merged by Morgan (PR #7, 25f71a5); PR CI and main CI green; Vercel production 25f71a5, links 302 to the login. Details: git log and the spec's S5 list.
 - Earlier entries (brainstorm to S4): [archive](archive/handoff-2026-11.md).
 
 ## Next
@@ -46,8 +48,6 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - 2026-11-05 Depth pass round 1 (Morgan, all as recommended): hold-to-charge strike force, right force set by heat, too light doesn't take / too hard costs and counts towards cracking; slag costs craft points, struck out before shaping, more in cheaper ore; missed hit −5; metal varies ±20 °C, cued by the hammer's sound; cooling +30%; Perfect = 1 px, in band, right force; times a guide. All 11 ideas Now (incl. blade stats, grind, streak, ore names). Depth means "actually shaping the bar… the ore really matter to stats of the item and how it looks".
 
 - 2026-11-04 S5 playtest (Morgan): quench "very flat", fixed in this PR (steam, the piece slides into the water, 1.6 s hold; spec S5 list); alloy choice matters; unsure about forging another.
-
-- 2026-11-04 S5 start (Morgan): each ore shows quality and a plain line about how it works, no temperatures; the alloy screen remembers the last mix per item (page load only) and "Forge another" / "Try again" skip it; ore names stay Ore 1–3 (spec S5 "Settled at S5 start").
 
 - 2026-11-04 S4 playtest (Morgan): "works pretty well"; quench from the fire too (a wide-view Quench button added); the quench feels unsatisfying but fine (steam and a sinking piece noted for later, spec S4 list).
 

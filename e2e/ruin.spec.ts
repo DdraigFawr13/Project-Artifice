@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { api, dragTo, knifeOnAnvil, strike } from './forge';
+import { api, clearSlag, dragTo, knifeOnAnvil, strike } from './forge';
 
 // J4 ruin (forge spec; S4 "Settled at S4 start"): a quench at white heat ruins the knife; half its 5 parts, rounded
 // down, come back as scrap, and the scrap is kept.
@@ -29,11 +29,12 @@ test('a quench at white heat shows the ruin screen and returns scrap', async ({ 
 
 test('three strikes on black metal show the ruin screen; Try again starts the same item', async ({ page }) => {
   await knifeOnAnvil(page, 300);
+  await clearSlag(page);
   const targets = (await api(page, (a) => a.state()))!.targets;
   for (const t of targets.slice(0, 3)) await strike(page, t.x, t.y);
   await api(page, (a) => a.advance(800));
   await expect(page.getByRole('alert')).toContainText('The knife cracked on the anvil.');
-  await expect(page.getByRole('alert')).toContainText('3 strikes on black, cold metal.');
+  await expect(page.getByRole('alert')).toContainText('3 cracking strikes: on black metal, or too hard below the working heat.');
   await expect(page.getByTestId('line')).toHaveText([/^Metal used\s*5 parts$/, /^Scrap returned\s*2 parts$/]);
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();

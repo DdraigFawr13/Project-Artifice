@@ -1,24 +1,31 @@
 import grading from '../data/grading.json';
+import stats from '../data/stats.json';
 import { bandAt, heatRules } from '../data/heatBands';
 import { itemById, type AlloyMix } from '../data/items';
-import { alloyProps, checkMix, type AlloyProps } from './alloy';
+import { alloyProps, checkMix, ores, type AlloyProps } from './alloy';
+import { grindScoreOf, strokeScore, type Pt } from './grind';
 import { heatStep, type Place } from './heat';
 import { isWhiteQuench } from './quench';
 import { mulberry32 } from './rng';
-import { scoreStrike, type CauseId, type Line, type StrikeKind, type Target } from './strike';
+import { scoreStrike, STEP_MS, type CauseId, type Heat, type Line, type StrikeKind, type Target } from './strike';
 
-/** One fixed step, in ms (forge spec, Engine). */
-export const STEP_MS = 16;
+export { STEP_MS };
 
 export type DropTarget = 'fire' | 'anvil' | 'tub';
 export type Input =
   | { bellows: boolean }
   | { grab: true }
   | { drop: DropTarget }
-  | { strike: { x: number; y: number } }
+  | { strike: { x: number; y: number; force?: number } }
+  /** One grind stroke: a point per engine step of the drag, in close-view px (S6). */
+  | { stroke: Pt[] }
   | { none: true };
 
 export interface CraftState {
+  /** The rules a replay plays by; 2 for the forge depth pass. */
+  rulesVersion: number;
+  /** The working band's move for this craft, whole °C from the seed; already added to `props`. */
+  bandShiftC: number;
   seed: number;
   itemId: string;
   alloy: AlloyMix;
@@ -34,6 +41,8 @@ export interface CraftState {
   bellows: boolean;
   /** Strike targets in close-view game px, moved by the seed, with how many times each has been hit (0 to `passes`). */
   targets: CraftTarget[];
+  /** Slag spots in the bar, in close-view game px; `gap` g lies between targets g and g + 1. A cleared one is gone. */
+  slag: SlagSpot[];
   /** Every strike made on the anvil, in order, with its points lost. */
   strikes: Strike[];
   /** Per-second causes so far (out of band on the anvil, burning), in fractions. */
@@ -42,13 +51,24 @@ export interface CraftState {
   burning: boolean;
   /** The metal's temperature when it went into the tub, or null before the quench. */
   quenchC: number | null;
+  /** Each grind stroke's score, 0–100, in order (S6); at most `stats.grind.strokes`. */
+  strokes: number[];
+  /** The mean of the strokes once the last is made, unrounded; null before, and always for an item with no grind. */
+  grindScore: number | null;
   /** Set when the craft ends in ruin; `location` is then `done`. */
   ruin: Ruin | null;
   /** Every input except `{none}`, with the step it arrived on, so a craft replays from seed plus log (GAME-01). */
   log: { step: number; input: Input }[];
 }
 
-export type Ruin = 'black-strikes' | 'white-quench';
+export type Ruin = 'cracked' | 'white-quench';
+
+export interface SlagSpot {
+  x: number;
+  y: number;
+  gap: number;
+  cleared: boolean;
+}
 
 export interface CraftTarget {
   x: number;
@@ -75,8 +95,25 @@ export interface Strike {
   y: number;
   target: number | null;
   kind: StrikeKind;
-  black: boolean;
+  crack: boolean;
+  force: number;
+  heat: Heat;
+  offPx: number | null;
+  perfect: boolean;
+  /** The index of the slag spot this strike cleared (kind `slag`). */
+  slag?: number;
   lines: Line[];
+}
+
+/** The number of latest strikes in a row whose lines, each rounded, sum to 0, counting hits and slag clears. */
+export function cleanStreak(s: Pick<CraftState, 'strikes'>): number {
+  let n = 0;
+  for (let i = s.strikes.length - 1; i >= 0; i--) {
+    const k = s.strikes[i]!;
+    if ((k.kind !== 'hit' && k.kind !== 'slag') || k.lines.reduce((t, l) => t + Math.round(l.points), 0) !== 0) break;
+    n++;
+  }
+  return n;
 }
 
 /** The seed moves each target by whole px, up to ±3 in x and y: floor(next() × 7) − 3, x then y (forge spec S3). */
@@ -90,24 +127,55 @@ function placeTargets(seed: number, itemId: string): CraftTarget[] {
   });
 }
 
+/**
+ * Slag: count = min(targets − 1, round(Σ parts × slagPerPart)); the gaps are shuffled (Fisher–Yates, own seeded stream)
+ * and the first `count` taken; each spot sits at the midpoint of its two shifted targets (S3).
+ */
+function placeSlag(seed: number, alloy: AlloyMix, targets: readonly CraftTarget[]): SlagSpot[] {
+  let sum = 0;
+  for (const [id, parts] of Object.entries(alloy)) sum += parts * ores.find((o) => o.id === id)!.slagPerPart;
+  const gaps = Array.from({ length: Math.max(0, targets.length - 1) }, (_, g) => g);
+  const count = Math.min(gaps.length, Math.round(sum));
+  const rng = mulberry32(seed ^ 0x51a6);
+  for (let i = gaps.length - 1; i >= 1; i--) {
+    const j = Math.floor(rng.next() * (i + 1));
+    [gaps[i], gaps[j]] = [gaps[j]!, gaps[i]!];
+  }
+  return gaps.slice(0, count).map((g) => ({
+    x: Math.round((targets[g]!.x + targets[g + 1]!.x) / 2),
+    y: Math.round((targets[g]!.y + targets[g + 1]!.y) / 2),
+    gap: g,
+    cleared: false,
+  }));
+}
+
 export function createCraft(seed: number, itemId: string, alloy: AlloyMix): CraftState {
   const check = checkMix(itemById(itemId), alloy);
   if (!check.ok) throw new Error(`This mix can't start a craft: ${check.refusal}`);
+  const base = alloyProps(alloy);
+  const targets = placeTargets(seed >>> 0, itemId);
+  // The working band moves by a whole number of °C from its own seeded stream, so target placement is unchanged (GAME-01).
+  const bandShiftC = Math.round((mulberry32((seed >>> 0) ^ 0xba5d).next() * 2 - 1) * grading.metal.bandShiftC) + 0;
   return {
+    rulesVersion: 2,
+    bandShiftC,
     seed: seed >>> 0,
     itemId,
     alloy: { ...alloy },
-    props: alloyProps(alloy),
+    props: { ...base, bandLowC: base.bandLowC + bandShiftC, bandHighC: base.bandHighC + bandShiftC },
     step: 0,
     temp: heatRules.startC,
     location: 'fire',
     heldFrom: 'fire',
     bellows: false,
-    targets: placeTargets(seed >>> 0, itemId),
+    targets,
+    slag: placeSlag(seed >>> 0, alloy, targets),
     strikes: [],
     lost: {},
     burning: false,
     quenchC: null,
+    strokes: [],
+    grindScore: null,
     ruin: null,
     log: [],
   };
@@ -121,24 +189,41 @@ function applyInput(s: CraftState, input: Input): CraftState {
   }
   if ('drop' in input) {
     if (s.location !== 'held') return s;
-    // The quench ends the craft at this step's temperature, before any heat change (S4); white heat cracks it.
-    if (input.drop === 'tub') return { ...s, location: 'done', bellows: false, quenchC: s.temp, ruin: isWhiteQuench(s.temp) ? 'white-quench' : null };
+    // The quench is taken at this step's temperature, before any heat change (S4); white heat cracks it and ends the
+    // craft. Otherwise a piece with a grind waits for its strokes (S6); any other ends here.
+    if (input.drop === 'tub') {
+      const ruin = isWhiteQuench(s.temp) ? 'white-quench' : null;
+      const grinds = !ruin && itemById(s.itemId).grind === true;
+      return { ...s, location: grinds ? 'grind' : 'done', bellows: false, quenchC: s.temp, ruin };
+    }
     return { ...s, location: input.drop };
+  }
+  if ('stroke' in input) {
+    // A stroke counts only in the grind, and only with enough points to have a speed (S6).
+    if (s.location !== 'grind' || input.stroke.length < stats.grind.minPoints) return s;
+    const strokes = [...s.strokes, strokeScore(input.stroke, itemById(s.itemId).edgeLine!)];
+    if (strokes.length < stats.grind.strokes) return { ...s, strokes };
+    return { ...s, strokes, grindScore: grindScoreOf(strokes), location: 'done' };
   }
   if ('strike' in input) {
     // Strikes count only on the anvil; elsewhere they are logged and ignored.
     if (s.location !== 'anvil') return s;
-    const { x, y } = input.strike;
+    const { x, y, force } = input.strike;
     // A target is open while it has fewer hits than the round in progress; once all are worked, none is open.
     const round = currentRound(s);
-    const view: Target[] = s.targets.map((t) => ({ x: t.x, y: t.y, struck: t.hits >= round }));
-    const sc = scoreStrike(view, x, y, s.temp, s.props);
+    // A target is blocked while the gap before it or after it holds an uncleared spot.
+    const held = (i: number) => s.slag.some((p) => !p.cleared && (p.gap === i - 1 || p.gap === i));
+    const view: Target[] = s.targets.map((t, i) => ({ x: t.x, y: t.y, struck: t.hits >= round, blocked: held(i) }));
+    const open = s.slag.flatMap((p, i) => (p.cleared ? [] : [i]));
+    const sc = scoreStrike(view, x, y, s.temp, s.props, force, open.map((i) => s.slag[i]!));
+    const spot = sc.slag === undefined ? undefined : open[sc.slag]!;
+    const slag = spot === undefined ? s.slag : s.slag.map((p, i) => (i === spot ? { ...p, cleared: true } : p));
     const targets = sc.target === null ? s.targets : s.targets.map((t, i) => (i === sc.target ? { ...t, hits: t.hits + 1 } : t));
-    const strikes = [...s.strikes, { step: s.step, x, y, ...sc }];
-    const blacks = strikes.filter((k) => k.black).length;
-    // The 3rd black-band strike is scored, then ends the craft at once.
-    if (blacks >= grading.ruin.blackStrikes) return { ...s, targets, strikes, location: 'done', bellows: false, ruin: 'black-strikes' };
-    return { ...s, targets, strikes };
+    const strikes = [...s.strikes, { step: s.step, x, y, ...sc, ...(spot === undefined ? {} : { slag: spot }) }];
+    const cracks = strikes.filter((k) => k.crack).length;
+    // The 3rd cracking strike is scored, then ends the craft at once.
+    if (cracks >= grading.ruin.cracks) return { ...s, targets, slag, strikes, location: 'done', bellows: false, ruin: 'cracked' };
+    return { ...s, targets, slag, strikes };
   }
   return s;
 }

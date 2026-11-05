@@ -1,10 +1,11 @@
 import { heatRules as H } from '../data/heatBands';
 
-export type Place = 'fire' | 'anvil' | 'held' | 'done';
+export type Place = 'fire' | 'anvil' | 'held' | 'grind' | 'done';
 
 /** One fixed step of heat (forge spec, Data → Heat). Pure: no clock, no randomness. */
 export function heatStep(tempC: number, place: Place, bellows: boolean, coolRate: number, dtS: number): number {
-  if (place === 'done') return tempC;
+  // The piece is quenched in the grind: its temperature is frozen there as at the end.
+  if (place === 'done' || place === 'grind') return tempC;
   if (place === 'fire') {
     if (bellows) return Math.min(H.maxC, tempC + H.bellowsRate * dtS);
     // Without the bellows the fire pulls the bar towards its idle heat, from either side, and stops there.

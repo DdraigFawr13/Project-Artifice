@@ -9,6 +9,12 @@ export interface Ore {
   bandHighC: number;
   /** °C lost per second out of the fire. */
   cool: number;
+  /** Slag spots per part of this ore in a mix (S3). */
+  slagPerPart: number;
+  /** What the ore does to each stat's work, as a multiplier (S4). */
+  stats: Record<'edge' | 'toughness' | 'balance', number>;
+  /** The metal's colour as `#rrggbb`, for the result piece (S5). */
+  sheen: string;
   /** How the ore works, in words for the alloy screen; never a temperature (S5). */
   note: string;
 }

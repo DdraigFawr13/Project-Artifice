@@ -1,6 +1,9 @@
 {
   "alloy": "Tap − and + to share the parts between the ores. Better ore is harder to work.",
   "heat": "Watch the colour, glow and sparks. Let go to ease off.",
+  "force": "Hold longer to strike harder. Hot metal wants a light touch.",
+  "slag": "Knock out the dark slag first. The spots beside it won't shape until it's gone.",
   "hammer": "Strike the marked spots. Your strike lands at the ring above your thumb when you lift it.",
+  "grind": "Drag the stone along the edge, steady and even.",
   "quench": "Drag the piece to the tub and let go to quench."
 }

@@ -19,25 +19,45 @@ function memoryStorage(initial: Record<string, string> = {}, opts: { failWrites?
   };
 }
 
-const sample: Save = { version: 1, best: { knife: 74 }, scrap: 2, hintsSeen: { heat: 1 } };
+const sample: Save = { version: 2, best: { knife: 74 }, bestStats: { knife: { edge: 60, toughness: 80, balance: 70 } }, scrap: 2, hintsSeen: { heat: 1 } };
+const v1 = { version: 1, best: { knife: 74 }, scrap: 2, hintsSeen: { heat: 1 } };
 
 describe('loadSave', () => {
   it('starts a fresh save when there is none', () => {
     const r = loadSave(memoryStorage());
     expect(r).toEqual({ save: freshSave(), saving: true, recovered: false });
-    expect(freshSave()).toEqual({ version: 1, best: {}, scrap: 0, hintsSeen: {} });
+    expect(freshSave()).toEqual({ version: 2, best: {}, bestStats: {}, scrap: 0, hintsSeen: {} });
   });
 
-  it('reads a version 1 save', () => {
+  it('reads a version 2 save', () => {
     const r = loadSave(memoryStorage({ [SAVE_KEY]: JSON.stringify(sample) }));
     expect(r.save).toEqual(sample);
     expect(r.recovered).toBe(false);
   });
 
+  it('upgrades a version 1 save in memory with no stats, and leaves storage as it was until the next save', () => {
+    const storage = memoryStorage({ [SAVE_KEY]: JSON.stringify(v1) });
+    const r = loadSave(storage);
+    expect(r.save).toEqual({ version: 2, best: { knife: 74 }, bestStats: {}, scrap: 2, hintsSeen: { heat: 1 } });
+    expect(r.recovered).toBe(false);
+    expect(JSON.parse(storage.getItem(SAVE_KEY)!).version).toBe(1);
+    writeSave(storage, r.save);
+    expect(JSON.parse(storage.getItem(SAVE_KEY)!).version).toBe(2);
+  });
+
   it.each([
     ['an unknown version', JSON.stringify({ ...sample, version: 99 })],
-    ['bad JSON', '{"version": 1, best'],
+    ['bad JSON', '{"version": 2, best'],
     ['a version 1 save with the wrong shape', JSON.stringify({ version: 1, best: 'knife', scrap: 0, hintsSeen: {} })],
+    ['a version 2 save with the wrong shape', JSON.stringify({ ...sample, best: 'knife' })],
+    ['a version 2 save without bestStats', JSON.stringify({ version: 2, best: {}, scrap: 0, hintsSeen: {} })],
+    ['an unknown stat key', JSON.stringify({ ...sample, bestStats: { knife: { sharpness: 50 } } })],
+    ['a stat over 100', JSON.stringify({ ...sample, bestStats: { knife: { edge: 101 } } })],
+    ['a negative stat', JSON.stringify({ ...sample, bestStats: { knife: { edge: -1 } } })],
+    ['a fractional stat', JSON.stringify({ ...sample, bestStats: { knife: { edge: 1.5 } } })],
+    ['bestStats that is not an object', JSON.stringify({ ...sample, bestStats: 'edge' })],
+    ['bestStats that is an array', JSON.stringify({ ...sample, bestStats: [] })],
+    ['an item\'s stats that are not an object', JSON.stringify({ ...sample, bestStats: { knife: 60 } })],
     ['a best score over 100', JSON.stringify({ ...sample, best: { knife: 101 } })],
     ['a fractional best score', JSON.stringify({ ...sample, best: { knife: 74.5 } })],
     ['negative scrap', JSON.stringify({ ...sample, scrap: -1 })],
@@ -80,24 +100,56 @@ describe('writeSave', () => {
 describe('recordCraft', () => {
   it('keeps the higher score as the best, a 0 included, and says whether it is new', () => {
     let save = freshSave();
-    let r = recordCraft(save, 'knife', { ruined: false, score: 0 });
+    let r = recordCraft(save, 'knife', { ruined: false, score: 0, stats: {} });
     expect(r).toEqual({ save: { ...freshSave(), best: { knife: 0 } }, newBest: true, previousBest: null });
+    expect(r.save.bestStats).toEqual({});
     save = r.save;
-    r = recordCraft(save, 'knife', { ruined: false, score: 74 });
+    r = recordCraft(save, 'knife', { ruined: false, score: 74, stats: {} });
     expect(r.newBest).toBe(true);
     expect(r.save.best.knife).toBe(74);
-    r = recordCraft(r.save, 'knife', { ruined: false, score: 60 });
+    r = recordCraft(r.save, 'knife', { ruined: false, score: 60, stats: {} });
     expect(r).toMatchObject({ newBest: false, previousBest: 74 });
     expect(r.save.best.knife).toBe(74);
     // Equal is not a new best.
-    expect(recordCraft(r.save, 'knife', { ruined: false, score: 74 }).newBest).toBe(false);
+    expect(recordCraft(r.save, 'knife', { ruined: false, score: 74, stats: {} }).newBest).toBe(false);
     // The input save is not changed.
     expect(save.best.knife).toBe(0);
   });
 
   it('adds a ruin\'s scrap and leaves the bests alone', () => {
-    const save: Save = { ...freshSave(), best: { knife: 80 }, scrap: 1 };
+    const save: Save = { ...freshSave(), best: { knife: 80 }, bestStats: { knife: { edge: 70 } }, scrap: 1 };
     const r = recordCraft(save, 'knife', { ruined: true, scrapParts: 2 });
     expect(r).toEqual({ save: { ...save, scrap: 3 }, newBest: false, previousBest: 80 });
+  });
+
+  it('keeps each stat\'s best on its own, even when the score is not a new best', () => {
+    const stats = (edge: number, toughness: number, balance: number) => ({ edge, toughness, balance });
+    let r = recordCraft(freshSave(), 'knife', { ruined: false, score: 80, stats: stats(60, 90, 50) });
+    expect(r.save.bestStats).toEqual({ knife: stats(60, 90, 50) });
+    // A worse score, but a better Edge and Balance: those rise, Toughness stays.
+    r = recordCraft(r.save, 'knife', { ruined: false, score: 50, stats: stats(75, 40, 70) });
+    expect(r.newBest).toBe(false);
+    expect(r.save.best.knife).toBe(80);
+    expect(r.save.bestStats).toEqual({ knife: stats(75, 90, 70) });
+    // Equal or lower changes nothing.
+    r = recordCraft(r.save, 'knife', { ruined: false, score: 10, stats: stats(75, 10, 0) });
+    expect(r.save.bestStats).toEqual({ knife: stats(75, 90, 70) });
+  });
+
+  it('records only the stats the item has, per item, and does not change the input save', () => {
+    const save = freshSave();
+    const r = recordCraft(save, 'horseshoe', { ruined: false, score: 70, stats: { toughness: 55, balance: 65 } });
+    expect(r.save.bestStats).toEqual({ horseshoe: { toughness: 55, balance: 65 } });
+    expect(recordCraft(r.save, 'knife', { ruined: false, score: 70, stats: { edge: 50 } }).save.bestStats).toEqual({
+      horseshoe: { toughness: 55, balance: 65 },
+      knife: { edge: 50 },
+    });
+    expect(save.bestStats).toEqual({});
+  });
+
+  it('changes no stats for a ruin', () => {
+    const save: Save = { ...freshSave(), bestStats: { knife: { edge: 70 } } };
+    expect(recordCraft(save, 'knife', { ruined: true, scrapParts: 1 }).save.bestStats).toEqual({ knife: { edge: 70 } });
+    expect(recordCraft(freshSave(), 'knife', { ruined: true, scrapParts: 1 }).save.bestStats).toEqual({});
   });
 });

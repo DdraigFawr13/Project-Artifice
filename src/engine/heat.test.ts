@@ -3,6 +3,7 @@ import heatJson from '../data/heat-bands.json';
 import { createCraft, step, STEP_MS, type CraftState, type Input } from './craft';
 import { defaultAlloy, alloyProps } from './alloy';
 import { items } from '../data/items';
+import { grindOut } from './grindFixture';
 
 // J2 Heat (docs/specs/forge-prototype.md, Data → Heat). Rates come from the data file, not from this test.
 const H = heatJson.heat;
@@ -46,7 +47,7 @@ describe('heat', () => {
   it('falls at the alloy cool rate on the anvil and while held, down to 20 °C', () => {
     const alloy = defaultAlloy(knife);
     const cool = alloyProps(alloy).cool;
-    expect(cool).toBeCloseTo((4 * 60 + 45) / 5, 6);
+    expect(cool).toBeCloseTo((4 * 78 + 58.5) / 5, 6);
     let s = createCraft(1, 'knife', alloy);
     s = run(s, steps(4000), { bellows: true });
     const hot = s.temp;
@@ -74,7 +75,8 @@ describe('heat', () => {
       for (const i of from) s = step(s, i);
       s = step(s, { grab: true });
       s = step(s, { drop: 'tub' });
-      expect(s.location).toBe('done');
+      expect(s.location).toBe('grind');
+      expect(grindOut(s).location).toBe('done');
     }
   });
 
