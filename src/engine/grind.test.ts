@@ -39,6 +39,10 @@ describe('stroke score', () => {
     expect(strokeScore(over, EDGE)).toBeLessThan(100);
   });
 
+  it('never scores below 0: a stroke 20 px off the edge (100 − 8 × 20 = −60) scores 0', () => {
+    expect(strokeScore(strokePoints('knife', 0).map((p) => ({ x: p.x, y: p.y + 20 })), EDGE)).toBe(0);
+  });
+
   it('penalises an uneven speed by perCv × cv', () => {
     // On the line; steps alternate 1 and 3 px: mean 2, population SD 1, cv 0.5. 36 steps cover 72 of 88 px (0.82 ≥ 0.8).
     const xs = [EDGE.x0];
