@@ -5,7 +5,7 @@ import { alloyProps, checkMix, type AlloyProps } from './alloy';
 import { heatStep, type Place } from './heat';
 import { isWhiteQuench } from './quench';
 import { mulberry32 } from './rng';
-import { scoreStrike, type CauseId, type Line, type StrikeKind, type Target } from './strike';
+import { scoreStrike, type CauseId, type Heat, type Line, type StrikeKind, type Target } from './strike';
 
 /** One fixed step, in ms (forge spec, Engine). */
 export const STEP_MS = 16;
@@ -19,6 +19,10 @@ export type Input =
   | { none: true };
 
 export interface CraftState {
+  /** The rules a replay plays by; 2 for the forge depth pass. */
+  rulesVersion: number;
+  /** The working band's move for this craft, whole °C from the seed; already added to `props`. */
+  bandShiftC: number;
   seed: number;
   itemId: string;
   alloy: AlloyMix;
@@ -76,7 +80,21 @@ export interface Strike {
   target: number | null;
   kind: StrikeKind;
   black: boolean;
+  heat: Heat;
+  offPx: number | null;
+  perfect: boolean;
   lines: Line[];
+}
+
+/** The number of latest strikes in a row whose lines, each rounded, sum to 0 (hits only until slag clears exist). */
+export function cleanStreak(s: Pick<CraftState, 'strikes'>): number {
+  let n = 0;
+  for (let i = s.strikes.length - 1; i >= 0; i--) {
+    const k = s.strikes[i]!;
+    if (k.kind !== 'hit' || k.lines.reduce((t, l) => t + Math.round(l.points), 0) !== 0) break;
+    n++;
+  }
+  return n;
 }
 
 /** The seed moves each target by whole px, up to ±3 in x and y: floor(next() × 7) − 3, x then y (forge spec S3). */
@@ -93,11 +111,16 @@ function placeTargets(seed: number, itemId: string): CraftTarget[] {
 export function createCraft(seed: number, itemId: string, alloy: AlloyMix): CraftState {
   const check = checkMix(itemById(itemId), alloy);
   if (!check.ok) throw new Error(`This mix can't start a craft: ${check.refusal}`);
+  const base = alloyProps(alloy);
+  // The working band moves by a whole number of °C from its own seeded stream, so target placement is unchanged (GAME-01).
+  const bandShiftC = Math.round((mulberry32((seed >>> 0) ^ 0xba5d).next() * 2 - 1) * grading.metal.bandShiftC) + 0;
   return {
+    rulesVersion: 2,
+    bandShiftC,
     seed: seed >>> 0,
     itemId,
     alloy: { ...alloy },
-    props: alloyProps(alloy),
+    props: { ...base, bandLowC: base.bandLowC + bandShiftC, bandHighC: base.bandHighC + bandShiftC },
     step: 0,
     temp: heatRules.startC,
     location: 'fire',

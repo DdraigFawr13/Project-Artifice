@@ -1,3 +1,4 @@
+import grading from '../data/grading.json';
 import { el, show } from './dom';
 
 export type Step = 'Alloy' | 'Heat' | 'Hammer' | 'Quench';
@@ -20,6 +21,8 @@ export interface ForgeView {
   struck: number;
   targets: number;
   lost: number;
+  /** Clean strikes in a row, from the engine. */
+  streak: number;
   /** Where the tub's label sits, in CSS px over the canvas (the quench view only). */
   tub: { x: number; y: number } | null;
   /** Where a held piece was picked up from. */
@@ -166,7 +169,7 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
       if (quenchHint) quenchHint.hidden = isBurning;
       if (heatHint) heatHint.hidden = isBurning;
       if (hammerHint) hammerHint.hidden = isBurning;
-      const text = `Round ${v.round} · ${v.struck} of ${v.targets} · −${v.lost}`;
+      const text = `Round ${v.round} · ${v.struck} of ${v.targets} · −${v.lost}${v.streak >= grading.streakShowAt ? ` · Clean ×${v.streak}` : ''}`;
       if (label.textContent !== text) label.textContent = text;
       const back = `Back to the ${v.heldFrom}`;
       if (putBack.textContent !== back) putBack.textContent = back;

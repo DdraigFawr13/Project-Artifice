@@ -1,9 +1,10 @@
 import * as Phaser from 'phaser';
 import { look } from '../data/heatBands';
+import feel from '../data/feel.json';
 import hints from '../data/hints.json';
 import { itemById, type AlloyMix, type Item } from '../data/items';
 import grading from '../data/grading.json';
-import { createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
+import { cleanStreak, createCraft, currentRound, step, STEP_MS, type CraftState, type Input } from '../engine/craft';
 import { grade, pointsLost } from '../engine/grade';
 import { recordCraft, writeSave } from '../save/save';
 import type { ResultData } from './Result';
@@ -107,6 +108,8 @@ export class Forge extends Phaser.Scene {
   private ring: { x: number; y: number } | null = null;
   private seenStrikes = 0;
   private popups: Popup[] = [];
+  /** The last strike's first hammer play, for the debug API. */
+  private lastSound: { key: string; rate: number; perfect: boolean } | null = null;
   private hammerHintCounted = false;
   private quenchHintCounted = false;
   private layoutPending = false;
@@ -144,6 +147,7 @@ export class Forge extends Phaser.Scene {
     this.ring = null;
     this.seenStrikes = 0;
     this.popups = [];
+    this.lastSound = null;
     this.hammerHintCounted = false;
     this.quenchHintCounted = false;
     this.layoutPending = false;
@@ -473,13 +477,23 @@ export class Forge extends Phaser.Scene {
         const v = 40 + this.sparkRng.next() * 60;
         this.sparks.push({ x: gx, y: gy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: max, max });
       }
-      this.sound.play('hammer', { volume: 0.6 });
+      // The hammer's rate says where the strike landed against the working heat; a wild one rings the anvil (rate 1).
+      const rate = s.kind === 'wild' ? 1 : feel.hammerRate[s.heat];
+      this.sound.play('hammer', { volume: 0.6, rate });
+      let ring = false;
+      if (s.perfect) {
+        this.sound.play('hammer', { volume: feel.perfectVolume, rate: feel.perfectRate });
+        ring = true;
+      }
+      // `perfect` records that the second ring played, so a check can tell it was heard.
+      this.lastSound = { key: 'hammer', rate, perfect: ring };
       const pts = Math.round(s.lines.reduce((t, l) => t + l.points, 0));
       const k = 1 / this.gamePerCss();
       // Only the newest strike's points show, so quick strikes don't pile their numbers on each other.
       for (const old of this.popups) old.set(1);
       this.popups = [];
-      this.popups.push({ set: this.panel.addPoints(pts === 0 ? 'Clean' : `−${pts}`, gx * k, (gy - 6) * k), age: 0 });
+      const words = s.perfect ? 'Perfect' : pts === 0 ? 'Clean' : `−${pts}`;
+      this.popups.push({ set: this.panel.addPoints(words, gx * k, (gy - 6) * k), age: 0 });
     }
   }
 
@@ -632,6 +646,7 @@ export class Forge extends Phaser.Scene {
       held: this.craft.location === 'held' || this.dragging,
       burning: this.craft.burning,
       round: currentRound(this.craft),
+      streak: cleanStreak(this.craft),
       struck: this.craft.targets.filter((t) => t.hits >= currentRound(this.craft)).length,
       targets: this.craft.targets.length,
       lost: pointsLost(this.craft),
@@ -760,6 +775,7 @@ export class Forge extends Phaser.Scene {
   private registerDebug(): void {
     setForgeDebug({
       state: () => this.craft,
+      lastSound: () => this.lastSound,
       pause: () => {
         this.paused = true;
       },

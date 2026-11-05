@@ -1,0 +1,6 @@
+{
+  "hammerRate": { "cold": 1.25, "in": 1, "hot": 0.8 },
+  "perfectRate": 1.5,
+  "perfectVolume": 0.3,
+  "lightVolume": 0.3
+}

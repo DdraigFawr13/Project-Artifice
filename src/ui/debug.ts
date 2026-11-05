@@ -19,6 +19,8 @@ export interface CssBox {
 /** What the forge screen offers tests while it is open (forge spec, Debug API). */
 export interface ForgeDebug {
   state(): CraftState;
+  /** The last strike's first hammer play (`rate`) and whether a second, Perfect ring played; null before any strike. */
+  lastSound(): { key: string; rate: number; perfect: boolean } | null;
   /** Stop real time driving the fixed step. */
   pause(): void;
   /** Run the fixed step for `ms`; a part step is carried to the next call. */
@@ -85,6 +87,7 @@ export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: 
     },
     targets: () => (forge ?? noForge()).targets(),
     state: () => forge?.state() ?? null,
+    lastSound: () => (forge ?? noForge()).lastSound(),
     pause: () => (forge ?? noForge()).pause(),
     advance: (ms) => (forge ?? noForge()).advance(ms),
     send: (input) => (forge ?? noForge()).send(input),

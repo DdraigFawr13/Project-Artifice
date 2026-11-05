@@ -72,7 +72,7 @@ test('a lift 40 game px below a target strikes it', async ({ page }, testInfo) =
   expect((await api(page, (a) => a.targets()))[4]!.hits).toBe(1);
   expect(s.targets.filter((t) => t.hits > 0)).toHaveLength(1);
   await expect(page.getByTestId('strikes')).toHaveText('Round 1 · 1 of 9 · −0');
-  await expect(page.getByTestId('points')).toHaveText('Clean');
+  await expect(page.getByTestId('points')).toHaveText('Perfect'); // a centre hit in the band is Perfect now (S1)
 
   // About 6 game px off-centre: the strike costs points, and the screen shows what the engine scored for it.
   // (Touch positions are rounded by the browser, so the exact distance comes from the engine, not from here.)
@@ -106,7 +106,7 @@ test('round 2 opens once every target has its first hit', async ({ page }) => {
   await knifeOnAnvil(page, 950);
   const targets = await api(page, (a) => a.targets());
   for (const t of targets) await strikeAt(page, t);
-  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 0 of 9 · −\d+$/);
+  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 0 of 9 · −\d+( · Clean ×\d+)?$/);
   expect((await api(page, (a) => a.targets())).every((t) => t.hits === 1)).toBe(true);
   // The second hit finishes the stretch: 11–13 game px below a belly target only the finished blade reaches.
   const k = await cssPerGame(page);
@@ -116,7 +116,7 @@ test('round 2 opens once every target has its first hit', async ({ page }) => {
   const before = await meanRgb(page, deep(targets[5]!));
   await strikeAt(page, targets[5]!);
   expect((await api(page, (a) => a.targets()))[5]!.hits).toBe(2);
-  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 1 of 9 · −\d+$/);
+  await expect(page.getByTestId('strikes')).toHaveText(/^Round 2 · 1 of 9 · −\d+( · Clean ×\d+)?$/);
   await api(page, (a) => a.advance(800));
   await frames(page);
   const after = await meanRgb(page, deep(targets[5]!));

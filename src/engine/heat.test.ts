@@ -46,7 +46,7 @@ describe('heat', () => {
   it('falls at the alloy cool rate on the anvil and while held, down to 20 °C', () => {
     const alloy = defaultAlloy(knife);
     const cool = alloyProps(alloy).cool;
-    expect(cool).toBeCloseTo((4 * 60 + 45) / 5, 6);
+    expect(cool).toBeCloseTo((4 * 78 + 58.5) / 5, 6);
     let s = createCraft(1, 'knife', alloy);
     s = run(s, steps(4000), { bellows: true });
     const hot = s.temp;

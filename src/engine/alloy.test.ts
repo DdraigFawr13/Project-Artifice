@@ -7,13 +7,13 @@ const knife = itemById('knife');
 
 describe('alloy means (forge spec, Data → ores.json)', () => {
   it('a 2-ore mix takes the parts-weighted means of its ores', () => {
-    // ore2 ×4 + ore1 ×1: quality (240 + 40) / 5, band (3400 + 800) / 5 to (4400 + 1150) / 5, cool (240 + 45) / 5.
-    expect(alloyProps({ ore2: 4, ore1: 1 })).toEqual({ quality: 56, bandLowC: 840, bandHighC: 1110, cool: 57 });
+    // ore2 ×4 + ore1 ×1: quality (240 + 40) / 5, band (3400 + 800) / 5 to (4400 + 1150) / 5, cool (312 + 58.5) / 5.
+    expect(alloyProps({ ore2: 4, ore1: 1 })).toEqual({ quality: 56, bandLowC: 840, bandHighC: 1110, cool: 74.1 });
   });
 
   it('a 3-ore mix takes the parts-weighted means of its ores', () => {
-    // ore1 ×1 + ore2 ×2 + ore3 ×2: quality (40 + 120 + 170) / 5, band (800 + 1700 + 1800) / 5 to (1150 + 2200 + 2100) / 5.
-    expect(alloyProps({ ore1: 1, ore2: 2, ore3: 2 })).toEqual({ quality: 66, bandLowC: 860, bandHighC: 1090, cool: 65 });
+    // ore1 ×1 + ore2 ×2 + ore3 ×2: quality (40 + 120 + 170) / 5, band (800 + 1700 + 1800) / 5 to (1150 + 2200 + 2100) / 5, cool (58.5 + 156 + 208) / 5.
+    expect(alloyProps({ ore1: 1, ore2: 2, ore3: 2 })).toEqual({ quality: 66, bandLowC: 860, bandHighC: 1090, cool: 84.5 });
   });
 
   it('material quality is the alloy quality rounded, not floored', () => {

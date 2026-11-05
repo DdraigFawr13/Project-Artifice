@@ -60,30 +60,30 @@ describe('grade', () => {
     expect(g).toMatchObject({ ruined: false, score: 100, tier: 'Masterwork', materialQuality: 56, lines: [] });
   });
 
-  it('charges 3 per missing hit, so a target never hit costs 6', () => {
+  it('charges 5 per missing hit, so a target never hit costs 10', () => {
     let s = at(run(createCraft(3, 'knife', ALLOY), [{ grab: true }, { drop: 'anvil' }]), 950);
     const t = s.targets;
     // Round 1 complete, then round 2 on all but targets 7 and 8: 2 hits missing.
     for (const p of t) s = at(step(s, { strike: { x: p.x, y: p.y } }), 950);
     for (const p of t.slice(0, 7)) s = at(step(s, { strike: { x: p.x, y: p.y } }), 950);
-    expect(graded(quench(s, 830)).lines).toEqual([{ cause: 'missed-target', points: 6, count: 2 }]);
-    // No strikes at all: every hit is missing (9 targets × 2 hits × 3).
+    expect(graded(quench(s, 830)).lines).toEqual([{ cause: 'missed-target', points: 10, count: 2 }]);
+    // No strikes at all: every hit is missing (18 hits × 5).
     const bare = run(createCraft(3, 'knife', ALLOY), [{ grab: true }]);
     const g = graded(step(at(bare, 830), { drop: 'tub' }));
-    expect(g.lines).toEqual([{ cause: 'missed-target', points: 54, count: 18 }]);
-    expect(g.score).toBe(46);
+    expect(g.lines).toEqual([{ cause: 'missed-target', points: 90, count: 18 }]);
+    expect(g.score).toBe(10);
   });
 
   it('rounds each line, then takes the sum from 100, so the shown lines add up', () => {
     // A quench 10 °C over: 0.4 points, shown as nothing. Two strikes 3.4 px off: 0.4 each, 0.8 in all, shown as 1.
     let s = worked();
-    s = { ...s, strikes: [...s.strikes, ...[0, 1].map((i) => ({ step: 1, x: 0, y: 0, target: i, kind: 'repeat' as const, black: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }))] };
+    s = { ...s, strikes: [...s.strikes, ...[0, 1].map((i) => ({ step: 1, x: 0, y: 0, target: i, kind: 'repeat' as const, black: false, heat: 'in' as const, offPx: null, perfect: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }))] };
     const g = graded(quench(s, 890));
     expect(g.lines).toEqual([{ cause: 'off-centre', points: 1, count: 2 }]);
     expect(g.score).toBe(99);
     // Two causes of 0.4 each: both lines round to 0, so nothing is charged (rounding the 0.8 sum would charge 1).
     let t = worked();
-    t = { ...t, strikes: [...t.strikes, { step: 1, x: 0, y: 0, target: 0, kind: 'repeat' as const, black: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }] };
+    t = { ...t, strikes: [...t.strikes, { step: 1, x: 0, y: 0, target: 0, kind: 'repeat' as const, black: false, heat: 'in' as const, offPx: null, perfect: false, lines: [{ cause: 'off-centre' as const, points: 0.4 }] }] };
     const h = graded(quench(t, 890));
     expect(h.lines).toEqual([]);
     expect(h.score).toBe(100);
