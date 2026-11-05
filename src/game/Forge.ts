@@ -101,6 +101,8 @@ export class Forge extends Phaser.Scene {
   /** Where the grinding finger is, in game px, and the close-view px sampled per engine step while it is down (S6). */
   private finger: { x: number; y: number } | null = null;
   private strokePts: { x: number; y: number }[] = [];
+  /** The finger has moved (or come down) since the last stroke point: a step that sees no new position adds none. */
+  private fingerFresh = false;
   private grindHintShown = false;
   private grindHintCounted = false;
 
@@ -459,6 +461,7 @@ export class Forge extends Phaser.Scene {
       this.strikePointer = p.id;
       this.strokePts = [];
       this.finger = { x: Math.round(p.x), y: Math.round(p.y) };
+      this.fingerFresh = true;
       return;
     }
     if (this.mode === 'close') {
@@ -493,6 +496,7 @@ export class Forge extends Phaser.Scene {
   private onMove(p: Phaser.Input.Pointer): void {
     if (p.id === this.strikePointer && this.finger) {
       this.finger = { x: Math.round(p.x), y: Math.round(p.y) };
+      this.fingerFresh = true;
       return;
     }
     if (p.id === this.strikePointer && this.ring) {
@@ -553,7 +557,10 @@ export class Forge extends Phaser.Scene {
   private sampleStroke(): void {
     const f = this.finger;
     if (!f) return;
-    this.strokePts.push({ x: f.x - this.closeX, y: f.y - this.closeY });
+    // Two engine steps can run in one frame (16 ms steps, 16.7 ms frames at 60 Hz) before the next pointer event:
+    // repeating the point would read as a stop, and a steady stroke would score as uneven (S6 review).
+    if (this.fingerFresh) this.strokePts.push({ x: f.x - this.closeX, y: f.y - this.closeY });
+    this.fingerFresh = false;
     const n = 1 + Math.floor(this.sparkRng.next() * 2);
     for (let i = 0; i < n; i++) {
       const max = 0.15 + this.sparkRng.next() * 0.25;

@@ -117,9 +117,9 @@ const frame = (page: Page) => page.evaluate(() => new Promise<void>((r) => reque
  * and the game rounds to whole game px (13 per 16 CSS px at the Pixel's size), so the points sit on whole CSS px: a
  * step of 12 CSS px is 9.75 game px, nearly even, and a straight stroke scores about 97 (the engine's own tests show
  * exactly 100). `wavy` alternates about 6 game px either side of the edge. One engine step (16 ms) runs per point,
- * as the engine's one-point-per-step sampling expects.
+ * as the engine's one-point-per-step sampling expects; `stepsPerMove` runs more, as when two steps fall in one frame.
  */
-export async function grindStroke(page: Page, wavy = false) {
+export async function grindStroke(page: Page, wavy = false, stepsPerMove = 1) {
   const e = await api(page, (a) => a.edgeLine());
   const k = await page.locator('#game canvas').evaluate((c: HTMLCanvasElement) => c.getBoundingClientRect().width / c.width);
   const step = 12;
@@ -134,7 +134,7 @@ export async function grindStroke(page: Page, wavy = false) {
   for (let i = 1; i <= count; i++) {
     await page.mouse.move(x0 + i * step, y0 + (wavy ? (i % 2 === 0 ? -off : off) : 0));
     await frame(page);
-    await api(page, (a) => a.advance(16));
+    await page.evaluate((ms) => (window as unknown as Win).__artifice.advance(ms), 16 * stepsPerMove);
   }
   await page.mouse.up();
   await frame(page);

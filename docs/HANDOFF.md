@@ -23,7 +23,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Just done
 
-- 2026-11-05 Depth pass on `claude/forge-depth` (draft PR #9): each slice built by a fresh implementer, re-checked before and fresh-reviewed and mutation-tested after (Morgan asked for this). S1 39a0caf, S2 6b666b5, S3 944cc25, S4 f75e15f (+ drag-layout fix), S5 1862277, S6 grind (this commit). Details: git log. Next: S6 fresh review and mutants, then a whole-diff review, a playtest form, and pause for Morgan.
+- 2026-11-05 Depth pass on `claude/forge-depth` (draft PR #9): each slice built by a fresh implementer, re-checked before and fresh-reviewed and mutation-tested after (Morgan asked for this). S1 39a0caf, S2 6b666b5, S3 944cc25, S4 f75e15f (+ drag-layout fix), S5 1862277, S6 3fa6968 grind + review fixes (0 bugs; stroke points only on new pointer events, 18/18 mutants killed). Details: git log. Next: whole-diff review, playtest form, pause for Morgan.
 
 - 2026-11-04 S5 merged by Morgan (PR #7, 25f71a5); PR CI and main CI green; Vercel production 25f71a5, links 302 to the login. Details: git log and the spec's S5 list.
 - Earlier entries (brainstorm to S4): [archive](archive/handoff-2026-11.md).

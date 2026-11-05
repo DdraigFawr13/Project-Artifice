@@ -36,7 +36,7 @@ describe('stroke score', () => {
     const over = strokePoints('knife').map((p) => ({ x: p.x + 20, y: p.y }));
     const dist = over.reduce((t, p) => t + Math.max(0, p.x - EDGE.x1), 0) / over.length;
     expect(dist).toBeGreaterThan(0);
-    expect(strokeScore(over, EDGE)).toBeLessThan(100);
+    expect(strokeScore(over, EDGE)).toBeCloseTo(100 - G.perPx * dist, 9);
   });
 
   it('never scores below 0: a stroke 20 px off the edge (100 − 8 × 20 = −60) scores 0', () => {
@@ -48,6 +48,12 @@ describe('stroke score', () => {
     const xs = [EDGE.x0];
     for (let i = 0; i < 36; i++) xs.push(xs[i]! + (i % 2 === 0 ? 1 : 3));
     expect(strokeScore(xs.map((x) => ({ x, y: EDGE.y0 })), EDGE)).toBeCloseTo(100 - G.perCv * 0.5, 9);
+  });
+
+  it('caps the cover factor at 1: a stroke over 0.9 of the edge (past minCover) scores 100, not 112.5', () => {
+    const len = EDGE.x1 - EDGE.x0;
+    const most = Array.from({ length: 20 }, (_, i) => ({ x: EDGE.x0 + (len * 0.9 * i) / 19, y: EDGE.y0 }));
+    expect(strokeScore(most, EDGE)).toBeCloseTo(100, 9);
   });
 
   it('scales the score by cover ÷ minCover when the stroke covers less of the edge', () => {
@@ -81,6 +87,8 @@ describe('J7 grind', () => {
     expect(s.ruin).toBeNull();
     s = step(s, { stroke: along(4, 0) });
     expect(s.strokes).toEqual([]);
+    // minPoints (5) is enough: the stroke counts, scored low for its tiny cover.
+    expect(step(s, { stroke: along(5, 0) }).strokes).toHaveLength(1);
     s = step(s, { none: true });
     expect(s.temp).toBe(830);
     s = stroke(s, 0);

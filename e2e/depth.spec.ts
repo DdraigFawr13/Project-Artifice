@@ -372,7 +372,7 @@ test('a ruined knife shows no piece', async ({ page }) => {
 });
 
 // J7 on screen (forge-depth spec, S6): after the quench a knife waits in the grind until 2 strokes of the stone, made with
-// the real mouse. A straight pair scores 100 and keeps Edge at the hammer's 83; a wavy pair scores about 50 to 70 and loses
+// the real mouse. A straight pair scores about 97 (100 with exact points, as in the unit tests); a wavy pair scores about 50 to 70 and loses
 // Edge; the craft's score is the same either way; a horseshoe never grinds.
 
 /** A knife with the slag cleared, every target struck twice in the band, and quenched at 830 °C: waiting in the grind. */
@@ -433,6 +433,17 @@ test('a straight pair of strokes beats a wavy pair: Edge shows it, the score doe
   // Guard: the score is the same with either grind.
   expect(wavy.score).toBe(straight.score);
   expect(straight.score).toBe('100');
+});
+
+// S6 review: steps (16 ms) and frames (16.7 ms at 60 Hz) don't line up, so now and then two steps run before the next
+// pointer event. Repeating the point read as a stop and cost a steady stroke about 12 points; only new positions count.
+test('a steady stroke scores the same when two engine steps run between pointer events', async ({ page }) => {
+  await quenchedKnife(page);
+  await sinkIntoGrind(page);
+  await grindStroke(page, false, 2);
+  const s = (await api(page, (a) => a.state()))!;
+  expect(s.strokes).toHaveLength(1);
+  expect(s.strokes[0]!).toBeGreaterThan(85);
 });
 
 test('a press too short to be a stroke pops "Too short" and counts for nothing; the stone shows under the finger', async ({ page }) => {
