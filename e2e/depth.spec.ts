@@ -288,18 +288,23 @@ async function finishKnife(page: Page) {
   await expect(page.getByTestId('score')).toBeVisible();
 }
 
-/** The most common colour among the piece's opaque pixels, outline excluded, and the canvas's size and CSS width. */
+/** The most common colour among the piece's opaque pixels, outline excluded; how many pixels are the outline colour; the canvas's size and CSS width. */
 const readPiece = (page: Page) =>
   page.getByTestId('result-piece').evaluate((c: HTMLCanvasElement, outline) => {
     const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
     const counts = new Map<string, number>();
+    let outlinePx = 0;
     for (let i = 0; i < d.length; i += 4) {
-      if (d[i + 3] !== 255 || (d[i] === outline[0] && d[i + 1] === outline[1] && d[i + 2] === outline[2])) continue;
+      if (d[i + 3] !== 255) continue;
+      if (d[i] === outline[0] && d[i + 1] === outline[1] && d[i + 2] === outline[2]) {
+        outlinePx++;
+        continue;
+      }
       const k = `${d[i]},${d[i + 1]},${d[i + 2]}`;
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
     const top = [...counts].sort((a, b) => b[1] - a[1])[0];
-    return { rgb: top ? top[0].split(',').map(Number) : [], w: c.width, h: c.height, cssW: c.getBoundingClientRect().width };
+    return { rgb: top ? top[0].split(',').map(Number) : [], outlinePx, w: c.width, h: c.height, cssW: c.getBoundingClientRect().width };
   }, OUTLINE);
 
 const near = (got: number[], want: number[]) => got.every((c, i) => Math.abs(c - want[i]!) <= 8);
@@ -311,6 +316,8 @@ test('a finished knife is drawn in its mix\'s sheen, and two mixes look differen
   await settle(page);
   const a = await readPiece(page);
   expect(near(a.rgb, [165, 154, 139]), `default mix drew ${a.rgb}`).toBe(true);
+  // The outline is the forge's dark colour, untinted by the sheen: hundreds of pixels round the knife.
+  expect(a.outlinePx).toBeGreaterThan(200);
   // Drawn above the score, and sized by the formula: round(w x min(2, 300 / w)) CSS px.
   const order = await page.locator('.screen.result .panel.fill > *').evaluateAll((els) => els.map((e) => e.getAttribute('data-testid') ?? e.className));
   expect(order.indexOf('result-piece')).toBe(0);

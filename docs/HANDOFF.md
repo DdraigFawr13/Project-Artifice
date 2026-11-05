@@ -23,7 +23,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Just done
 
-- 2026-11-05 Depth pass on `claude/forge-depth` (draft PR #9), built by fresh implementer agents, each slice re-checked before and fresh-reviewed after (Morgan asked for this): S1 39a0caf, S2 6b666b5 + c4aa7d7, S3 944cc25 (+ review fixes, mutants), S4 f75e15f blade stats (why lines pluralise; layout held during a drag, which fixed a flaky drop test and a likely cause of S5's missed drops) + review fixes (0 bugs; 2 test gaps closed, stat names in one place; 20/23 mutants killed, 3 equivalent). S5 ore look (this commit: the finished piece drawn in its mix's sheen above the score; re-check defaults in the spec). Next: S5 fresh review and mutants, then S6 grind.
+- 2026-11-05 Depth pass on `claude/forge-depth` (draft PR #9), built by fresh implementer agents, each slice re-checked before and fresh-reviewed after (Morgan asked for this): S1 39a0caf, S2 6b666b5 + c4aa7d7, S3 944cc25 (+ review fixes, mutants), S4 f75e15f blade stats (why lines pluralise; layout held during a drag, which fixed a flaky drop test and a likely cause of S5's missed drops) + review fixes (0 bugs; 2 test gaps closed, stat names in one place; 20/23 mutants killed, 3 equivalent). S5 1862277 ore look (the finished piece drawn in its mix's sheen above the score) + review fixes (0 bugs; outline colour and the 2× cap now tested; 14/15 mutants killed, 1 equivalent). Next: S6 grind (re-check first).
 
 - 2026-11-04 S5 merged by Morgan (PR #7, 25f71a5); PR CI and main CI green; Vercel production 25f71a5, links 302 to the login. Details: git log and the spec's S5 list.
 - Earlier entries (brainstorm to S4): [archive](archive/handoff-2026-11.md).

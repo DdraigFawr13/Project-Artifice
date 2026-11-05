@@ -129,6 +129,10 @@ test('Choose item reopens the alloy screen with the last mix; Back to the list g
   await expect(page.getByTestId('alloy-quality')).toHaveText('Material quality 77');
   await start(page).tap();
   await quenchAt(page, 830);
+  // The horseshoe is narrow, so its piece is drawn at the 2x cap (depth S5): CSS width = 2 x the raster's.
+  const [w, cssW] = await page.getByTestId('result-piece').evaluate((c: HTMLCanvasElement) => [c.width, c.getBoundingClientRect().width]);
+  expect(w).toBeLessThan(150);
+  expect(cssW).toBe(2 * w);
   await page.getByRole('button', { name: 'Choose item' }).click();
   await expect(page.getByRole('button', { name: 'Forge a horseshoe' })).toBeVisible();
   await page.getByRole('button', { name: 'Forge a horseshoe' }).tap();

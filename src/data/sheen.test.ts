@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { itemById } from './items';
 import { shapesFor, worked } from '../game/shapes';
 import { sheenOf, shaded } from './sheen';
 
@@ -42,7 +43,7 @@ describe('the finished knife', () => {
     // Measured by counting the shade of every piece pixel of worked(shapesFor('knife'), all targets hit twice), outline
     // excluded: 0.4 × 376, 0.62 × 690, 0.76 × 1298, 0.88 × 1344, 1 × 1060. e2e/depth.spec.ts (J6) uses the numbers below.
     const counts = new Map<number, number>();
-    for (const v of worked(shapesFor('knife'), Array(9).fill(2)).shade) if (v > 0) counts.set(Math.fround(v), (counts.get(Math.fround(v)) ?? 0) + 1);
+    for (const v of worked(shapesFor('knife'), itemById('knife').targets.map(() => 2)).shade) if (v > 0) counts.set(Math.fround(v), (counts.get(Math.fround(v)) ?? 0) + 1);
     const [modal, n] = [...counts].sort((a, b) => b[1] - a[1])[0]!;
     expect(modal).toBe(Math.fround(0.88));
     expect(n).toBe(1344);
