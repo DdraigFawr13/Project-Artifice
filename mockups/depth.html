@@ -4,7 +4,7 @@
 <style>
 /* Layout: a row of 412 px phone frames (Pixel 10 Pro XL first target), scrolling sideways inside its own wrapper. */
 :root {
-  --night-0:#090610; --night-1:#100a14; --night-2:#17111f; --soot:#261a29;
+  --night-0:#0d091b; --night-1:#191126; --night-2:#241a33; --soot:#372c45;
   --ember-0:#30161c; --ember-1:#451b1a; --ember-2:#64281d; --ember-3:#93341d;
   --fire-0:#a9512b; --fire-1:#c05024; --fire-2:#e26328; --fire-3:#f87f33; --fire-4:#f7a74e; --fire-5:#fdd479;
   --ink:#ead59c; --ink-dim:#735b44;
@@ -88,7 +88,7 @@ p { margin: 0 0 8px; max-width: 65ch; }
  <div class="thumb2" style="left:237px; top:360px"></div>
  <div class="pop" style="left:190px; top:318px">Too hard −2</div>
  <div class="over hint" style="top:681px">Hold longer to strike harder. Hot metal wants a light touch.</div>
-</div></div><p class="cap">2a. Strike force: the ring fills while the finger is down (here about 60%) and the strike lands on lift. A too-hard strike pops "Too hard" with its points. The force hint replaces the hammer hint the first 3 times.</p></div><div><div class="frame" id="f-slag"><div class="shot">
+</div></div><p class="cap">2a. Strike force: the ring fills while the finger is down (here about 60%) and the strike lands on lift. A too-hard strike pops "Too hard" with its points. The force hint shows in the close panel the first 3 times the anvil is reached.</p></div><div><div class="frame" id="f-slag"><div class="shot">
  <div class="pit" style="left:182px; top:328px"></div><div class="pit" style="left:245px; top:332px"></div><div class="pit" style="left:286px; top:330px"></div>
  <div class="pop" style="left:253px; top:323px">Slag first −1</div>
  <div class="over hint" style="top:681px">Knock out the dark slag first. The spots beside it won't shape until it's gone.</div>
@@ -100,13 +100,13 @@ p { margin: 0 0 8px; max-width: 65ch; }
  <div class="lines"><div><span>Start</span><span class="pts">100</span></div><div><span>3 strikes off-centre</span><span class="pts minus">−9</span></div><div><span>2 slag spots left</span><span class="pts minus">−6</span></div><div><span>Out of the working heat for 4 s</span><span class="pts minus">−8</span></div><div><span>Quenched too hot</span><span class="pts minus">−3</span></div></div>
  <div class="stats">
   <div class="stat"><b>Edge</b><div class="sbar"><i style="width:68%"></i></div><span>Sharp</span><span class="why">hurt most by 3 off-centre strikes</span></div>
-  <div class="stat"><b>Toughness</b><div class="sbar"><i style="width:79%"></i></div><span>Sturdy</span><span class="why">helped by the Bog Iron in the mix</span></div>
+  <div class="stat"><b>Toughness</b><div class="sbar"><i style="width:79%"></i></div><span>Sturdy</span><span class="why">hurt most by 4 s out of the working heat</span></div>
   <div class="stat"><b>Balance</b><div class="sbar"><i style="width:62%"></i></div><span>Steady</span><span class="why">hurt most by 2 slag spots left</span></div>
  </div>
  <p class="dim">New best for a knife.</p>
 </div>
 <div class="panel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" type="button">Choose item</button><button class="btn" type="button">Forge another</button></div>
-</div><p class="cap">2c and 2e. Result with the finished piece in its metal's colour above the score, and the stat card under the lines. Every number here is an example, not a measured craft.</p></div><div><div class="frame" id="f-list-stats"><div class="top"><span>Choose your work</span><span class="dim">Saved</span></div>
+</div><p class="cap">2c. Result with the finished piece in its metal's colour above the score, and the stat card under the lines. Every number here is an example, not a measured craft.</p></div><div><div class="frame" id="f-list-stats"><div class="top"><span>Choose your work</span><span class="dim">Saved</span></div>
 <div class="panel" style="flex:1;align-content:start;border-top:0">
  <div class="item"><b>Horseshoe</b><span>about 1 min</span><span class="dim">Best: none yet</span></div>
  <div class="item sel"><b>Knife</b><span>about 2 min</span><span class="dim">Best: 74</span><span class="dim">Edge Sharp · Toughness Sturdy · Balance Steady</span></div>
@@ -127,3 +127,12 @@ p { margin: 0 0 8px; max-width: 65ch; }
  <div class="panel" style="position:absolute;left:0;right:0;top:607px;bottom:0;border-top:2px solid var(--soot);align-content:start"><p>Stroke 1 of 2</p><div class="hint">Drag the stone along the edge, steady and even.</div></div>
 </div></div><p class="cap">2f. Grind: after the quench, the cooled knife in its metal's colour (the default mix of Ridge Iron × 4 + Bog Iron × 1), a whetstone under the finger, sparks along the stroke. The top bar gains a Grind step. Two strokes, then the result.</p></div>
 </div></div>
+
+<section id="check-record"><h2>Check record</h2><ul>
+<li><b>Files checked:</b> docs/specs/forge-depth.md, docs/UI_STYLE.md, src/ui/style.css, src/data/ores.json, items.json, grading.json, hints.json, src/ui/result.ts, src/ui/choose.ts, docs/DECISIONS.md (D-003, D-005, D-007), .claude/skills/ui-style/references/avoid.md.</li>
+<li><b>Facts checked:</b> hint texts, popup words, ore names and sheens, item minutes, slag count for the default knife (3), example score arithmetic (100 − 9 − 6 − 8 − 3 = 74, Fine), stat words against their bands, material quality 56.</li>
+<li><b>Images:</b> close views are screenshots of the S1 build at 443 × 816 CSS px (seed 42, knife, default mix); the finished knife is drawn from the game's own worked shape (shapes.ts) in each sheen; the overlays (ring, pits, stone, sparks, popups) are drawn in CSS.</li>
+<li><b>Fresh check (reviewer, 2026-11-05):</b> 1 wrong fact fixed (Toughness "why" said "helped by" though the lines show Toughness deductions; now "hurt most by 4 s out of the working heat"), old night tokens updated to the current UI_STYLE values, a doubled caption label fixed, the force-hint caption reworded. No Avoid items, no text under 14 px, no taps under 44 px.</li>
+<li><b>Lint:</b> mockup-lint: 0 warnings.</li>
+<li><b>Review:</b> Morgan reviews these frames with the PR rather than before each slice (D-007).</li>
+</ul></section>
