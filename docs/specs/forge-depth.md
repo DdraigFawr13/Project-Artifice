@@ -201,8 +201,16 @@ From the spec checks:
 
 - **Morgan tries:** the result shows the finished piece in its metal's colour; different mixes look different.
 - **Checks that fail now:** J6.
-- **Files:** `mockups/depth.html` `f-result-piece` first; `src/data/ores.json` (`sheen`), new `src/data/sheen.ts` (the blend), `sheen.test.ts`; `src/game/Result.ts`, `src/ui/result.ts` (canvas); `e2e/depth.spec.ts`.
+- **Files:** `mockups/depth.html` `f-result-piece` first; `src/data/ores.json` (`sheen`), new `src/data/sheen.ts` (the blend), `sheen.test.ts`; `src/game/shapes.ts` (the outline colour), `src/game/Forge.ts` (imports it); `src/ui/result.ts` (canvas), `src/ui/style.css` (`.piece`); `e2e/depth.spec.ts`. `ResultData` already carries `hits` and `alloy` (S4), so `Result.ts` needs no change.
 - **Waits on:** S4.
+
+- **Settled at S5 start (2026-11-05):** the zero-decision re-check against the S1–S4 code left these choices; defaults:
+  - `ores.json` gains `sheen` as a `#rrggbb` string. `sheen.ts` exports `sheenOf(alloy)`: each channel the parts-weighted mean (as `alloyProps` weights), rounded; an unknown ore throws, as in `alloy.ts`. It also exports `shaded(rgb, shade)`: each channel `Math.round(channel × shade)`, alpha 255. The canvas and the tests use these same functions.
+  - The outline colour moves from `Forge.ts` (`EDGE_RGB`) to an export of `shapes.ts`, used by the forge and the result canvas: `outline(raster)` pixels painted opaque in it.
+  - The canvas's attributes are the raster's `w × h`; its CSS width is `round(w × min(2, 300 ÷ w))` px, `display: block; margin: 0 auto`, in a `.piece` rule with `image-rendering: pixelated`. The sword is scaled below 1 and may lose single-pixel lines: a known look, shown to Morgan at the playtest.
+  - Placement: first in the finished result's body, above the score. A ruined craft shows no piece (no `result-piece` element), with a test.
+  - J6's "most common shade" is counted from `worked(shapesFor('knife'), [2, …])` over the piece's own pixels (outline excluded) by a test helper, and the measured shade and expected RGB are written into the test as numbers. The e2e takes the most common colour over alpha-255 pixels other than the outline colour.
+  - The canvas has `role="img"` and `aria-label` "{item name} in {ore names in the mix, by parts, most first, joined with \" and \"}". No debug API change.
 
 ### S6 Grind and finish
 
