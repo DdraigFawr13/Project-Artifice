@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { api, type Api, clearSlag, dragTo, holdForIdeal, knifeOnAnvil, settle, strike } from './forge';
+import { api, type Api, clearSlag, dragTo, grindExact, grindKnife, grindStroke, holdForIdeal, knifeOnAnvil, settle, sinkIntoGrind, strike } from './forge';
 
 /** Hold the temperature at `c` °C (a value passed through, since `api` callbacks can't close over variables). */
 const pin = (page: Page, c: number) => page.evaluate((t) => (window as unknown as { __artifice: Api }).__artifice.pinTemp(t), c);
@@ -191,7 +191,7 @@ test('a press clears a slag spot, a strike beside another is blocked, and the re
     a.advance(32);
   });
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(1600));
+  await grindKnife(page);
   await expect(page.getByTestId('line').filter({ hasText: 'slag' })).toHaveText([/^1 strike on spots held by slag\s*−1$/, /^2 slag spots left\s*−6$/]);
 });
 
@@ -207,7 +207,7 @@ test('the slag hint shows once the hammer and force hints are spent, and is coun
     a.advance(32);
   });
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(1600));
+  await grindKnife(page);
   await expect(page.getByTestId('score')).toBeVisible();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
   expect(saved.hintsSeen.slag).toBe(1);
@@ -230,8 +230,9 @@ test('a finished knife shows 3 stats with words and reasons, and the list keeps 
     a.pinTemp(830);
     a.advance(16);
     a.send({ drop: 'tub' });
-    a.advance(1600);
+    a.advance(16);
   });
+  await grindExact(page); // two exact strokes: grind 100, so Edge is the hammer's 83 still
 
   // The default mix (Ridge Iron x 4, Bog Iron x 1), every hit dead centre: work 100 x the mix's multipliers.
   await expect(page.getByTestId('score')).toHaveText('100');
@@ -284,7 +285,7 @@ async function finishKnife(page: Page) {
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(48));
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(1600));
+  await grindKnife(page);
   await expect(page.getByTestId('score')).toBeVisible();
 }
 
@@ -368,4 +369,125 @@ test('a ruined knife shows no piece', async ({ page }) => {
   await api(page, (x) => x.advance(1600));
   await expect(page.getByText('Knife ruined')).toBeVisible();
   await expect(page.getByTestId('result-piece')).toHaveCount(0);
+});
+
+// J7 on screen (forge-depth spec, S6): after the quench a knife waits in the grind until 2 strokes of the stone, made with
+// the real mouse. A straight pair scores 100 and keeps Edge at the hammer's 83; a wavy pair scores about 50 to 70 and loses
+// Edge; the craft's score is the same either way; a horseshoe never grinds.
+
+/** A knife with the slag cleared, every target struck twice in the band, and quenched at 830 °C: waiting in the grind. */
+async function quenchedKnife(page: Page) {
+  await knifeOnAnvil(page, 950);
+  await clearSlag(page);
+  const s0 = (await api(page, (a) => a.state()))!;
+  await pin(page, (s0.props.bandLowC + s0.props.bandHighC) / 2);
+  for (let round = 0; round < 2; round++) for (const t of s0.targets) await strike(page, t.x, t.y);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => a.advance(48));
+  await pin(page, 830);
+  await dragTo(page, 'tub');
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'grind', quenchC: 830, ruin: null });
+}
+
+/** Two strokes with the mouse, checking the craft waits in the grind between them; returns the numbers the screen shows. */
+async function grindPair(page: Page, wavy: boolean) {
+  await quenchedKnife(page);
+  await sinkIntoGrind(page);
+  await expect(page.locator('.top .steps .on')).toHaveText('Grind');
+  await expect(page.getByTestId('stroke-label')).toHaveText('Stroke 1 of 2');
+  await expect(page.getByTestId('grind-hint')).toHaveText('Drag the stone along the edge, steady and even.');
+  await grindStroke(page, wavy);
+  const mid = (await api(page, (a) => a.state()))!;
+  expect(mid.location).toBe('grind');
+  expect(mid.strokes).toHaveLength(1);
+  await expect(page.getByTestId('stroke-label')).toHaveText('Stroke 2 of 2');
+  await grindStroke(page, wavy);
+  const end = (await api(page, (a) => a.state()))!;
+  expect(end.location).toBe('done');
+  expect(end.strokes).toHaveLength(2);
+  await api(page, (a) => a.advance(900));
+  await expect(page.getByTestId('score')).toBeVisible();
+  const edge = page.getByTestId('stat-row').nth(0);
+  return {
+    grindScore: end.grindScore!,
+    score: await page.getByTestId('score').innerText(),
+    edgeBar: await edge.locator('.sbar i').evaluate((e) => (e as HTMLElement).style.width),
+    edgeWhy: await edge.locator('.why').innerText(),
+  };
+}
+
+test('a straight pair of strokes beats a wavy pair: Edge shows it, the score does not', async ({ page }) => {
+  const straight = await grindPair(page, false);
+  // A finger on whole pixels is a little uneven (the engine's own tests show exactly 100 for a perfect stroke).
+  expect(straight.grindScore).toBeGreaterThan(85);
+  expect(straight.edgeWhy).toMatch(/^(helped by the Ridge Iron in the mix|hurt most by an uneven grind)$/);
+
+  const wavy = await grindPair(page, true);
+  expect(wavy.grindScore).toBeGreaterThan(40);
+  expect(wavy.grindScore).toBeLessThan(75);
+  expect(wavy.grindScore).toBeLessThan(straight.grindScore - 20);
+  // Edge = (50 + 0.5 × grind) × 0.83: about 80 for the straight pair, about 70 for the wavy, and the card names the grind.
+  expect(parseInt(wavy.edgeBar)).toBeLessThan(parseInt(straight.edgeBar) - 10);
+  expect(parseInt(straight.edgeBar)).toBeGreaterThan(75);
+  expect(wavy.edgeWhy).toBe('hurt most by an uneven grind');
+  // Guard: the score is the same with either grind.
+  expect(wavy.score).toBe(straight.score);
+  expect(straight.score).toBe('100');
+});
+
+test('a press too short to be a stroke pops "Too short" and counts for nothing; the stone shows under the finger', async ({ page }) => {
+  await quenchedKnife(page);
+  await sinkIntoGrind(page);
+  const e = await api(page, (a) => a.edgeLine());
+  const k = await page.locator('#game canvas').evaluate((c: HTMLCanvasElement) => c.getBoundingClientRect().width / c.width);
+  // Off the piece, on the anvil face, where only the stone changes the pixels.
+  const at = { x: e.x0 + 20 * k, y: e.y0 + 40 * k };
+  const before = await brightness(page, at, 3);
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.down();
+  await api(page, (a) => a.advance(32)); // 2 points: under minPoints
+  await settle(page);
+  expect(Math.abs((await brightness(page, at, 3)) - before)).toBeGreaterThan(3); // the whetstone is drawn
+  await page.mouse.up();
+  await settle(page);
+  await api(page, (a) => a.advance(16));
+  await expect(page.getByTestId('points')).toHaveText('Too short');
+  const s = (await api(page, (a) => a.state()))!;
+  expect(s.strokes).toEqual([]);
+  expect(s.location).toBe('grind');
+  await expect(page.getByTestId('stroke-label')).toHaveText('Stroke 1 of 2');
+  await api(page, (a) => a.advance(800));
+  expect(await brightness(page, at, 3)).toBe(before); // the stone is gone with the finger
+});
+
+test('the grind hint shows the first 3 times the grind is reached, not after', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('artifice.save', JSON.stringify({ version: 1, best: {}, scrap: 0, hintsSeen: { grind: 3 } })));
+  await quenchedKnife(page);
+  await sinkIntoGrind(page);
+  await expect(page.getByTestId('stroke-label')).toBeVisible();
+  await expect(page.getByTestId('grind-hint')).toHaveCount(0);
+});
+
+test('a horseshoe has no Grind step: it goes from the quench straight to the result', async ({ page }) => {
+  await page.goto('/?debug');
+  await page.waitForFunction(() => (window as unknown as { __artifice?: Api }).__artifice != null);
+  await page.getByTestId('item-row').filter({ hasText: 'Horseshoe' }).tap();
+  await page.getByRole('button', { name: 'Forge a horseshoe' }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap();
+  await page.waitForFunction(() => (window as unknown as { __artifice: Api }).__artifice.state?.() != null);
+  await expect(page.locator('.top .steps span')).toHaveText(['Alloy', 'Heat', 'Hammer', 'Quench']);
+  await page.evaluate(() => {
+    const x = (window as unknown as { __artifice: Api }).__artifice;
+    x.pause();
+    x.pinTemp(830);
+    x.advance(32);
+  });
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (x) => x.advance(48));
+  await dragTo(page, 'tub');
+  expect((await api(page, (x) => x.state()))!).toMatchObject({ location: 'done', quenchC: 830, strokes: [], grindScore: null });
+  await api(page, (x) => x.advance(1600));
+  await expect(page.getByTestId('score')).toBeVisible();
+  await expect(page.getByTestId('stroke-label')).toHaveCount(0);
+  await expect(page.getByTestId('stat-row')).toHaveCount(2); // Toughness and Balance only
 });

@@ -39,7 +39,7 @@ function ended(itemId: string, alloy: Record<string, number>, b: Build = {}): Cr
   return {
     rulesVersion: 2, bandShiftC: 0, seed: 1, itemId, alloy, props: alloyProps(alloy), step: 100, temp: 830, location: 'done',
     heldFrom: 'anvil', bellows: false, targets, slag, strikes: [...strikes, ...(b.extra ?? [])], lost: b.lost ?? {}, burning: false,
-    quenchC: b.quenchC === undefined ? 830 : b.quenchC, ruin: null, log: [],
+    quenchC: b.quenchC === undefined ? 830 : b.quenchC, strokes: [], grindScore: null, ruin: null, log: [],
   };
 }
 const edge = (s: CraftState) => statsFor(s).edge!;

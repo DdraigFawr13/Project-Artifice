@@ -9,6 +9,8 @@ export type Api = {
     temp: number;
     ruin: string | null;
     quenchC: number | null;
+    strokes: number[];
+    grindScore: number | null;
     alloy: Record<string, number>;
     rulesVersion: number;
     bandShiftC: number;
@@ -27,6 +29,8 @@ export type Api = {
   targets(): { x: number; y: number; hits: number }[];
   /** The slag spots' centres in CSS px, relative to the page. */
   slag(): { x: number; y: number; cleared: boolean }[];
+  /** The cutting edge's ends in CSS px, relative to the page. */
+  edgeLine(): { x0: number; y0: number; x1: number; y1: number };
   /** Mark every slag spot cleared. */
   clearSlag(): void;
   pause(): void;
@@ -101,3 +105,78 @@ export async function dragTo(page: Page, zone: 'fire' | 'anvil' | 'tub') {
   await page.mouse.up();
   await api(page, (a) => a.advance(32));
 }
+
+/** The sinking hold after the drop (QUENCH_S 1.6 s of engine time) plus a margin, before the grind view takes strokes. */
+const SINK_MS = 1700;
+
+/** One frame of real time, so a mouse event that Phaser queues has been handled before the next engine step. */
+const frame = (page: Page) => page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => r())));
+
+/**
+ * One whetstone stroke through the real mouse, along the knife's edge from end to end. The browser reports whole CSS px
+ * and the game rounds to whole game px (13 per 16 CSS px at the Pixel's size), so the points sit on whole CSS px: a
+ * step of 12 CSS px is 9.75 game px, nearly even, and a straight stroke scores about 97 (the engine's own tests show
+ * exactly 100). `wavy` alternates about 6 game px either side of the edge. One engine step (16 ms) runs per point,
+ * as the engine's one-point-per-step sampling expects.
+ */
+export async function grindStroke(page: Page, wavy = false) {
+  const e = await api(page, (a) => a.edgeLine());
+  const k = await page.locator('#game canvas').evaluate((c: HTMLCanvasElement) => c.getBoundingClientRect().width / c.width);
+  const step = 12;
+  const count = Math.floor((e.x1 - e.x0) / step);
+  const x0 = Math.round(e.x0);
+  // The whole CSS px whose game px (rounded) is the edge's y: the one nearest the edge.
+  const y0 = Math.round(e.y0);
+  const off = Math.round(6 / k);
+  await page.mouse.move(x0, y0);
+  await page.mouse.down();
+  await frame(page);
+  for (let i = 1; i <= count; i++) {
+    await page.mouse.move(x0 + i * step, y0 + (wavy ? (i % 2 === 0 ? -off : off) : 0));
+    await frame(page);
+    await api(page, (a) => a.advance(16));
+  }
+  await page.mouse.up();
+  await frame(page);
+  await api(page, (a) => a.advance(32));
+}
+
+/**
+ * The same grind without the mouse: two exact strokes (a point per px along the knife's edge, so each scores 100),
+ * for checks about what the grind does rather than about the finger.
+ */
+export async function grindExact(page: Page) {
+  await sinkIntoGrind(page);
+  await page.evaluate(() => {
+    const a = (window as unknown as Win).__artifice;
+    // The edge's ends in close-view game px: from its CSS px, through the first target, which both views give.
+    const e = a.edgeLine();
+    const t = a.targets()[0]!;
+    const g = a.state()!.targets[0]!;
+    const c = document.querySelector('#game canvas') as HTMLCanvasElement;
+    const perCss = c.width / c.getBoundingClientRect().width;
+    const toGame = (cssX: number, cssY: number) => ({ x: Math.round(g.x + (cssX - t.x) * perCss), y: Math.round(g.y + (cssY - t.y) * perCss) });
+    const p0 = toGame(e.x0, e.y0);
+    const p1 = toGame(e.x1, e.y1);
+    const points = Array.from({ length: p1.x - p0.x + 1 }, (_, i) => ({ x: p0.x + i, y: p0.y }));
+    for (let n = 0; n < 2; n++) {
+      a.send({ stroke: points });
+      a.advance(16);
+    }
+    a.advance(900);
+  });
+}
+
+/** After a quench: wait out the sinking hold, make both strokes of the grind, then the end hold, so the result opens. */
+export async function grindKnife(page: Page, wavy = false) {
+  await sinkIntoGrind(page);
+  await grindStroke(page, wavy);
+  await grindStroke(page, wavy);
+  await api(page, (a) => a.advance(900));
+}
+
+/** Wait out the sinking hold only: the grind view is open and no stroke has been made. */
+export const sinkIntoGrind = async (page: Page) => {
+  await page.evaluate((ms) => (window as unknown as Win).__artifice.advance(ms), SINK_MS);
+  await settle(page);
+};

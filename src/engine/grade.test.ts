@@ -3,6 +3,7 @@ import { itemById } from '../data/items';
 import { createCraft, PASSES, step, type CraftState, type Input } from './craft';
 import { grade, tierFor, type Graded } from './grade';
 import { quenchLines } from './quench';
+import { grindOut } from './grindFixture';
 
 // J4 Quench and grade (forge spec; S4 "Settled at S4 start"): the sum rule, rounding, the floor at 0, the tiers,
 // every ruin rule and the scrap returned.
@@ -24,7 +25,7 @@ function worked(temp = 950): CraftState {
 /** Quench at exactly `temp`: pick the piece up and drop it in the tub with the heat held there. */
 function quench(s: CraftState, temp: number): CraftState {
   s = at(step(s, { grab: true }), temp);
-  return step(s, { drop: 'tub' });
+  return grindOut(step(s, { drop: 'tub' }));
 }
 const graded = (s: CraftState) => {
   const g = grade(s);
@@ -36,6 +37,9 @@ describe('quench', () => {
   it('ends the craft in the tub at that step\'s temperature, before any cooling', () => {
     const s = quench(worked(), 850);
     expect(s).toMatchObject({ location: 'done', quenchC: 850, ruin: null });
+    // A knife waits in the grind first (S6), still at the quench heat, until its 2 strokes.
+    const held = at(step(worked(), { grab: true }), 850);
+    expect(step(held, { drop: 'tub' })).toMatchObject({ location: 'grind', quenchC: 850, temp: 850, ruin: null });
     // A done craft takes no more input.
     expect(step(s, { grab: true })).toBe(s);
   });
@@ -71,14 +75,14 @@ describe('grade', () => {
     expect(graded(quench(s, 830)).lines).toEqual([{ cause: 'missed-target', points: 10, count: 2 }]);
     // No strikes at all: every hit is missing (18 hits × 5), and the default knife's 3 slag spots cost 9 more.
     const bare = run(createCraft(3, 'knife', ALLOY), [{ grab: true }]);
-    const g = graded(step(at(bare, 830), { drop: 'tub' }));
+    const g = graded(grindOut(step(at(bare, 830), { drop: 'tub' })));
     expect(g.lines).toEqual([
       { cause: 'missed-target', points: 90, count: 18 },
       { cause: 'slag-left', points: 9, count: 3 },
     ]);
     expect(g.score).toBe(1);
     // With the slag gone it is the old 10.
-    expect(graded(step(at(run(fresh(3), [{ grab: true }]), 830), { drop: 'tub' })).score).toBe(10);
+    expect(graded(grindOut(step(at(run(fresh(3), [{ grab: true }]), 830), { drop: 'tub' }))).score).toBe(10);
   });
 
   it('rounds each line, then takes the sum from 100, so the shown lines add up', () => {

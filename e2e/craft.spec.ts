@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { api, clearSlag, dragTo, knifeOnAnvil, settle, strike } from './forge';
+import { api, clearSlag, dragTo, grindKnife, grindStroke, knifeOnAnvil, settle, sinkIntoGrind, strike } from './forge';
 
 // J4 Quench and grade (forge spec; S4 "Settled at S4 start"). A scripted knife: every hit dead centre in the working
 // heat except one wild strike and one hit left missing, then Quench and a drag to the tub a little hot (905 °C).
@@ -27,8 +27,14 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   await api(page, (a) => a.pinTemp(905));
   await dragTo(page, 'tub');
   const s = (await api(page, (a) => a.state()))!;
-  expect(s).toMatchObject({ location: 'done', quenchC: 905, ruin: null });
-  await api(page, (a) => a.advance(1600));
+  // A knife waits in the grind after the quench (S6); two strokes end the craft.
+  expect(s).toMatchObject({ location: 'grind', quenchC: 905, ruin: null });
+  await sinkIntoGrind(page);
+  await grindStroke(page);
+  await grindStroke(page);
+  // Read before the end hold: once it runs out the forge closes on the next frame and the state is gone.
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 905, ruin: null });
+  await api(page, (a) => a.advance(900));
 
   await expect(page.getByTestId('score')).toHaveText('92');
   await expect(page.getByTestId('tier')).toHaveText('Masterwork');
@@ -48,7 +54,7 @@ test('a scripted knife is quenched in the tub and graded line by line', async ({
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 92');
   // The hint counts were written with the craft: each step's hint shown once.
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('artifice.save')!));
-  expect(saved.hintsSeen).toEqual({ alloy: 1, heat: 1, hammer: 1, force: 1, quench: 1 }); // slag waits: 2 hints at most
+  expect(saved.hintsSeen).toEqual({ alloy: 1, heat: 1, hammer: 1, force: 1, quench: 1, grind: 1 }); // slag waits: 2 hints at most
   await page.getByRole('button', { name: 'Forge a knife' }).tap();
   await page.getByRole('button', { name: 'Start forging' }).tap(); // the default mix (S5)
   await expect(page.getByRole('button', { name: 'Hold: bellows' })).toBeVisible();
@@ -62,7 +68,7 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
     a.advance(32);
   });
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(1600));
+  await grindKnife(page);
   // No strikes: all 18 hits missing (90 points) and the default knife's 3 slag spots (9 points), so 1 and Crude.
   await expect(page.getByTestId('score')).toHaveText('1');
   await expect(page.getByTestId('tier')).toHaveText('Crude');
@@ -92,7 +98,7 @@ test('the result offers Choose item and Forge another', async ({ page }) => {
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(32));
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(1600));
+  await grindKnife(page);
   await page.getByRole('button', { name: 'Choose item' }).click();
   await expect(page.getByRole('button', { name: 'Forge a knife' })).toBeVisible();
   await expect(page.getByTestId('item-row').filter({ hasText: 'Knife' })).toContainText('Best: 1');
@@ -121,8 +127,8 @@ test('the piece can go from the fire straight to the quench', async ({ page }, t
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(48));
   await dragTo(page, 'tub');
-  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
-  await api(page, (a) => a.advance(1600));
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'grind', quenchC: 830 });
+  await grindKnife(page);
   await expect(page.getByTestId('score')).toHaveText('1');
 });
 
@@ -150,6 +156,10 @@ test('a quench holds the tub view while the piece sinks, then shows the result',
   await expect(page.getByTestId('score')).toHaveCount(0);
   expect((await api(page, (a) => a.metalBox())).y).toBeGreaterThan(mid.y);
   await api(page, (a) => a.advance(700));
+  // The knife's sinking hold is over and the grind view is up, not the result (S6).
+  await expect(page.getByTestId('stroke-label')).toHaveText('Stroke 1 of 2');
+  await expect(page.getByTestId('score')).toHaveCount(0);
+  await grindKnife(page);
   await expect(page.getByTestId('score')).toHaveText('1');
 });
 
@@ -173,7 +183,7 @@ test('letting go with the finger over the water quenches, wherever the piece was
   await page.mouse.move(over.x, over.y, { steps: 8 });
   await page.mouse.up();
   await api(page, (a) => a.advance(32));
-  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'grind', quenchC: 830 });
 });
 
 // A panel that changes height mid-drag must not move the scene under the finger: the tub stays where the player saw
@@ -201,7 +211,7 @@ test('the scene holds still under a dragging finger while the panel changes heig
   expect(await api(page, (a) => a.zone('tub'))).toEqual(tub);
   await page.mouse.up();
   await api(page, (a) => a.advance(32));
-  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'done', quenchC: 830 });
+  expect((await api(page, (a) => a.state()))!).toMatchObject({ location: 'grind', quenchC: 830 });
   // After the drop the layout catches up with the taller panel.
   await settle(page);
   expect((await api(page, (a) => a.zone('tub'))).y).not.toBe(tub.y);

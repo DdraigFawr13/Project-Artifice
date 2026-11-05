@@ -16,6 +16,10 @@ export interface Item {
   minutes: number;
   /** The starting mix on the alloy screen, until a mix has been used for the item (S5). */
   defaultAlloy: AlloyMix;
+  /** True when the piece is ground on a whetstone after the quench (S6). */
+  grind?: boolean;
+  /** The cutting edge in close-view game px, measured on the finished raster (S6); present for items with `grind`. */
+  edgeLine?: { x0: number; y0: number; x1: number; y1: number };
   /** Strike targets in close-view game px (assets/close.png), before the seed moves them (forge spec S3). */
   targets: { x: number; y: number }[];
 }

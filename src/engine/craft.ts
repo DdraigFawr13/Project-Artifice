@@ -1,7 +1,9 @@
 import grading from '../data/grading.json';
+import stats from '../data/stats.json';
 import { bandAt, heatRules } from '../data/heatBands';
 import { itemById, type AlloyMix } from '../data/items';
 import { alloyProps, checkMix, ores, type AlloyProps } from './alloy';
+import { grindScoreOf, strokeScore, type Pt } from './grind';
 import { heatStep, type Place } from './heat';
 import { isWhiteQuench } from './quench';
 import { mulberry32 } from './rng';
@@ -15,6 +17,8 @@ export type Input =
   | { grab: true }
   | { drop: DropTarget }
   | { strike: { x: number; y: number; force?: number } }
+  /** One grind stroke: a point per engine step of the drag, in close-view px (S6). */
+  | { stroke: Pt[] }
   | { none: true };
 
 export interface CraftState {
@@ -47,6 +51,10 @@ export interface CraftState {
   burning: boolean;
   /** The metal's temperature when it went into the tub, or null before the quench. */
   quenchC: number | null;
+  /** Each grind stroke's score, 0–100, in order (S6); at most `stats.grind.strokes`. */
+  strokes: number[];
+  /** The mean of the strokes once the last is made, unrounded; null before, and always for an item with no grind. */
+  grindScore: number | null;
   /** Set when the craft ends in ruin; `location` is then `done`. */
   ruin: Ruin | null;
   /** Every input except `{none}`, with the step it arrived on, so a craft replays from seed plus log (GAME-01). */
@@ -166,6 +174,8 @@ export function createCraft(seed: number, itemId: string, alloy: AlloyMix): Craf
     lost: {},
     burning: false,
     quenchC: null,
+    strokes: [],
+    grindScore: null,
     ruin: null,
     log: [],
   };
@@ -179,9 +189,21 @@ function applyInput(s: CraftState, input: Input): CraftState {
   }
   if ('drop' in input) {
     if (s.location !== 'held') return s;
-    // The quench ends the craft at this step's temperature, before any heat change (S4); white heat cracks it.
-    if (input.drop === 'tub') return { ...s, location: 'done', bellows: false, quenchC: s.temp, ruin: isWhiteQuench(s.temp) ? 'white-quench' : null };
+    // The quench is taken at this step's temperature, before any heat change (S4); white heat cracks it and ends the
+    // craft. Otherwise a piece with a grind waits for its strokes (S6); any other ends here.
+    if (input.drop === 'tub') {
+      const ruin = isWhiteQuench(s.temp) ? 'white-quench' : null;
+      const grinds = !ruin && itemById(s.itemId).grind === true;
+      return { ...s, location: grinds ? 'grind' : 'done', bellows: false, quenchC: s.temp, ruin };
+    }
     return { ...s, location: input.drop };
+  }
+  if ('stroke' in input) {
+    // A stroke counts only in the grind, and only with enough points to have a speed (S6).
+    if (s.location !== 'grind' || input.stroke.length < stats.grind.minPoints) return s;
+    const strokes = [...s.strokes, strokeScore(input.stroke, itemById(s.itemId).edgeLine!)];
+    if (strokes.length < stats.grind.strokes) return { ...s, strokes };
+    return { ...s, strokes, grindScore: grindScoreOf(strokes), location: 'done' };
   }
   if ('strike' in input) {
     // Strikes count only on the anvil; elsewhere they are logged and ignored.

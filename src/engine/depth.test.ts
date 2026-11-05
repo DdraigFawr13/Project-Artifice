@@ -5,6 +5,7 @@ import { itemById } from '../data/items';
 import { alloyProps, ores } from './alloy';
 import { cleanStreak, createCraft, step, type CraftState, type Input } from './craft';
 import { grade, type Graded } from './grade';
+import { grindOut } from './grindFixture';
 
 // J1 and J2's engine parts (forge-depth spec, S1): the new miss cost, the per-craft band shift, and what each strike
 // records (heat, offPx, perfect) and the clean streak.
@@ -23,7 +24,7 @@ const last = (s: CraftState) => s.strikes[s.strikes.length - 1]!;
 
 describe('J1 missed hits and the shifted band', () => {
   it('scores a knife with no strikes 1 and Crude (10 before its 3 slag spots, −9), quenched at 830 °C', () => {
-    const quench = (c: CraftState) => grade(step(at(step(at(run(c, [{ grab: true }, { drop: 'anvil' }]), 830), { grab: true }), 830), { drop: 'tub' })) as Graded;
+    const quench = (c: CraftState) => grade(grindOut(step(at(step(at(run(c, [{ grab: true }, { drop: 'anvil' }]), 830), { grab: true }), 830), { drop: 'tub' }))) as Graded;
     const g = quench(createCraft(42, 'knife', ALLOY));
     expect(g.ruined).toBe(false);
     expect(g.score).toBe(1);

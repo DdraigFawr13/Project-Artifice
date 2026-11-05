@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { itemById } from '../data/items';
 import { createCraft, PASSES, step, type CraftState } from './craft';
 import { grade } from './grade';
+import { grindOut } from './grindFixture';
 
 // J4's spread goal (forge spec Goals and J4): careful and sloppy play of the same knife and alloy differ by 25 or more.
 // Careful: every strike 4 px from its target and in the working band, quench at 830 °C. Sloppy, as J4 states it:
@@ -19,7 +20,7 @@ function play(offY: number, quenchC: number): number {
     for (const t of s.targets) s = { ...step(s, { strike: { x: t.x, y: t.y + offY } }), temp: IN_BAND };
   }
   s = { ...step(s, { grab: true }), temp: quenchC };
-  const g = grade(step(s, { drop: 'tub' }));
+  const g = grade(grindOut(step(s, { drop: 'tub' })));
   if (g.ruined) throw new Error('ruined');
   return g.score;
 }

@@ -3,6 +3,7 @@ import heatJson from '../data/heat-bands.json';
 import { createCraft, step, STEP_MS, type CraftState, type Input } from './craft';
 import { defaultAlloy, alloyProps } from './alloy';
 import { items } from '../data/items';
+import { grindOut } from './grindFixture';
 
 // J2 Heat (docs/specs/forge-prototype.md, Data → Heat). Rates come from the data file, not from this test.
 const H = heatJson.heat;
@@ -74,7 +75,8 @@ describe('heat', () => {
       for (const i of from) s = step(s, i);
       s = step(s, { grab: true });
       s = step(s, { drop: 'tub' });
-      expect(s.location).toBe('done');
+      expect(s.location).toBe('grind');
+      expect(grindOut(s).location).toBe('done');
     }
   });
 

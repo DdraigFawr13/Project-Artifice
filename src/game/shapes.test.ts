@@ -83,3 +83,26 @@ describe('piece shapes', () => {
     expect(CLOSE_LINE_Y).toBe(390);
   });
 });
+
+// S6: the edge line is measured on the finished raster's lowest opaque row (items.json `edgeLine`).
+describe('edge line', () => {
+  it('has an edge for exactly the items that grind, each end within 2 px of the raster\'s lowest opaque pixels', () => {
+    expect(items.filter((i) => i.grind).map((i) => i.id)).toEqual(['knife', 'sword']);
+    for (const item of items) {
+      if (!item.grind) {
+        expect(item.edgeLine, item.id).toBeUndefined();
+        continue;
+      }
+      const r = shapesFor(item.id).final;
+      let low = -1;
+      for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (r.shade[j * r.w + i]! > 0) low = j;
+      const xs: number[] = [];
+      for (let i = 0; i < r.w; i++) if (r.shade[low * r.w + i]! > 0) xs.push(r.x + i);
+      const e = item.edgeLine!;
+      const near = (x: number, y: number) => Math.min(...xs.map((px) => Math.hypot(px - x, r.y + low - y)));
+      expect(near(e.x0, e.y0), `${item.id} start`).toBeLessThanOrEqual(2);
+      expect(near(e.x1, e.y1), `${item.id} end`).toBeLessThanOrEqual(2);
+      expect(e.x1).toBeGreaterThan(e.x0);
+    }
+  });
+});

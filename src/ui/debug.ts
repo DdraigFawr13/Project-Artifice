@@ -41,6 +41,8 @@ export interface ForgeDebug {
   targets(): { x: number; y: number; hits: number }[];
   /** The slag spots' centres in CSS px, relative to the page, like `targets()`. */
   slag(): { x: number; y: number; cleared: boolean }[];
+  /** The cutting edge's ends in CSS px, relative to the page, like `targets()`; for items that grind (S6). */
+  edgeLine(): { x0: number; y0: number; x1: number; y1: number };
   /** Mark every slag spot cleared, so checks that strike targets directly don't depend on the seed's slag. */
   clearSlag(): void;
 }
@@ -95,6 +97,7 @@ export function installDebug(stage: HTMLElement, current: () => DebugInfo, fps: 
     },
     targets: () => (forge ?? noForge()).targets(),
     slag: () => (forge ?? noForge()).slag(),
+    edgeLine: () => (forge ?? noForge()).edgeLine(),
     clearSlag: () => (forge ?? noForge()).clearSlag(),
     state: () => forge?.state() ?? null,
     lastSound: () => (forge ?? noForge()).lastSound(),

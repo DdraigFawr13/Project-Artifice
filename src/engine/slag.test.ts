@@ -3,6 +3,7 @@ import { itemById } from '../data/items';
 import { cleanStreak, createCraft, step, type CraftState, type Input } from './craft';
 import { grade, liveLines, pointsLost, type Graded } from './grade';
 import { scoreStrike, type Target } from './strike';
+import { grindOut } from './grindFixture';
 
 // J4 (forge-depth spec, S3): slag spots in the bar, how many, where, what they block, and what they cost.
 const knife = itemById('knife');
@@ -186,7 +187,7 @@ describe('blocking', () => {
 describe('the quench and the streak', () => {
   const finish = (s: CraftState): Graded => {
     const held = step({ ...s, temp: 830 }, { grab: true });
-    return grade(step({ ...held, temp: 830 }, { drop: 'tub' })) as Graded;
+    return grade(grindOut(step({ ...held, temp: 830 }, { drop: 'tub' }))) as Graded;
   };
 
   it('charges −3 per spot left at the quench, counted as spots', () => {

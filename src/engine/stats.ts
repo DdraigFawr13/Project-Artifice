@@ -72,10 +72,13 @@ const mean = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / xs.lengt
 function deductions(state: CraftState, stat: StatId): Deduction[] {
   if (stat === 'edge') {
     const over = overByTarget(state).flat();
+    // With a grind the hammer's half of Edge is scaled by (1 − share) and the grind's own deduction is added (S6).
+    const grind = state.grindScore === null ? [] : [{ points: S.grind.share * (100 - state.grindScore), why: S.why.grind }];
+    const hammer = state.grindScore === null ? 1 : 1 - S.grind.share;
     // No hits is the worst Edge: the whole 100 is lost.
-    if (over.length === 0) return [{ points: 100, why: S.why.noHits }];
+    if (over.length === 0) return [{ points: 100 * hammer, why: S.why.noHits }, ...grind];
     const offCentre = state.strikes.filter((k) => k.kind === 'hit' && k.offPx !== null && k.offPx > R.centrePx).length;
-    return [{ points: S.edge.perPx * mean(over), why: fill(S.why.offCentre, offCentre) }];
+    return [{ points: hammer * S.edge.perPx * mean(over), why: fill(S.why.offCentre, offCentre) }, ...grind];
   }
   if (stat === 'toughness') {
     const T = S.toughness;

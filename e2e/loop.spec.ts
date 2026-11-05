@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { api, dragTo, type Api } from './forge';
+import { api, dragTo, grindKnife, type Api } from './forge';
 
 // J5 Full loop (forge spec; S5 "Settled at S5 start"): mix a 3-ore alloy through the real − and + buttons, craft a knife,
 // forge another with the same mix, ruin it for scrap, then reload: the best and the scrap show on the item list.
@@ -22,7 +22,9 @@ async function quenchAt(page: Page, temp: number) {
   await page.getByRole('button', { name: 'Quench' }).click();
   await api(page, (a) => a.advance(48));
   await dragTo(page, 'tub');
-  await api(page, (a) => a.advance(1600));
+  // A knife or sword that isn't ruined is ground before the result; a horseshoe or a ruin goes straight to it (S6).
+  if ((await api(page, (a) => a.state()))!.location === 'grind') await grindKnife(page);
+  else await api(page, (a) => a.advance(1600));
 }
 
 test('mix a 3-ore alloy, craft a knife, forge another, reload: best and scrap kept', async ({ page }, testInfo) => {

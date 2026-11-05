@@ -1,14 +1,16 @@
 import grading from '../data/grading.json';
+import type { Item } from '../data/items';
+import stats from '../data/stats.json';
 import { el, show } from './dom';
 
-export type Step = 'Alloy' | 'Heat' | 'Hammer' | 'Quench';
+export type Step = 'Alloy' | 'Heat' | 'Hammer' | 'Quench' | 'Grind';
 
 /**
  * What the forge screen shows: the wide view at the fire, the close-up anvil view, the wide view with the piece in
- * hand for the quench (mock-up frame 5), or the craft just ended (the last view stays, its buttons off, until the
+ * hand for the quench (mock-up frame 5), the whetstone after the quench (S6; mock-up f-grind), or the craft just ended (the last view stays, its buttons off, until the
  * result or ruin screen opens).
  */
-export type ForgeMode = 'wide' | 'close' | 'quench' | 'done';
+export type ForgeMode = 'wide' | 'close' | 'quench' | 'grind' | 'done';
 
 export interface ForgeView {
   mode: ForgeMode;
@@ -21,6 +23,8 @@ export interface ForgeView {
   struck: number;
   targets: number;
   lost: number;
+  /** The grind stroke being made, 1 to the number of strokes. */
+  stroke: number;
   /** Clean strikes in a row, from the engine. */
   streak: number;
   /** Where the tub's label sits, in CSS px over the canvas (the quench view only). */
@@ -46,15 +50,17 @@ export interface ForgeHandlers {
   putBack(): void;
 }
 
-const STEPS: Step[] = ['Alloy', 'Heat', 'Hammer', 'Quench'];
-const STEP_FOR: Record<Exclude<ForgeMode, 'done'>, Step> = { wide: 'Heat', close: 'Hammer', quench: 'Quench' };
+/** The top bar's steps; Grind only for items that grind (S6). */
+const stepsFor = (item: Pick<Item, 'grind'>): Step[] => (item.grind ? ['Alloy', 'Heat', 'Hammer', 'Quench', 'Grind'] : ['Alloy', 'Heat', 'Hammer', 'Quench']);
+const STEP_FOR: Record<Exclude<ForgeMode, 'done'>, Step> = { wide: 'Heat', close: 'Hammer', quench: 'Quench', grind: 'Grind' };
 /** How far a strike's points rise before they fade, in CSS px. */
 const RISE = 28;
 
 /** The forge's top bar, scene labels and bottom panel (mock-up frames 3, 3b and 4). */
-export function showForgePanel(itemName: string, hints: { heat: string | null; hammer: string | null; force: string | null; slag: string | null; quench: string | null }, on: ForgeHandlers): ForgePanel {
+export function showForgePanel(item: Pick<Item, 'name' | 'grind'>, hints: { heat: string | null; hammer: string | null; force: string | null; slag: string | null; grind: string | null; quench: string | null }, on: ForgeHandlers): ForgePanel {
+  const STEPS = stepsFor(item);
   const stepEls = STEPS.map((s) => el('span', { text: s }));
-  const top = el('div', { className: 'top' }, el('div', { className: 'steps' }, ...stepEls), el('span', { text: itemName }));
+  const top = el('div', { className: 'top' }, el('div', { className: 'steps' }, ...stepEls), el('span', { text: item.name }));
 
   // In hand for the quench the fire advice doesn't fit; white heat in the tub would crack it, so the advice is to cool.
   const BURN_FIRE = 'The metal is being damaged. Ease off the bellows or take it out of the fire.';
@@ -121,6 +127,12 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   const quenching = el('div', { className: 'group' }, quenchIntro, ...(quenchHint ? [quenchHint] : []), putBack);
   quenching.hidden = true;
 
+  // ── Grind: after the quench, strokes of the whetstone along the edge (S6; mock-up f-grind) ──
+  const strokeLabel = el('p', { testId: 'stroke-label', text: `Stroke 1 of ${stats.grind.strokes}` });
+  const grindHint = hints.grind ? el('div', { className: 'hint', testId: 'grind-hint', text: hints.grind }) : null;
+  const grinding = el('div', { className: 'group' }, strokeLabel, ...(grindHint ? [grindHint] : []));
+  grinding.hidden = true;
+
   // The strikes label sits at the scene's top left (mock-up frame 4); points float over the canvas.
   const label = el('span', { className: 'label', testId: 'strikes' });
   label.hidden = true;
@@ -129,7 +141,7 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
   tubLabel.hidden = true;
   const floats = el('div', { className: 'floats' });
 
-  const panel = el('div', { className: 'panel' }, burning, wide, close, quenching);
+  const panel = el('div', { className: 'panel' }, burning, wide, close, quenching, grinding);
   show(el('div', { className: 'screen forge' }, top, el('div', { className: 'scene-gap' }, label), panel, floats, tubLabel));
 
   let mode: ForgeMode | null = null;
@@ -151,6 +163,7 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
         wide.hidden = v.mode !== 'wide';
         close.hidden = v.mode !== 'close';
         quenching.hidden = v.mode !== 'quench';
+        grinding.hidden = v.mode !== 'grind';
         label.hidden = v.mode !== 'close';
         if (v.mode !== 'wide') release();
       }
@@ -162,6 +175,8 @@ export function showForgePanel(itemName: string, hints: { heat: string | null; h
         tubLabel.style.left = `${Math.min(v.tub.x, floats.clientWidth - 8 - half)}px`;
         tubLabel.style.top = `${v.tub.y}px`;
       }
+      const strokeText = `Stroke ${v.stroke} of ${stats.grind.strokes}`;
+      if (strokeLabel.textContent !== strokeText) strokeLabel.textContent = strokeText;
       const isBurning = v.burning;
       const burnWords = v.mode === 'quench' ? BURN_HELD : BURN_FIRE;
       if (burnText.textContent !== burnWords) burnText.textContent = burnWords;
