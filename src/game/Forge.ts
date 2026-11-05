@@ -539,9 +539,12 @@ export class Forge extends Phaser.Scene {
     if (this.layoutPending) this.layout();
   }
 
-  /** A lift over the panel or off the canvas cancels a strike; a drag still drops. */
+  /**
+   * A lift over the panel or off the canvas cancels a strike; a drag still drops, and a grind stroke still counts
+   * (its points were taken over the piece; dropping it silently answered nothing).
+   */
   private onUpOutside(p: Phaser.Input.Pointer): void {
-    if (p.id === this.strikePointer) this.cancelStrike();
+    if (p.id === this.strikePointer && this.mode !== 'grind') this.cancelStrike();
     else this.onUp(p);
   }
 

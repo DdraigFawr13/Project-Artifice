@@ -1,3 +1,4 @@
+import grading from '../data/grading.json';
 import type { Item } from '../data/items';
 import type { Graded, ResultLine } from '../engine/grade';
 import { ores } from '../engine/alloy';
@@ -18,7 +19,7 @@ const WORDS: Record<CauseId, (n: number) => string> = {
   'hot-strike': (n) => `${plural(n, 'strike')} on metal too hot`,
   'hard-strike': (n) => `${plural(n, 'strike')} too hard`,
   'repeat-strike': (n) => `${plural(n, 'strike')} on finished spots`,
-  'blocked-strike': (n) => `${plural(n, 'strike')} on spots held by slag`,
+  'blocked-strike': (n) => `${plural(n, 'strike')} blocked by slag`,
   'missed-target': (n) => `${plural(n, 'hit')} missing`,
   'slag-left': (n) => `${plural(n, 'slag spot')} left`,
   'out-of-band': (n) => `Out of the working heat for ${n} s`,
@@ -105,7 +106,7 @@ export function showResult(item: Item, data: ResultData, on: { choose(): void; a
     const cause =
       g.ruin === 'white-quench'
         ? { title: `The ${name} cracked in the quench.`, why: 'It went into the water far too hot.' }
-        : { title: `The ${name} cracked on the anvil.`, why: '3 cracking strikes: on black metal, or too hard below the working heat.' };
+        : { title: `The ${name} cracked on the anvil.`, why: `${grading.ruin.cracks} cracking strikes: on black metal, or too hard below the working heat.` };
     body.push(
       el('div', { className: 'alert', attrs: { role: 'alert' } }, el('b', { text: cause.title }), el('p', { text: cause.why })),
       el('p', { text: 'Half the metal, rounded down, comes back as scrap.' }),

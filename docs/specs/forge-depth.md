@@ -136,7 +136,7 @@ From the spec checks:
 - **S3 (mock-up `f-slag`).** Uncleared spots are dark pits on the bar; a clearing strike gives a puff of grey scale and the popup "Slag out"; a blocked strike pops "Slag first −n". The slag hint shows in the close panel.
 - **S4 (mock-ups `f-result-stats`, `f-list-stats`).** A stat card (`data-testid="stat-card"`, one `stat-row` per stat) under the score lines: per stat, the name, a bar (value ÷ 100), the word and the `why` line. The item list adds a line (`data-testid="best-stats"`) under the best: the best word of each stat, "Edge Keen · Toughness Sound · Balance True", only once any exist.
 - **S5 (mock-up `f-result-piece`).** A `<canvas data-testid="result-piece">` above the score, drawing `worked(shapesFor(item.id), hits)` one canvas px per game px, shown at min(2, 300 ÷ the raster's width) CSS px per game px with `image-rendering: pixelated`, so the sword fits the 443 px screen; each pixel = the mix's sheen × the raster's shade, with the dark outline as in the forge.
-- **S6 (mock-up `f-grind`).** The quench's hiss, steam, sinking and 1.6 s hold start when `quenchC` is set (today they start at `done`); then, for a piece in `grind`, the close view shows the cooled piece in its sheen and the top bar gains a Grind step, lit; a whetstone drawn in code follows the finger; sparks along the stroke; the panel reads "Stroke 1 of 2" and the grind hint. After the last stroke, `grindEndS`, then the result. The craft's end (save, Result) happens at `done`, after the grind.
+- **S6 (mock-up `f-grind`).** The quench's hiss, steam, sinking and 1.6 s hold start when `quenchC` is set (today they start at `done`); then, for a piece in `grind`, the close view shows the cooled piece in its sheen and the top bar's Grind step (shown for grinding items only) is lit; a whetstone drawn in code follows the finger; sparks along the stroke; the panel reads "Stroke 1 of 2" and the grind hint. After the last stroke, `grindEndS`, then the result. The craft's end (save, Result) happens at `done`, after the grind.
 
 ### Save (S4)
 
@@ -145,6 +145,7 @@ From the spec checks:
 
 ### Debug API
 
+- S2: `hold()` gives `{steps, force}` for the striking finger so far and `idealHold()` the steps of holding whose force is ideal at the current heat, so tests can strike at a chosen force through the real control.
 - S1: `e2e/forge.ts`'s `Api` type follows each slice's additions. `state()` gains `rulesVersion`, `bandShiftC`, and strike `heat` / `offPx` / `perfect`; `lastSound()` returns `{key, rate, perfect}` for the last strike: `rate` is the first (hammer) play's rate, `perfect` true when the second ring played; a light strike reports its hammer play at `lightVolume` with the same rate rule. S2: `send()` takes `force`; strike `force`, `kind`, `crack`. S3: `slag()` gives the spots' centres in CSS px with `cleared`. S6: `send()` takes `stroke`; `state().grindScore`; `edgeLine()` gives the edge's ends in CSS px, converted like `targets()`.
 
 ## Slices
@@ -178,7 +179,7 @@ From the spec checks:
   - Popups, first match wins: light "Too light"; blocked "Slag first −n"; slag "Slag out" (or "Slag out −n" with points); hard "Too hard −n"; Perfect; "Clean" / "−n". The hammer plays by heat as for any strike that isn't wild. Dents are drawn for every strike except wild and light. The scale puff is its own particle list (grey, seeded from the spark generator), not the quench steam.
   - Hints: the close panel shows at most 2 due hints, in the order hammer, force, slag; a hint counts only when shown.
   - Debug: `slag()` in CSS px like `targets()`; `state().slag` in game px; `clearSlag()` marks every spot cleared, so S1–S2 checks that strike targets directly keep their meaning without depending on the seed's slag. Unit tests do the same with `{...s, slag: []}`. `spread.test.ts` compares careful and sloppy crafts with slag cleared.
-  - Wording in `result.ts`: `blocked-strike` "N strikes on spots held by slag"; `slag-left` "N slag spots left".
+  - Wording in `result.ts`: `blocked-strike` "N strikes blocked by slag" (renamed at the final review: "spots held by slag" read as slag spots); `slag-left` "N slag spots left".
 
 ### S4 Blade stats and ore traits
 

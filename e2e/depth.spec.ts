@@ -192,7 +192,7 @@ test('a press clears a slag spot, a strike beside another is blocked, and the re
   });
   await dragTo(page, 'tub');
   await grindKnife(page);
-  await expect(page.getByTestId('line').filter({ hasText: 'slag' })).toHaveText([/^1 strike on spots held by slag\s*−1$/, /^2 slag spots left\s*−6$/]);
+  await expect(page.getByTestId('line').filter({ hasText: 'slag' })).toHaveText([/^1 strike blocked by slag\s*−1$/, /^2 slag spots left\s*−6$/]);
 });
 
 test('the slag hint shows once the hammer and force hints are spent, and is counted when shown', async ({ page }) => {
@@ -444,6 +444,25 @@ test('a steady stroke scores the same when two engine steps run between pointer 
   const s = (await api(page, (a) => a.state()))!;
   expect(s.strokes).toHaveLength(1);
   expect(s.strokes[0]!).toBeGreaterThan(85);
+});
+
+// Final review: a stroke lifted over the panel was dropped silently. Its points were taken over the piece, so it counts.
+test('a stroke that ends with the finger lifted over the panel still counts', async ({ page }) => {
+  await quenchedKnife(page);
+  await sinkIntoGrind(page);
+  const e = await api(page, (a) => a.edgeLine());
+  await page.mouse.move(Math.round(e.x0), Math.round(e.y0));
+  await page.mouse.down();
+  for (let x = Math.round(e.x0) + 12; x <= e.x1; x += 12) {
+    await page.mouse.move(x, Math.round(e.y0));
+    await page.evaluate(() => (window as unknown as { __artifice: Api }).__artifice.advance(16));
+  }
+  // Off the canvas, over the panel, then lift.
+  const panel = await page.locator('.panel').first().boundingBox();
+  await page.mouse.move(panel!.x + panel!.width / 2, panel!.y + panel!.height / 2);
+  await page.mouse.up();
+  await api(page, (a) => a.advance(32));
+  expect((await api(page, (a) => a.state()))!.strokes).toHaveLength(1);
 });
 
 test('a press too short to be a stroke pops "Too short" and counts for nothing; the stone shows under the finger', async ({ page }) => {
