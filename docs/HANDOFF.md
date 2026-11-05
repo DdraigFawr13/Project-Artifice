@@ -19,13 +19,12 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Build S3: hammer (merged, PR #5).
 - ✔ Build S4: quench and grade (merged, PR #6).
 - ✔ Build S5: full loop and the 10-craft test (merged, PR #7).
-- ▶ Judge the prototype against CONCEPT.md's kill criteria with Morgan.
+- ▶ Plan and build the depth pass, then judge the prototype against the kill criteria.
 
 ## Just done
 
-- 2026-11-04 S5 merged by Morgan (PR #7, 25f71a5); PR CI green (23 e2e); Vercel production is 25f71a5, both production links 302 to the login. S5 built (17333e3, b0b7bff): zero-decision re-check (reviewer) found 12 consequential gaps; 3 went to Morgan (ore info: quality + a plain line; last mix remembered, "Forge another" skips the alloy screen; names stay Ore 1–3), the rest are defaults in the spec's S5 list. J5 checks failed first, then passed (101 unit, 20 e2e); 15 mutants, all killed after 1 check was sharpened. Alloy screen screenshotted at the Pixel size beside frames 2 and 2b. Spec review: 7 findings, all fixed (9c5d2f0): `room` from checkMix (GAME-02), the hint limit, the mix changing grading, 4 ores refused, stale spec lines; 4 more mutants killed (103 unit, 21 e2e).
-
-- Earlier entries (brainstorm to S3 built): [archive](archive/handoff-2026-11.md).
+- 2026-11-04 S5 merged by Morgan (PR #7, 25f71a5); PR CI green (23 e2e); Vercel production is 25f71a5, both production links 302 to the login. S5 built (17333e3, b0b7bff): zero-decision re-check (reviewer) found 12 consequential gaps; 3 went to Morgan (ore info: quality + a plain line; last mix remembered, "Forge another" skips the alloy screen; names stay Ore 1–3), the rest are defaults in the spec's S5 list. J5 checks failed first, then passed (101 unit, 20 e2e); 15 mutants, all killed after 1 check was sharpened. Alloy screen screenshotted at the Pixel size beside frames 2 and 2b. Spec review: 7 findings, all fixed (9c5d2f0); 4 more mutants killed (103 unit, 21 e2e).
+- Earlier entries (brainstorm to S4): [archive](archive/handoff-2026-11.md).
 
 ## Next
 
