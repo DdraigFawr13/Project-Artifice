@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { api, type Api, clearSlag, dragTo, holdForIdeal, knifeOnAnvil, strike } from './forge';
+import { api, type Api, clearSlag, dragTo, holdForIdeal, knifeOnAnvil, settle, strike } from './forge';
 
 /** Hold the temperature at `c` °C (a value passed through, since `api` callbacks can't close over variables). */
 const pin = (page: Page, c: number) => page.evaluate((t) => (window as unknown as { __artifice: Api }).__artifice.pinTemp(t), c);
@@ -265,4 +265,100 @@ test('a fresh save shows no best-stats line', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByTestId('item-row').first()).toBeVisible();
   await expect(page.getByTestId('best-stats')).toHaveCount(0);
+});
+
+// J6 on screen (forge-depth spec, S5): a finished knife is drawn on the result in its mix's sheen, so different mixes look
+// different. Expected colours: sheen x the knife's most common finished shade. The shade, 0.88, was measured by counting
+// the shade of every piece pixel of worked(shapesFor('knife'), all targets hit twice), outline excluded (src/data/sheen.test.ts).
+// Default mix (ore2 x 4, ore1 x 1): sheen (188, 175, 158) x 0.88 = (165, 154, 139).
+// Ore1 x 1, ore2 x 2, ore3 x 2: sheen (137, 146, 176) x 0.88 = (121, 128, 155).
+const OUTLINE = [0x12, 0x08, 0x14];
+
+/** A knife with every slag spot cleared and every target struck twice, quenched in the band: the finished result. */
+async function finishKnife(page: Page) {
+  await clearSlag(page);
+  const s0 = (await api(page, (a) => a.state()))!;
+  const mid = (s0.props.bandLowC + s0.props.bandHighC) / 2;
+  await pin(page, mid);
+  for (let round = 0; round < 2; round++) for (const t of s0.targets) await strike(page, t.x, t.y);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (a) => a.advance(48));
+  await dragTo(page, 'tub');
+  await api(page, (a) => a.advance(1600));
+  await expect(page.getByTestId('score')).toBeVisible();
+}
+
+/** The most common colour among the piece's opaque pixels, outline excluded, and the canvas's size and CSS width. */
+const readPiece = (page: Page) =>
+  page.getByTestId('result-piece').evaluate((c: HTMLCanvasElement, outline) => {
+    const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+    const counts = new Map<string, number>();
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] !== 255 || (d[i] === outline[0] && d[i + 1] === outline[1] && d[i + 2] === outline[2])) continue;
+      const k = `${d[i]},${d[i + 1]},${d[i + 2]}`;
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+    const top = [...counts].sort((a, b) => b[1] - a[1])[0];
+    return { rgb: top ? top[0].split(',').map(Number) : [], w: c.width, h: c.height, cssW: c.getBoundingClientRect().width };
+  }, OUTLINE);
+
+const near = (got: number[], want: number[]) => got.every((c, i) => Math.abs(c - want[i]!) <= 8);
+
+test('a finished knife is drawn in its mix\'s sheen, and two mixes look different', async ({ page }) => {
+  // The default mix, from the alloy screen's default.
+  await knifeOnAnvil(page, 950);
+  await finishKnife(page);
+  await settle(page);
+  const a = await readPiece(page);
+  expect(near(a.rgb, [165, 154, 139]), `default mix drew ${a.rgb}`).toBe(true);
+  // Drawn above the score, and sized by the formula: round(w x min(2, 300 / w)) CSS px.
+  const order = await page.locator('.screen.result .panel.fill > *').evaluateAll((els) => els.map((e) => e.getAttribute('data-testid') ?? e.className));
+  expect(order.indexOf('result-piece')).toBe(0);
+  expect(a.cssW).toBe(Math.round(a.w * Math.min(2, 300 / a.w)));
+  const piece = page.getByTestId('result-piece');
+  await expect(piece).toHaveAttribute('role', 'img');
+  await expect(piece).toHaveAttribute('aria-label', 'Knife in Ridge Iron and Bog Iron');
+  await expect(piece).toHaveClass('piece');
+
+  // Ore 1 x 1, Ore 2 x 2, Ore 3 x 2, set with the alloy screen's buttons.
+  await page.goto('/?debug');
+  await page.waitForFunction(() => (window as unknown as { __artifice?: Api }).__artifice != null);
+  await api(page, (x) => x.setSeed(42));
+  await page.getByRole('button', { name: 'Forge a knife' }).tap();
+  await page.getByRole('button', { name: 'Less Ridge Iron', exact: true }).tap();
+  await page.getByRole('button', { name: 'Less Ridge Iron', exact: true }).tap();
+  await page.getByRole('button', { name: 'More Starmetal', exact: true }).tap();
+  await page.getByRole('button', { name: 'More Starmetal', exact: true }).tap();
+  await page.getByRole('button', { name: 'Start forging' }).tap();
+  await page.waitForFunction(() => (window as unknown as { __artifice: Api }).__artifice.state?.() != null);
+  await page.evaluate(() => {
+    const x = (window as unknown as { __artifice: Api }).__artifice;
+    x.pause();
+    x.pinTemp(950);
+    x.send({ grab: true });
+    x.advance(16);
+    x.send({ drop: 'anvil' });
+    x.advance(32);
+  });
+  await expect(page.getByRole('button', { name: 'Back to the fire' })).toBeVisible();
+  expect((await api(page, (x) => x.state()))!.alloy).toEqual({ ore1: 1, ore2: 2, ore3: 2 });
+  await finishKnife(page);
+  await settle(page);
+  const b = await readPiece(page);
+  expect(near(b.rgb, [121, 128, 155]), `3-ore mix drew ${b.rgb}`).toBe(true);
+  expect(Math.max(...a.rgb.map((c, i) => Math.abs(c - b.rgb[i]!)))).toBeGreaterThanOrEqual(30);
+  await expect(page.getByTestId('result-piece')).toHaveAttribute('aria-label', 'Knife in Ridge Iron, Starmetal and Bog Iron');
+});
+
+test('a ruined knife shows no piece', async ({ page }) => {
+  await knifeOnAnvil(page, 950);
+  await page.getByRole('button', { name: 'Quench' }).click();
+  await api(page, (x) => {
+    x.pinTemp(1275);
+    x.advance(32);
+  });
+  await dragTo(page, 'tub');
+  await api(page, (x) => x.advance(1600));
+  await expect(page.getByText('Knife ruined')).toBeVisible();
+  await expect(page.getByTestId('result-piece')).toHaveCount(0);
 });

@@ -13,6 +13,8 @@ export interface Ore {
   slagPerPart: number;
   /** What the ore does to each stat's work, as a multiplier (S4). */
   stats: Record<'edge' | 'toughness' | 'balance', number>;
+  /** The metal's colour as `#rrggbb`, for the result piece (S5). */
+  sheen: string;
   /** How the ore works, in words for the alloy screen; never a temperature (S5). */
   note: string;
 }

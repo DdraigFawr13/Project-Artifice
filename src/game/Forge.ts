@@ -14,7 +14,7 @@ import { debugEnabled, setForgeDebug, takeDebugSeed, type CssBox } from '../ui/d
 import { showForgePanel, type ForgeMode, type ForgePanel } from '../ui/forge';
 import { CLOSE_LINE_Y } from './closeLayout';
 import type { GameContext } from './context';
-import { outline, scaled, shapesFor, worked, WIDE_SCALE, type PieceShapes, type Raster } from './shapes';
+import { OUTLINE_RGB, outline, scaled, shapesFor, worked, WIDE_SCALE, type PieceShapes, type Raster } from './shapes';
 import { CONTENT_BOTTOM_Y, CONTENT_MID_Y, FIRE_GLOW, inside, REST, WATER, ZONES } from './wideLayout';
 
 const BG_W = 400;
@@ -24,8 +24,6 @@ const HINT_TIMES = 3;
 const MAX_FRAME_MS = 250;
 /** Smallest hit area around the piece: 44 CSS px at the Pixel's ×3 on 2.4375 dpr is about 36 game px. */
 const MIN_HIT = 36;
-/** The piece's outline: a dark plum near --night-0, never tinted, so a cold piece still reads on the anvil. */
-const EDGE_RGB = [0x12, 0x08, 0x14] as const;
 const SPARK = 0xfdd479; // --fire-5
 const FORGE_GLOW = 0xf87f33; // --fire-3
 const INK = 0xead59c; // --ink: targets still open this round
@@ -399,7 +397,7 @@ export class Forge extends Phaser.Scene {
         for (let i = 0; i < r.w * r.h; i++) {
           const v = r.shade[i]!;
           if (layer === 'fill' && v > 0) img.data.set([v * 255, v * 255, v * 255, 255], i * 4);
-          if (layer === 'edge' && edge[i]) img.data.set([...EDGE_RGB, 255], i * 4);
+          if (layer === 'edge' && edge[i]) img.data.set([...OUTLINE_RGB, 255], i * 4);
         }
         tex.context.putImageData(img, 0, 0);
         tex.refresh();

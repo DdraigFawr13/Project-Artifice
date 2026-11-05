@@ -210,7 +210,7 @@ From the spec checks:
   - The canvas's attributes are the raster's `w × h`; its CSS width is `round(w × min(2, 300 ÷ w))` px, `display: block; margin: 0 auto`, in a `.piece` rule with `image-rendering: pixelated`. The sword is scaled below 1 and may lose single-pixel lines: a known look, shown to Morgan at the playtest.
   - Placement: first in the finished result's body, above the score. A ruined craft shows no piece (no `result-piece` element), with a test.
   - J6's "most common shade" is counted from `worked(shapesFor('knife'), [2, …])` over the piece's own pixels (outline excluded) by a test helper, and the measured shade and expected RGB are written into the test as numbers. The e2e takes the most common colour over alpha-255 pixels other than the outline colour.
-  - The canvas has `role="img"` and `aria-label` "{item name} in {ore names in the mix, by parts, most first, joined with \" and \"}". No debug API change.
+  - The canvas has `role="img"` and `aria-label` "{item name} in {ore names in the mix, by parts, most first, as a list: \"A and B\", \"A, B and C\"; ties in `ores.json` order}". No debug API change.
 
 ### S6 Grind and finish
 

@@ -113,6 +113,7 @@ body {
 .label.tub { transform: translate(-50%, -100%); white-space: nowrap; }
 
 /* Result and ruin (mock-up frames 6 and 7). */
+.piece { display: block; margin: 0 auto; image-rendering: pixelated; }
 .score { display: flex; align-items: baseline; gap: 10px; }
 .score b { font-family: var(--figures); font-size: 40px; font-weight: 400; color: var(--fire-5); font-variant-numeric: tabular-nums; }
 .score span { font-size: 24px; color: var(--fire-4); }

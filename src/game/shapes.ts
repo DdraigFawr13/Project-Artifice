@@ -29,6 +29,9 @@ export interface PieceShapes {
   region: Int16Array;
 }
 
+/** The piece's outline: a dark plum near --night-0, never tinted, so a cold piece still reads on the anvil. */
+export const OUTLINE_RGB = [0x12, 0x08, 0x14] as const;
+
 const RIM = 0.4;
 const STEPS: Record<string, number> = { r: RIM, '1': 0.62, '2': 0.76, '3': 0.88, '4': 1 };
 /** Half the bar's thickness in game px, by item. */
