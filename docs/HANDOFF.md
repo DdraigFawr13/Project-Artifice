@@ -19,7 +19,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 - ✔ Build S3: hammer (merged, PR #5).
 - ✔ Build S4: quench and grade (merged, PR #6).
 - ✔ Build S5: full loop and the 10-craft test (merged, PR #7).
-- ▶ Plan and build the depth pass, then judge the prototype against the kill criteria.
+- ▶ Build the depth pass (S1–S6), then the 10-craft test again.
 
 ## Just done
 
@@ -28,7 +28,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Next
 
-1. Forge **depth pass** spec drafted: `docs/specs/forge-depth.md` (6 slices). Rounds 1–2 answered ([1](https://claude.ai/artifact/K4G53fSfXyj7K3ovUrk2ZQ) `depth1`, [2](https://claude.ai/artifact/T9No24JSVbtoPS2rLXhAE3) `depth2`; Morgan: all recommended). Checks: paraphrase, critic, zero-decision, then a critic and zero-decision re-run; 2 fix passes (10d5ab4); a final zero-decision check is running. Next: the approval page (ore names, cracking rule, old bests, 7 additions), then DECISIONS + D-005 update, then S1 in a fresh session.
+1. Forge **depth pass** approved (D-007, [approval](https://claude.ai/artifact/6tvP43GMS8DgArxEogxFR9)): build S1–S6 of `docs/specs/forge-depth.md` on branch `claude/forge-depth` (cut from `claude/forge-after-s5`, PR #8), one commit per slice, each by a fresh implementer agent, reviewed here; mock-ups in `mockups/depth.html`; pause before marking any PR ready (Morgan).
 2. Then the 10-craft test again. Also from S5: "unsure" about forging another, crafts "way shorter" than the goal.
 
 ## Open questions
@@ -41,6 +41,8 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 ## Decisions since the last plan update
 
+- 2026-11-05 Depth pass approved, all as recommended (D-007): ore names Bog Iron, Ridge Iron, Starmetal; cracking rule kept; old bests kept; OpenArt allowed if needed for consistent art; pause before PRs go ready.
+
 - 2026-11-05 Depth pass round 1 (Morgan, all as recommended): hold-to-charge strike force, right force set by heat, too light doesn't take / too hard costs and counts towards cracking; slag costs craft points, struck out before shaping, more in cheaper ore; missed hit −5; metal varies ±20 °C, cued by the hammer's sound; cooling +30%; Perfect = 1 px, in band, right force; times a guide. All 11 ideas Now (incl. blade stats, grind, streak, ore names). Depth means "actually shaping the bar… the ore really matter to stats of the item and how it looks".
 
 - 2026-11-04 S5 playtest (Morgan): quench "very flat", fixed in this PR (steam, the piece slides into the water, 1.6 s hold; spec S5 list); alloy choice matters; unsure about forging another.
@@ -49,10 +51,7 @@ Shown at the start of a session and when asking the owner to approve a PR or a m
 
 - 2026-11-04 S4 playtest (Morgan): "works pretty well"; quench from the fire too (a wide-view Quench button added); the quench feels unsatisfying but fine (steam and a sinking piece noted for later, spec S4 list).
 
-- 2026-11-04 S3 art (Morgan): the knife is the concept's own knife, and every piece starts as bar stock; each target shapes its own stretch, in two strict rounds: the first hit gives a halfway shape, the second the finished one (section by section). Spec S3 list updated.
 - 2026-11-04 Checks run at Morgan's measured Pixel size only: 443 × 816 CSS px at dpr 2.4375, ×3, 359 × 663 game px (the `?debug` readout; D-004 updated).
-- 2026-11-04 S3: close-up art from a free local edit, no OpenArt spend; strike reach 9 game px with −1 per px beyond 3, up to −6 (Morgan; spec S3 "Settled at S3 start" and Data → grading.json).
-- 2026-11-04 S2 controls: the mock-up's "Hold: bellows" and "To the anvil" buttons plus dragging the bar both work (Morgan; spec S2 "Settled at S2 start").
 
 - 2026-11-04 Concept chosen ([D-001](DECISIONS.md#d-001-concept-chosen)).
 - 2026-11-04 Full setup with the game layer ([D-002](DECISIONS.md#d-002-full-ai-master-setup-with-the-game-layer)).

@@ -1,7 +1,7 @@
 # Forge depth pass
 
-- **Status:** Draft
-- **Planned in:** [ideas page](https://claude.ai/artifact/KTpAvi8EfJSm6UBfaerknz) (idea ids L1–L10, M1–M10, H1–H10), [round 1](https://claude.ai/artifact/K4G53fSfXyj7K3ovUrk2ZQ) (database collection `depth1`), [round 2](https://claude.ai/artifact/T9No24JSVbtoPS2rLXhAE3) (`depth2`; Morgan, 2026-11-05: "Go with all recommended and continue"). Answer ids such as `q_miss` are those collections' document ids; the answers are restated where used. **Decisions:** D-001, D-003, D-005; the depth-pass decision is added on approval. Builds on [forge-prototype.md](forge-prototype.md), whose slices are cited as "prototype S1"–"prototype S5"; slices here are "S1"–"S6".
+- **Status:** Approved 2026-11-05
+- **Planned in:** [ideas page](https://claude.ai/artifact/KTpAvi8EfJSm6UBfaerknz) (idea ids L1–L10, M1–M10, H1–H10), [round 1](https://claude.ai/artifact/K4G53fSfXyj7K3ovUrk2ZQ) (database collection `depth1`), [round 2](https://claude.ai/artifact/T9No24JSVbtoPS2rLXhAE3) (`depth2`; Morgan, 2026-11-05: "Go with all recommended and continue"). Answer ids such as `q_miss` are those collections' document ids; the answers are restated where used. **Decisions:** D-001, D-003, D-005, D-007. Builds on [forge-prototype.md](forge-prototype.md), whose slices are cited as "prototype S1"–"prototype S5"; slices here are "S1"–"S6".
 
 ## Problem
 
@@ -74,7 +74,7 @@ Each check below fails at the commit the slice starts from, except lines marked 
 - Every rule lives in the engine; screens show results (GAME-02). Every number is data in `src/data/*.json` (GAME-04). New randomness comes from new seeded streams, so prototype S3's target positions for a seed don't move (GAME-01). `CraftState.rulesVersion` is 2 for the whole pass, so a replay knows its rules; no replay logs are saved, so none from version 1 have to play back.
 - The hammer's sound tells where a strike landed against the working heat, after the strike (`q_vary`). It's feedback, like the points popup that already shows "on metal too cold"; D-005's "no heat gauge" is about reading the heat before acting.
 - On approval, D-005 is updated in the same change (SRC-04): the craft gains force, slag, stats, the ore look and a grind after the quench.
-- Mock-ups first: S2–S6 change a screen or a control, so each starts with its frame in `mockups/depth.html`, made with `ui-mockups` and approved by Morgan before code.
+- Mock-ups first: S2–S6 change a screen or a control, so each starts with its frame in `mockups/depth.html`, made with `ui-mockups` and screenshotted before code; Morgan reviews them with the PR (D-007).
 
 ## Alternatives rejected
 
@@ -98,12 +98,12 @@ From the spec checks:
 ## Risks
 
 - Too much at once on a phone (aim, heat, force, slag) → slices land one at a time on the preview; the quick playtest after S3 can cut or tune before stats.
-- A cracking ruin can now come in warm metal: 3 too-hard strikes below the working band (about 800–900 °C) end the craft (`f_wrong`, Morgan's choice) → shown on the approval page; `cracks` is data.
+- A cracking ruin can now come in warm metal: 3 too-hard strikes below the working band (about 800–900 °C) end the craft (`f_wrong`, Morgan's choice) → kept by Morgan (D-007); `cracks` is data.
 - Ore 3 cools at 104 °C/s across a band about 150 °C wide: under 1.5 s per heat (worked out, not measured) → tune `cool` by the S1 preview.
 - Force read from heat feels arbitrary → the ideal is a straight line across the working band (data), and "Too light" / "Too hard" show at once.
 - Stat formulas feel random → each stat comes from named parts of the craft, the card names what hurt it most, every weight is data.
 - Grind is fiddly by finger → judged by mean distance and speed evenness with generous weights; it can't ruin the piece.
-- Old bests were earned with −3 per missed hit → Morgan decides on the approval page whether to keep or clear them.
+- Old bests were earned with −3 per missed hit → kept (D-007).
 
 ## Design
 
@@ -111,7 +111,7 @@ From the spec checks:
 
 - `grading.json`: `missedHit` 3 → 5 (S1). New (S1): `metal: {bandShiftC: 20}`, `perfectPx: 1`, `streakShowAt: 3`. New (S2): `force: {fullHoldS: 0.6, idealAtHigh: 0.3, idealAtLow: 0.8, min: 0.25, max: 0.8, window: 0.15, hard: 2}` (so 1.0 is always hard and 0.05 always light); `ruin.blackStrikes` renamed `ruin.cracks` (3). New (S3): `slag: {reachPx: 6, blocked: 1, left: 3}`.
 - `feel.json` (new, S1; screen-only numbers): `hammerRate: {cold: 1.25, in: 1, hot: 0.8}`, `perfectRate: 1.5`, `perfectVolume: 0.3`, `lightVolume: 0.3`; `grindEndS: 0.8` (S6).
-- `ores.json`, per ore (Ore 1 / Ore 2 / Ore 3): `cool` 58.5 / 78 / 104 (+30%, S1); `name` from the approval page (S1); `slagPerPart` 0.8 / 0.5 / 0.2 (S3); `stats` {edge, toughness, balance}: {0.75, 1, 0.85} / {0.85, 0.85, 1} / {1, 0.75, 0.85} (S4); `sheen` "#8a6248" / "#c8c2b4" / "#4a7ae0" (S5); a mix's sheen is the parts-weighted mean of each channel, rounded.
+- `ores.json`, per ore (Ore 1 / Ore 2 / Ore 3): `cool` 58.5 / 78 / 104 (+30%, S1); `name` Bog Iron / Ridge Iron / Starmetal (S1, D-007); `slagPerPart` 0.8 / 0.5 / 0.2 (S3); `stats` {edge, toughness, balance}: {0.75, 1, 0.85} / {0.85, 0.85, 1} / {1, 0.75, 0.85} (S4); `sheen` "#8a6248" / "#c8c2b4" / "#4a7ae0" (S5); a mix's sheen is the parts-weighted mean of each channel, rounded.
 - `items.json`: `stats` (S4): horseshoe ["toughness", "balance"], knife and sword ["edge", "toughness", "balance"]; `grind` (S6): true for knife and sword; `edgeLine: {x0, y0, x1, y1}` (S6) in close-view px along the cutting edge, measured in S6 on `close.png` against the drawn piece (assumption: knife about y 393, x 129–300; sword about y 394, x 60–340).
 - `stats.json` (new, S4): `edge: {perPx: 10}`; `toughness: {perOutSecond: 4, degreesPerPoint: 5, perCrack: 10, quenchC: 830}`; `balance: {perMissing: 3, perSlag: 15, perSpreadPx: 2}`; `words` for the bands 0/40/60/75/90: Edge Dull, Fair, Sharp, Keen, Razor; Toughness Brittle, Fair, Sound, Sturdy, Unyielding; Balance Clumsy, Fair, Steady, True, Perfect; `why` templates per deduction, `{n}` being the count named (off-centre strikes = hits with `offPx` > `centrePx`) (`"hurt most by {n} off-centre strikes"`, `"hurt most by {n} s out of the working heat"`, `"hurt most by a quench {d} °C off"`, `"hurt most by {n} cracking strikes"`, `"hurt most by {n} hits missing"`, `"hurt most by {n} slag spots left"`, `"hurt most by uneven work"`, `"hurt most by an uneven grind"`) and `"helped by the {ore} in the mix"`. S6 adds `grind: {perPx: 8, perCv: 60, minCover: 0.8, strokes: 2, minPoints: 5, share: 0.5}`.
 - `hints.json`: `force` (S2) "Hold longer to strike harder. Hot metal wants a light touch."; `slag` (S3) "Knock out the dark slag first. The spots beside it won't shape until it's gone."; `grind` (S6) "Drag the stone along the edge, steady and even." Each shows the first 3 times its step is reached, counted like the hammer hint.
@@ -141,7 +141,7 @@ From the spec checks:
 ### Save (S4)
 
 - Version 2 adds `bestStats: {[itemId]: {[stat]: number}}`: the best of each stat on its own (`st_best`), integers 0–100, only stats the item uses, updated on finished crafts only. Load accepts version 1 (upgraded in memory with `bestStats: {}`, written as version 2 at the next save) and version 2 (each value checked); anything else is kept aside as today (GAME-05). `recordCraft` takes the stats.
-- Old bests: kept or cleared as Morgan answers on the approval page.
+- Old bests are kept (D-007).
 
 ### Debug API
 
@@ -154,7 +154,7 @@ From the spec checks:
 - **Morgan tries:** a knife with no strikes scores 10 (Crude); the working heat moves between crafts and the hammer's clank or thud says where it is; more trips to the fire; "Perfect" on a dead-centre strike; "Clean ×N"; the ores' new names.
 - **Checks that fail now:** J1, J2.
 - **Files:** `src/data/grading.json`, `ores.json` (cool, names), new `feel.json`; `src/engine/craft.ts` (rulesVersion, band shift, `heat`, `offPx`, `perfect`), `strike.ts`; new `src/engine/depth.test.ts`; `src/game/Forge.ts` (sound rate, Perfect, streak); `src/ui/forge.ts` (label); `src/ui/debug.ts` (`lastSound`); tests that pin −3, 46 or 94 and change on purpose: `alloy.test.ts` (cool means), `grade.test.ts`, `heat.test.ts`, `spread.test.ts`, `e2e/craft.spec.ts` (46 → 10, Common → Crude, 94 → 92, "−3" → "−5"), `e2e/loop.spec.ts` (46 → 10, ore names); `src/engine/grade.test.ts` strike literals gain the new fields; `e2e/forge.ts` (`Api`); new `e2e/depth.spec.ts`.
-- **Waits on:** Morgan's ore names.
+- **Waits on:** none (names settled).
 
 ### S2 Strike force
 
@@ -200,6 +200,5 @@ Then Morgan reruns the 10-craft test with the playtest form.
 
 ## Open questions
 
-- **Ore names:** Morgan picks a set on the approval page before S1.
-- **Old bests:** keep them (earned at −3 per missed hit) or clear them when S1 lands; asked on the approval page.
+- Settled 2026-11-05 (D-007): ore names Bog Iron, Ridge Iron, Starmetal; old bests kept; the cracking rule kept; mock-ups for S2–S6 are made and screenshotted, and Morgan reviews them with the PR rather than before each slice ("build all these features just pause before submitting prs for approval").
 - **Weights:** every number in Data is a starting value, tuned by playtest.
